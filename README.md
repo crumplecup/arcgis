@@ -124,6 +124,37 @@ Run an example:
 cargo run --example query_features
 ```
 
+## Testing
+
+### Unit Tests
+
+Run unit tests (no credentials required):
+
+```bash
+cargo test
+```
+
+### Integration Tests
+
+Integration tests require ArcGIS credentials and hit live AGOL APIs.
+
+1. **Set up credentials**:
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your ARCGIS_API_KEY or CLIENT_ID/CLIENT_SECRET
+   ```
+
+2. **Run integration tests**:
+   ```bash
+   # Run all integration tests (be patient, includes rate limiting)
+   cargo test --test integration_basic -- --ignored
+
+   # Run specific test
+   cargo test --test integration_basic test_public_feature_service_accessible -- --ignored
+   ```
+
+See [`tests/README.md`](tests/README.md) for more details.
+
 ## Authentication
 
 ### API Key
