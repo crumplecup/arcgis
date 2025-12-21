@@ -1,0 +1,99 @@
+[package]
+name = "arcgis"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["ArcGIS Rust Contributors"]
+license = "MIT OR Apache-2.0"
+description = "Type-safe Rust SDK for the ArcGIS REST API with compile-time guarantees"
+repository = "https://github.com/esri/arcgis-rust"
+documentation = "https://docs.rs/arcgis"
+homepage = "https://github.com/esri/arcgis-rust"
+keywords = ["arcgis", "gis", "geospatial", "esri", "maps"]
+categories = ["api-bindings", "web-programming::http-client"]
+readme = "README.md"
+exclude = [
+    ".github/",
+    "examples/",
+    "benches/",
+]
+
+[features]
+default = ["feature-service"]
+
+# Services (optional via features)
+feature-service = []
+map-service = []
+geocoding = []
+geometry-service = []
+routing = []
+geoprocessing = []
+stream-service = ["tokio/sync"]
+places = []
+
+# Format support
+pbf = ["dep:prost"]  # TODO: Add arcpbf when available
+
+# Convenience feature to enable all services
+full = [
+    "feature-service",
+    "map-service",
+    "geocoding",
+    "geometry-service",
+    "routing",
+    "geoprocessing",
+    "stream-service",
+    "places",
+    "pbf",
+]
+
+[dependencies]
+# Core HTTP and async runtime
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tokio = { version = "1.40", features = ["rt", "macros"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Authentication
+oauth2 = "4.4"
+
+# URL handling
+url = "2.5"
+
+# Error handling
+thiserror = "2.0"
+
+# Logging
+tracing = "0.1"
+
+# Spatial types (GeoRust ecosystem - always included)
+geo-types = "0.7"
+geojson = { version = "0.24", features = ["geo-types"] }
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Security
+secrecy = { version = "0.10", features = ["serde"] }
+
+# Async traits
+async-trait = "0.1"
+
+# Optional dependencies (enabled by features)
+geo = { version = "0.28", optional = true, features = ["use-serde"] }
+geozero = { version = "0.14", optional = true }
+# arcpbf = { version = "0.3", optional = true }  # TODO: Add when available
+prost = { version = "0.13", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-test = "0.4"
+mockito = "1"
+tracing-subscriber = "0.3"
+anyhow = "1"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

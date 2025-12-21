@@ -1,0 +1,49 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+# Note: Keep Cargo.lock for applications, but not for libraries
+# This is a library, so Cargo.lock should be in version control for reproducible builds
+# but it's not published to crates.io
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+
+# API Keys and Secrets
+**/secrets/
+**/credentials/
+*.key
+*.pem
+
+# Documentation
+/target/doc/
+
+# Test artifacts
+*.profraw
+*.profdata
+
+# Coverage
+*.lcov
+tarpaulin-report.html
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.directory
