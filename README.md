@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/arcgis.svg)](https://crates.io/crates/arcgis)
 [![Documentation](https://docs.rs/arcgis/badge.svg)](https://docs.rs/arcgis)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](README.md#license)
-[![Build Status](https://github.com/esri/arcgis-rust/workflows/CI/badge.svg)](https://github.com/esri/arcgis-rust/actions)
+[![Build Status](https://github.com/crumplecup/arcgis/workflows/CI/badge.svg)](https://github.com/crumplecup/arcgis/actions)
 
 A type-safe Rust SDK for the [ArcGIS REST API](https://developers.arcgis.com/rest/) with compile-time guarantees.
 
@@ -192,8 +192,8 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 ```bash
 # Clone the repository
-git clone https://github.com/esri/arcgis-rust.git
-cd arcgis-rust
+git clone https://github.com/crumplecup/arcgis.git
+cd arcgis
 
 # Build the project
 cargo build

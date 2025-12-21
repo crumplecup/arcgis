@@ -269,7 +269,7 @@ git push --tags
 
 ## 📞 Community & Support
 
-- **Repository**: https://github.com/esri/arcgis-rust (placeholder)
+- **Repository**: https://github.com/crumplecup/arcgis
 - **Documentation**: https://docs.rs/arcgis
 - **Issues**: GitHub Issues
 - **Discussions**: GitHub Discussions
