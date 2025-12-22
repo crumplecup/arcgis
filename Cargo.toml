@@ -91,7 +91,7 @@ derive-new = "0.7"
 derive_builder = "0.20"
 
 # Optional dependencies (enabled by features)
-geo = { version = "0.28", optional = true, features = ["use-serde"] }
+geo = { version = "0.32", optional = true, features = ["use-serde"] }
 geozero = { version = "0.14", optional = true }
 # arcpbf = { version = "0.3", optional = true }  # TODO: Add when available
 prost = { version = "0.13", optional = true }
