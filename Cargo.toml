@@ -94,7 +94,7 @@ derive_builder = "0.20"
 geo = { version = "0.28", optional = true, features = ["use-serde"] }
 geozero = { version = "0.14", optional = true }
 # arcpbf = { version = "0.3", optional = true }  # TODO: Add when available
-prost = { version = "0.13", optional = true }
+prost = { version = "0.14", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
