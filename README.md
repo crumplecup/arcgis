@@ -136,7 +136,7 @@ cargo test
 
 ### Integration Tests
 
-Integration tests require ArcGIS credentials and hit live AGOL APIs.
+Integration tests require ArcGIS credentials and the `api` feature flag.
 
 1. **Set up credentials**:
    ```bash
@@ -146,11 +146,14 @@ Integration tests require ArcGIS credentials and hit live AGOL APIs.
 
 2. **Run integration tests**:
    ```bash
-   # Run all integration tests (be patient, includes rate limiting)
-   cargo test --test integration_basic -- --ignored
+   # Run all API tests (be patient, includes rate limiting)
+   cargo test --features api
+
+   # Or use the justfile recipe
+   just test-api
 
    # Run specific test
-   cargo test --test integration_basic test_public_feature_service_accessible -- --ignored
+   cargo test --features api test_public_feature_service_accessible
    ```
 
 See [`tests/README.md`](tests/README.md) for more details.

@@ -1,13 +1,12 @@
 //! Basic integration tests for ArcGIS SDK.
 //!
-//! These tests require credentials in a `.env` file.
-//! They are marked with `#[ignore]` by default to avoid hammering the API.
-//! Run with: `cargo test --test integration_basic -- --ignored`
+//! These tests require credentials in a `.env` file and the `api` feature flag.
+//! Run with: `cargo test --features api`
 
 mod common;
 
 #[tokio::test]
-#[ignore = "Requires API key and hits live API"]
+#[cfg(feature = "api")]
 async fn test_client_creation_with_api_key() {
     let _client = common::create_api_key_client();
     // Client creation should succeed without panicking
@@ -15,20 +14,22 @@ async fn test_client_creation_with_api_key() {
 }
 
 #[test]
+#[cfg(feature = "api")]
 fn test_credentials_available() {
     common::load_env();
 
-    // Either API key OR OAuth credentials should be available
+    // API key should be available for testing
+    // OAuth credentials will be checked when OAuth is implemented (Phase 2)
     let has_api_key = common::api_key().is_some();
-    let has_oauth = std::env::var("CLIENT_ID").is_ok() &&
-                    std::env::var("CLIENT_SECRET").is_ok();
 
-    assert!(has_api_key || has_oauth,
-            "Either ARCGIS_API_KEY or (CLIENT_ID + CLIENT_SECRET) must be set in .env");
+    assert!(
+        has_api_key,
+        "ARCGIS_API_KEY must be set in .env for integration tests"
+    );
 }
 
 #[tokio::test]
-#[ignore = "Hits live AGOL API - run sparingly"]
+#[cfg(feature = "api")]
 async fn test_public_feature_service_accessible() {
     // This test verifies we can reach a public AGOL service
     // without authentication (read-only)
@@ -44,15 +45,21 @@ async fn test_public_feature_service_accessible() {
         .await
         .expect("Failed to reach AGOL sample service");
 
-    assert!(response.status().is_success(),
-            "Sample feature service should be accessible");
+    assert!(
+        response.status().is_success(),
+        "Sample feature service should be accessible"
+    );
 
-    let json: serde_json::Value = response.json().await
+    let json: serde_json::Value = response
+        .json()
+        .await
         .expect("Response should be valid JSON");
 
     // Verify it's a feature service response
-    assert!(json.get("layers").is_some() || json.get("tables").is_some(),
-            "Response should contain layers or tables");
+    assert!(
+        json.get("layers").is_some() || json.get("tables").is_some(),
+        "Response should contain layers or tables"
+    );
 }
 
 // TODO: Add more integration tests as we implement features:

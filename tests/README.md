@@ -2,7 +2,7 @@
 
 ## Setup
 
-Integration tests require ArcGIS credentials. These tests are marked with `#[ignore]` to avoid hammering the API during normal test runs.
+Integration tests require ArcGIS credentials and the `api` feature flag.
 
 ### 1. Create `.env` file
 
@@ -34,13 +34,19 @@ CLIENT_SECRET=your_client_secret_here
 Run all integration tests (hits live AGOL):
 
 ```bash
-cargo test --test integration_basic -- --ignored
+cargo test --features api
+```
+
+Or use the justfile recipe:
+
+```bash
+just test-api
 ```
 
 Run specific test:
 
 ```bash
-cargo test --test integration_basic test_public_feature_service_accessible -- --ignored
+cargo test --features api test_public_feature_service_accessible
 ```
 
 ## Rate Limiting

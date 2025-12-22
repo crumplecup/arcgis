@@ -34,6 +34,9 @@ places = []
 # Format support
 pbf = ["dep:prost"]  # TODO: Add arcpbf when available
 
+# Testing features
+api = []  # Empty marker for tests that hit live API endpoints
+
 # Convenience feature to enable all services
 full = [
     "feature-service",
@@ -63,7 +66,7 @@ oauth2 = "4.4"
 url = "2.5"
 
 # Error handling
-thiserror = "2.0"
+derive_more = { version = "1.0", features = ["display", "error", "from"] }
 
 # Logging
 tracing = "0.1"
@@ -80,6 +83,12 @@ secrecy = { version = "0.10", features = ["serde"] }
 
 # Async traits
 async-trait = "0.1"
+
+# Derive macros for getters/setters
+derive-getters = "0.5"
+derive_setters = "0.1"
+derive-new = "0.7"
+derive_builder = "0.20"
 
 # Optional dependencies (enabled by features)
 geo = { version = "0.28", optional = true, features = ["use-serde"] }

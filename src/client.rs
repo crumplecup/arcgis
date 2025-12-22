@@ -1,8 +1,10 @@
 //! Core HTTP client for ArcGIS services.
 
-use crate::auth::AuthProvider;
+use crate::AuthProvider;
+use derive_getters::Getters;
 use reqwest::Client as ReqwestClient;
 use std::sync::Arc;
+use tracing::instrument;
 
 /// The main client for interacting with ArcGIS services.
 ///
@@ -17,8 +19,11 @@ use std::sync::Arc;
 /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
 /// let client = ArcGISClient::new(auth);
 /// ```
+#[derive(Getters)]
 pub struct ArcGISClient {
+    /// HTTP client for making requests.
     http: ReqwestClient,
+    /// Authentication provider.
     auth: Arc<dyn AuthProvider>,
 }
 
@@ -33,21 +38,13 @@ impl ArcGISClient {
     /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
     /// let client = ArcGISClient::new(auth);
     /// ```
+    #[instrument(skip(auth))]
     pub fn new(auth: impl AuthProvider + 'static) -> Self {
+        tracing::debug!("Creating new ArcGIS client");
         Self {
             http: ReqwestClient::new(),
             auth: Arc::new(auth),
         }
-    }
-
-    /// Returns a reference to the underlying HTTP client.
-    pub fn http(&self) -> &ReqwestClient {
-        &self.http
-    }
-
-    /// Returns a reference to the authentication provider.
-    pub fn auth(&self) -> &Arc<dyn AuthProvider> {
-        &self.auth
     }
 }
 

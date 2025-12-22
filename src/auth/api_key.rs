@@ -1,8 +1,9 @@
 //! API Key authentication provider.
 
-use crate::{auth::AuthProvider, Result};
+use crate::{AuthProvider, Result};
 use async_trait::async_trait;
 use secrecy::{ExposeSecret, SecretString};
+use tracing::instrument;
 
 /// API Key authentication provider.
 ///
@@ -34,7 +35,9 @@ impl ApiKeyAuth {
     ///
     /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
     /// ```
+    #[instrument(skip(api_key))]
     pub fn new(api_key: impl Into<String>) -> Self {
+        tracing::debug!("Creating API Key authentication provider");
         Self {
             api_key: SecretString::new(api_key.into().into_boxed_str()),
         }
@@ -43,10 +46,13 @@ impl ApiKeyAuth {
 
 #[async_trait]
 impl AuthProvider for ApiKeyAuth {
+    #[instrument(skip(self))]
     async fn get_token(&self) -> Result<String> {
+        tracing::debug!("Retrieving API key token");
         Ok(self.api_key.expose_secret().to_string())
     }
 
+    #[instrument(skip(self))]
     fn requires_token_param(&self) -> bool {
         true
     }

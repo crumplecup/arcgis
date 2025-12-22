@@ -74,6 +74,7 @@ pub mod types;
 mod util;
 
 // Re-exports for convenience
+pub use auth::AuthProvider;
 pub use client::ArcGISClient;
 pub use error::Error;
 
