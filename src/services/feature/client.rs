@@ -88,11 +88,7 @@ impl<'a> FeatureServiceClient<'a> {
     /// # }
     /// ```
     #[instrument(skip(self, params), fields(layer_id = %layer_id, base_url = %self.base_url))]
-    pub async fn query(
-        &self,
-        layer_id: LayerId,
-        params: FeatureQueryParams,
-    ) -> Result<FeatureSet> {
+    pub async fn query(&self, layer_id: LayerId, params: FeatureQueryParams) -> Result<FeatureSet> {
         tracing::debug!("Querying feature layer");
 
         // Construct the query URL
@@ -136,4 +132,3 @@ impl<'a> FeatureServiceClient<'a> {
         Ok(feature_set)
     }
 }
-

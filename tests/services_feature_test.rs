@@ -1,10 +1,10 @@
 //! Tests for Feature Service types and client.
 
+use arcgis::ApiKeyAuth;
 use arcgis::{
     ArcGISClient, Feature, FeatureQueryParams, FeatureServiceClient, FeatureSet, GeometryType,
     ResponseFormat,
 };
-use arcgis::ApiKeyAuth;
 use std::collections::HashMap;
 
 #[test]
@@ -86,10 +86,8 @@ fn test_feature_service_client_creation() {
     let auth = ApiKeyAuth::new("test_key");
     let client = ArcGISClient::new(auth);
 
-    let feature_service = FeatureServiceClient::new(
-        "https://services.arcgis.com/test/FeatureServer",
-        &client,
-    );
+    let feature_service =
+        FeatureServiceClient::new("https://services.arcgis.com/test/FeatureServer", &client);
 
     // Just verify it compiles and constructs correctly
     drop(feature_service);

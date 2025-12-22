@@ -3,8 +3,10 @@
 //! These tests target ArcGIS Online (AGOL) and require credentials
 //! set in a `.env` file at the repository root.
 
-use arcgis::{ApiKeyAuth, ArcGISClient};
 use std::sync::OnceLock;
+
+#[cfg(feature = "api")]
+use arcgis::{ApiKeyAuth, ArcGISClient};
 
 /// Load environment variables from .env file.
 /// Only loads once, subsequent calls are no-ops.
@@ -17,6 +19,9 @@ pub fn load_env() {
 
 /// Get an optional API key from environment.
 /// Some tests may use API key instead of OAuth.
+///
+/// Available with the `api` feature.
+#[cfg(feature = "api")]
 pub fn api_key() -> Option<String> {
     load_env();
     std::env::var("ARCGIS_API_KEY").ok()
@@ -31,6 +36,9 @@ pub fn api_key() -> Option<String> {
 /// # Panics
 ///
 /// Panics if ARCGIS_API_KEY is not set in environment.
+///
+/// Available with the `api` feature.
+#[cfg(feature = "api")]
 pub fn create_api_key_client() -> ArcGISClient {
     let key = api_key().expect("ARCGIS_API_KEY not found in environment. Add to .env file");
     let auth = ApiKeyAuth::new(key);
@@ -39,11 +47,17 @@ pub fn create_api_key_client() -> ArcGISClient {
 
 /// Public ArcGIS Online feature service for testing (read-only).
 /// This is ESRI's World Cities sample service.
+///
+/// Available with the `api` feature.
+#[cfg(feature = "api")]
 pub const SAMPLE_FEATURE_SERVICE: &str =
     "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer";
 
 /// Rate limiting helper to be polite to the API.
 /// Sleeps for a short duration between requests.
+///
+/// Available with the `api` feature.
+#[cfg(feature = "api")]
 pub async fn rate_limit() {
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 }

@@ -5,22 +5,17 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Response format for feature service queries.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum ResponseFormat {
     /// JSON format.
+    #[default]
     Json,
     /// GeoJSON format.
     #[serde(rename = "geojson")]
     GeoJson,
     /// Protocol Buffer format.
     Pbf,
-}
-
-impl Default for ResponseFormat {
-    fn default() -> Self {
-        Self::Json
-    }
 }
 
 /// A single feature returned from a feature service.
@@ -111,7 +106,10 @@ pub struct FeatureQueryParams {
     pub object_ids: Option<Vec<ObjectId>>,
 
     /// Whether to return distinct values only.
-    #[serde(rename = "returnDistinctValues", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "returnDistinctValues",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub return_distinct_values: Option<bool>,
 
     /// Whether to return object IDs only.
@@ -127,7 +125,10 @@ pub struct FeatureQueryParams {
     pub order_by_fields: Option<Vec<String>>,
 
     /// GROUP BY clause.
-    #[serde(rename = "groupByFieldsForStatistics", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "groupByFieldsForStatistics",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub group_by_fields: Option<Vec<String>>,
 
     /// Output spatial reference WKID.
@@ -164,4 +165,3 @@ impl FeatureQueryParams {
         FeatureQueryParamsBuilder::default()
     }
 }
-

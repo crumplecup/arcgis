@@ -7,4 +7,6 @@ mod client;
 mod types;
 
 pub use client::FeatureServiceClient;
-pub use types::{Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureSet, ResponseFormat};
+pub use types::{
+    Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureSet, ResponseFormat,
+};

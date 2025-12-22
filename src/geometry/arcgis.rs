@@ -67,6 +67,18 @@ pub struct ArcGISPoint {
     pub spatial_reference: Option<SpatialReference>,
 }
 
+impl ArcGISPoint {
+    /// Converts this ArcGIS Point to a geo-types Point.
+    pub fn to_geo_types(&self) -> crate::Result<geo_types::Point> {
+        crate::geometry::from_arcgis_point(self)
+    }
+
+    /// Converts a geo-types Point to an ArcGIS Point.
+    pub fn from_geo_types(point: &geo_types::Point) -> crate::Result<Self> {
+        crate::geometry::to_arcgis_point(point)
+    }
+}
+
 /// ArcGIS Multipoint geometry.
 ///
 /// # JSON Format
@@ -83,6 +95,18 @@ pub struct ArcGISMultipoint {
     /// Spatial reference system.
     #[serde(rename = "spatialReference", skip_serializing_if = "Option::is_none")]
     pub spatial_reference: Option<SpatialReference>,
+}
+
+impl ArcGISMultipoint {
+    /// Converts this ArcGIS Multipoint to a geo-types MultiPoint.
+    pub fn to_geo_types(&self) -> crate::Result<geo_types::MultiPoint> {
+        crate::geometry::from_arcgis_multipoint(self)
+    }
+
+    /// Converts a geo-types MultiPoint to an ArcGIS Multipoint.
+    pub fn from_geo_types(multipoint: &geo_types::MultiPoint) -> crate::Result<Self> {
+        crate::geometry::to_arcgis_multipoint(multipoint)
+    }
 }
 
 /// ArcGIS Polyline geometry.
@@ -106,6 +130,32 @@ pub struct ArcGISPolyline {
     pub spatial_reference: Option<SpatialReference>,
 }
 
+impl ArcGISPolyline {
+    /// Converts this ArcGIS Polyline to a geo-types LineString (first path only).
+    ///
+    /// If the polyline has multiple paths, use `to_geo_types_multi()` instead.
+    pub fn to_geo_types(&self) -> crate::Result<geo_types::LineString> {
+        crate::geometry::from_arcgis_polyline(self)
+    }
+
+    /// Converts this ArcGIS Polyline to a geo-types MultiLineString (all paths).
+    pub fn to_geo_types_multi(&self) -> crate::Result<geo_types::MultiLineString> {
+        crate::geometry::from_arcgis_polyline_multi(self)
+    }
+
+    /// Converts a geo-types LineString to an ArcGIS Polyline.
+    pub fn from_geo_types(line_string: &geo_types::LineString) -> crate::Result<Self> {
+        crate::geometry::to_arcgis_polyline(line_string)
+    }
+
+    /// Converts a geo-types MultiLineString to an ArcGIS Polyline.
+    pub fn from_geo_types_multi(
+        multi_line_string: &geo_types::MultiLineString,
+    ) -> crate::Result<Self> {
+        crate::geometry::to_arcgis_polyline_multi(multi_line_string)
+    }
+}
+
 /// ArcGIS Polygon geometry.
 ///
 /// # JSON Format
@@ -125,6 +175,30 @@ pub struct ArcGISPolygon {
     /// Spatial reference system.
     #[serde(rename = "spatialReference", skip_serializing_if = "Option::is_none")]
     pub spatial_reference: Option<SpatialReference>,
+}
+
+impl ArcGISPolygon {
+    /// Converts this ArcGIS Polygon to a geo-types Polygon.
+    pub fn to_geo_types(&self) -> crate::Result<geo_types::Polygon> {
+        crate::geometry::from_arcgis_polygon(self)
+    }
+
+    /// Converts this ArcGIS Polygon to a geo-types MultiPolygon.
+    pub fn to_geo_types_multi(&self) -> crate::Result<geo_types::MultiPolygon> {
+        crate::geometry::from_arcgis_polygon_multi(self)
+    }
+
+    /// Converts a geo-types Polygon to an ArcGIS Polygon.
+    pub fn from_geo_types(polygon: &geo_types::Polygon) -> crate::Result<Self> {
+        crate::geometry::to_arcgis_polygon(polygon)
+    }
+
+    /// Converts a geo-types MultiPolygon to ArcGIS Polygons.
+    pub fn from_geo_types_multi(
+        multi_polygon: &geo_types::MultiPolygon,
+    ) -> crate::Result<Vec<Self>> {
+        crate::geometry::to_arcgis_polygon_multi(multi_polygon)
+    }
 }
 
 /// ArcGIS Envelope (bounding box) geometry.
@@ -154,6 +228,18 @@ pub struct ArcGISEnvelope {
     pub spatial_reference: Option<SpatialReference>,
 }
 
+impl ArcGISEnvelope {
+    /// Converts this ArcGIS Envelope to a geo-types Rect.
+    pub fn to_geo_types(&self) -> crate::Result<geo_types::Rect> {
+        crate::geometry::from_arcgis_envelope(self)
+    }
+
+    /// Converts a geo-types Rect to an ArcGIS Envelope.
+    pub fn from_geo_types(rect: &geo_types::Rect) -> crate::Result<Self> {
+        crate::geometry::to_arcgis_envelope(rect)
+    }
+}
+
 /// Union type for all ArcGIS geometry types.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -168,6 +254,43 @@ pub enum ArcGISGeometry {
     Polygon(ArcGISPolygon),
     /// Envelope (bounding box) geometry.
     Envelope(ArcGISEnvelope),
+}
+
+impl ArcGISGeometry {
+    /// Converts this ArcGIS geometry to a geo-types Geometry.
+    ///
+    /// # Example
+    /// ```
+    /// use arcgis::{ArcGISPoint, ArcGISGeometry};
+    ///
+    /// # fn example() -> arcgis::Result<()> {
+    /// let point = ArcGISPoint { x: -118.15, y: 33.80, z: None, m: None, spatial_reference: None };
+    /// let geometry = ArcGISGeometry::Point(point);
+    /// let geo_types_geom = geometry.to_geo_types()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn to_geo_types(&self) -> crate::Result<geo_types::Geometry> {
+        crate::geometry::from_arcgis_geometry(self)
+    }
+
+    /// Converts a geo-types Geometry to an ArcGIS geometry.
+    ///
+    /// # Example
+    /// ```
+    /// use arcgis::ArcGISGeometry;
+    /// use geo_types::{Point, Geometry};
+    ///
+    /// # fn example() -> arcgis::Result<()> {
+    /// let point = Point::new(-118.15, 33.80);
+    /// let geometry = Geometry::Point(point);
+    /// let arcgis_geom = ArcGISGeometry::from_geo_types(&geometry)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn from_geo_types(geom: &geo_types::Geometry) -> crate::Result<Self> {
+        crate::geometry::to_arcgis_geometry(geom)
+    }
 }
 
 #[cfg(test)]

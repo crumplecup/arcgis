@@ -17,14 +17,22 @@ use tracing::instrument;
 /// Converts an ArcGIS Point to a geo-types Point.
 #[instrument(skip(point))]
 pub fn from_arcgis_point(point: &ArcGISPoint) -> Result<Point> {
-    tracing::debug!(x = point.x, y = point.y, "Converting ArcGIS Point to geo-types");
+    tracing::debug!(
+        x = point.x,
+        y = point.y,
+        "Converting ArcGIS Point to geo-types"
+    );
     Ok(Point::new(point.x, point.y))
 }
 
 /// Converts a geo-types Point to an ArcGIS Point.
 #[instrument(skip(point))]
 pub fn to_arcgis_point(point: &Point) -> Result<ArcGISPoint> {
-    tracing::debug!(x = point.x(), y = point.y(), "Converting geo-types Point to ArcGIS");
+    tracing::debug!(
+        x = point.x(),
+        y = point.y(),
+        "Converting geo-types Point to ArcGIS"
+    );
     Ok(ArcGISPoint {
         x: point.x(),
         y: point.y(),
@@ -41,7 +49,10 @@ pub fn to_arcgis_point(point: &Point) -> Result<ArcGISPoint> {
 /// Converts an ArcGIS Multipoint to a geo-types MultiPoint.
 #[instrument(skip(multipoint))]
 pub fn from_arcgis_multipoint(multipoint: &ArcGISMultipoint) -> Result<MultiPoint> {
-    tracing::debug!(point_count = multipoint.points.len(), "Converting ArcGIS Multipoint");
+    tracing::debug!(
+        point_count = multipoint.points.len(),
+        "Converting ArcGIS Multipoint"
+    );
     let points: Vec<Point> = multipoint
         .points
         .iter()
@@ -53,7 +64,10 @@ pub fn from_arcgis_multipoint(multipoint: &ArcGISMultipoint) -> Result<MultiPoin
 /// Converts a geo-types MultiPoint to an ArcGIS Multipoint.
 #[instrument(skip(multipoint))]
 pub fn to_arcgis_multipoint(multipoint: &MultiPoint) -> Result<ArcGISMultipoint> {
-    tracing::debug!(point_count = multipoint.0.len(), "Converting geo-types MultiPoint");
+    tracing::debug!(
+        point_count = multipoint.0.len(),
+        "Converting geo-types MultiPoint"
+    );
     let points: Vec<[f64; 2]> = multipoint.0.iter().map(|p| [p.x(), p.y()]).collect();
     Ok(ArcGISMultipoint {
         points,
@@ -71,7 +85,10 @@ pub fn to_arcgis_multipoint(multipoint: &MultiPoint) -> Result<ArcGISMultipoint>
 /// Use `from_arcgis_polyline_multi` to convert all paths.
 #[instrument(skip(polyline))]
 pub fn from_arcgis_polyline(polyline: &ArcGISPolyline) -> Result<LineString> {
-    tracing::debug!(path_count = polyline.paths.len(), "Converting ArcGIS Polyline");
+    tracing::debug!(
+        path_count = polyline.paths.len(),
+        "Converting ArcGIS Polyline"
+    );
     if polyline.paths.is_empty() {
         return Err(Error::geometry("Polyline has no paths"));
     }
@@ -87,7 +104,10 @@ pub fn from_arcgis_polyline(polyline: &ArcGISPolyline) -> Result<LineString> {
 /// Converts an ArcGIS Polyline to a geo-types MultiLineString (all paths).
 #[instrument(skip(polyline))]
 pub fn from_arcgis_polyline_multi(polyline: &ArcGISPolyline) -> Result<MultiLineString> {
-    tracing::debug!(path_count = polyline.paths.len(), "Converting ArcGIS Polyline to MultiLineString");
+    tracing::debug!(
+        path_count = polyline.paths.len(),
+        "Converting ArcGIS Polyline to MultiLineString"
+    );
     let line_strings: Vec<LineString> = polyline
         .paths
         .iter()
@@ -103,7 +123,10 @@ pub fn from_arcgis_polyline_multi(polyline: &ArcGISPolyline) -> Result<MultiLine
 /// Converts a geo-types LineString to an ArcGIS Polyline (single path).
 #[instrument(skip(line_string))]
 pub fn to_arcgis_polyline(line_string: &LineString) -> Result<ArcGISPolyline> {
-    tracing::debug!(coord_count = line_string.0.len(), "Converting geo-types LineString");
+    tracing::debug!(
+        coord_count = line_string.0.len(),
+        "Converting geo-types LineString"
+    );
     let path: Vec<[f64; 2]> = line_string.0.iter().map(|c| [c.x, c.y]).collect();
 
     Ok(ArcGISPolyline {
@@ -115,7 +138,10 @@ pub fn to_arcgis_polyline(line_string: &LineString) -> Result<ArcGISPolyline> {
 /// Converts a geo-types MultiLineString to an ArcGIS Polyline (multiple paths).
 #[instrument(skip(multi_line_string))]
 pub fn to_arcgis_polyline_multi(multi_line_string: &MultiLineString) -> Result<ArcGISPolyline> {
-    tracing::debug!(line_count = multi_line_string.0.len(), "Converting geo-types MultiLineString");
+    tracing::debug!(
+        line_count = multi_line_string.0.len(),
+        "Converting geo-types MultiLineString"
+    );
     let paths: Vec<Vec<[f64; 2]>> = multi_line_string
         .0
         .iter()
@@ -135,7 +161,10 @@ pub fn to_arcgis_polyline_multi(multi_line_string: &MultiLineString) -> Result<A
 /// Converts an ArcGIS Polygon to a geo-types Polygon.
 #[instrument(skip(polygon))]
 pub fn from_arcgis_polygon(polygon: &ArcGISPolygon) -> Result<Polygon> {
-    tracing::debug!(ring_count = polygon.rings.len(), "Converting ArcGIS Polygon");
+    tracing::debug!(
+        ring_count = polygon.rings.len(),
+        "Converting ArcGIS Polygon"
+    );
     if polygon.rings.is_empty() {
         return Err(Error::geometry("Polygon has no rings"));
     }
@@ -162,7 +191,10 @@ pub fn from_arcgis_polygon(polygon: &ArcGISPolygon) -> Result<Polygon> {
 /// Converts a geo-types Polygon to an ArcGIS Polygon.
 #[instrument(skip(polygon))]
 pub fn to_arcgis_polygon(polygon: &Polygon) -> Result<ArcGISPolygon> {
-    tracing::debug!(interior_count = polygon.interiors().len(), "Converting geo-types Polygon");
+    tracing::debug!(
+        interior_count = polygon.interiors().len(),
+        "Converting geo-types Polygon"
+    );
     let mut rings: Vec<Vec<[f64; 2]>> = Vec::new();
 
     // Exterior ring
@@ -195,12 +227,12 @@ pub fn from_arcgis_polygon_multi(polygon: &ArcGISPolygon) -> Result<MultiPolygon
 /// For proper multi-polygon support, consider returning multiple ArcGIS Polygons.
 #[instrument(skip(multi_polygon))]
 pub fn to_arcgis_polygon_multi(multi_polygon: &MultiPolygon) -> Result<Vec<ArcGISPolygon>> {
-    tracing::debug!(polygon_count = multi_polygon.0.len(), "Converting geo-types MultiPolygon");
-    let polygons: Result<Vec<ArcGISPolygon>> = multi_polygon
-        .0
-        .iter()
-        .map(to_arcgis_polygon)
-        .collect();
+    tracing::debug!(
+        polygon_count = multi_polygon.0.len(),
+        "Converting geo-types MultiPolygon"
+    );
+    let polygons: Result<Vec<ArcGISPolygon>> =
+        multi_polygon.0.iter().map(to_arcgis_polygon).collect();
     polygons
 }
 
@@ -253,7 +285,9 @@ pub fn from_arcgis_geometry(geometry: &ArcGISGeometry) -> Result<Geometry> {
     match geometry {
         ArcGISGeometry::Point(p) => Ok(Geometry::Point(from_arcgis_point(p)?)),
         ArcGISGeometry::Multipoint(mp) => Ok(Geometry::MultiPoint(from_arcgis_multipoint(mp)?)),
-        ArcGISGeometry::Polyline(pl) => Ok(Geometry::MultiLineString(from_arcgis_polyline_multi(pl)?)),
+        ArcGISGeometry::Polyline(pl) => {
+            Ok(Geometry::MultiLineString(from_arcgis_polyline_multi(pl)?))
+        }
         ArcGISGeometry::Polygon(pg) => Ok(Geometry::Polygon(from_arcgis_polygon(pg)?)),
         ArcGISGeometry::Envelope(e) => Ok(Geometry::Rect(from_arcgis_envelope(e)?)),
     }
@@ -266,7 +300,9 @@ pub fn to_arcgis_geometry(geometry: &Geometry) -> Result<ArcGISGeometry> {
         Geometry::Point(p) => Ok(ArcGISGeometry::Point(to_arcgis_point(p)?)),
         Geometry::MultiPoint(mp) => Ok(ArcGISGeometry::Multipoint(to_arcgis_multipoint(mp)?)),
         Geometry::LineString(ls) => Ok(ArcGISGeometry::Polyline(to_arcgis_polyline(ls)?)),
-        Geometry::MultiLineString(mls) => Ok(ArcGISGeometry::Polyline(to_arcgis_polyline_multi(mls)?)),
+        Geometry::MultiLineString(mls) => {
+            Ok(ArcGISGeometry::Polyline(to_arcgis_polyline_multi(mls)?))
+        }
         Geometry::Polygon(pg) => Ok(ArcGISGeometry::Polygon(to_arcgis_polygon(pg)?)),
         Geometry::MultiPolygon(_mp) => Err(Error::geometry(
             "MultiPolygon to single ArcGIS Polygon not supported - use to_arcgis_polygon_multi",
@@ -274,9 +310,9 @@ pub fn to_arcgis_geometry(geometry: &Geometry) -> Result<ArcGISGeometry> {
         Geometry::Rect(r) => Ok(ArcGISGeometry::Envelope(to_arcgis_envelope(r)?)),
         Geometry::Line(_) => Err(Error::geometry("Line geometry not supported by ArcGIS")),
         Geometry::Triangle(_) => Err(Error::geometry("Triangle geometry not supported by ArcGIS")),
-        Geometry::GeometryCollection(_) => {
-            Err(Error::geometry("GeometryCollection not supported by ArcGIS"))
-        }
+        Geometry::GeometryCollection(_) => Err(Error::geometry(
+            "GeometryCollection not supported by ArcGIS",
+        )),
     }
 }
 
@@ -314,8 +350,14 @@ mod tests {
     #[test]
     fn test_linestring_conversion() {
         let coords = vec![
-            Coord { x: -97.06, y: 32.84 },
-            Coord { x: -97.06, y: 32.85 },
+            Coord {
+                x: -97.06,
+                y: 32.84,
+            },
+            Coord {
+                x: -97.06,
+                y: 32.85,
+            },
         ];
         let geo_line = LineString::new(coords);
 
@@ -330,10 +372,22 @@ mod tests {
     #[test]
     fn test_polygon_conversion() {
         let exterior = LineString::new(vec![
-            Coord { x: -97.06, y: 32.84 },
-            Coord { x: -97.06, y: 32.85 },
-            Coord { x: -97.07, y: 32.85 },
-            Coord { x: -97.06, y: 32.84 },
+            Coord {
+                x: -97.06,
+                y: 32.84,
+            },
+            Coord {
+                x: -97.06,
+                y: 32.85,
+            },
+            Coord {
+                x: -97.07,
+                y: 32.85,
+            },
+            Coord {
+                x: -97.06,
+                y: 32.84,
+            },
         ]);
         let geo_polygon = Polygon::new(exterior, vec![]);
 
@@ -348,8 +402,14 @@ mod tests {
     #[test]
     fn test_envelope_conversion() {
         let rect = Rect::new(
-            Coord { x: -109.55, y: 25.76 },
-            Coord { x: -86.39, y: 49.94 },
+            Coord {
+                x: -109.55,
+                y: 25.76,
+            },
+            Coord {
+                x: -86.39,
+                y: 49.94,
+            },
         );
 
         let envelope = to_arcgis_envelope(&rect).unwrap();

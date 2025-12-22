@@ -57,19 +57,23 @@ mod auth;
 mod client;
 mod error;
 mod geometry;
-mod types;
 mod services;
+mod types;
 mod util;
 
 // Re-exports
 pub use auth::{ApiKeyAuth, AuthProvider};
 pub use client::ArcGISClient;
 pub use error::{Error, ErrorKind};
-pub use geometry::{ArcGISGeometry, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
-                    ArcGISMultipoint, ArcGISEnvelope, SpatialReference};
-pub use services::feature::{Feature, FeatureSet, FeatureServiceClient,
-                             FeatureQueryParams, FeatureQueryParamsBuilder, ResponseFormat};
-pub use types::{GeometryType, SpatialRel, LayerId, ObjectId};
+pub use geometry::{
+    ArcGISEnvelope, ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
+    SpatialReference,
+};
+pub use services::feature::{
+    Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet,
+    ResponseFormat,
+};
+pub use types::{GeometryType, LayerId, ObjectId, SpatialRel};
 
 /// Result type alias using this crate's [`Error`] type.
 pub type Result<T> = std::result::Result<T, Error>;
