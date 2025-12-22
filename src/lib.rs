@@ -71,7 +71,7 @@ pub use geometry::{
 };
 pub use services::{
     Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet,
-    ResponseFormat,
+    QueryBuilder, ResponseFormat,
 };
 pub use types::{GeometryType, LayerId, ObjectId, SpatialRel};
 

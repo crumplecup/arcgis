@@ -1,8 +1,6 @@
 //! Feature Service client for querying and editing features.
 
-use crate::services::feature::{FeatureQueryParams, FeatureSet};
-use crate::types::LayerId;
-use crate::{ArcGISClient, Result};
+use crate::{ArcGISClient, FeatureQueryParams, FeatureSet, LayerId, QueryBuilder, Result};
 use tracing::instrument;
 
 /// Client for interacting with an ArcGIS Feature Service.
@@ -56,12 +54,45 @@ impl<'a> FeatureServiceClient<'a> {
         Self { base_url, client }
     }
 
-    /// Queries features from a specific layer.
+    /// Creates a fluent query builder for the specified layer.
     ///
-    /// # Arguments
+    /// This is the recommended way to query features. It provides a more
+    /// ergonomic API than manually constructing [`FeatureQueryParams`].
     ///
-    /// * `layer_id` - The ID of the layer to query
-    /// * `params` - Query parameters
+    /// # Example
+    /// ```no_run
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, FeatureServiceClient, LayerId};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = FeatureServiceClient::new(
+    ///     "https://services.arcgis.com/org/arcgis/rest/services/Dataset/FeatureServer",
+    ///     &client,
+    /// );
+    ///
+    /// // Use the fluent query builder
+    /// let features = service
+    ///     .query(LayerId::new(0))
+    ///     .where_clause("POPULATION > 100000")
+    ///     .out_fields(&["NAME", "POPULATION"])
+    ///     .execute()
+    ///     .await?;
+    ///
+    /// println!("Retrieved {} features", features.features.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self), fields(layer_id = %layer_id, base_url = %self.base_url))]
+    pub fn query(&'a self, layer_id: LayerId) -> QueryBuilder<'a> {
+        tracing::debug!(layer_id = %layer_id, "Creating query builder");
+        QueryBuilder::new(self, layer_id)
+    }
+
+    /// Queries features from a specific layer with pre-built parameters.
+    ///
+    /// This is a lower-level method. For most use cases, prefer the
+    /// [`query`](Self::query) builder method.
     ///
     /// # Example
     /// ```no_run
@@ -70,7 +101,6 @@ impl<'a> FeatureServiceClient<'a> {
     /// # async fn example() -> arcgis::Result<()> {
     /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
     /// let client = ArcGISClient::new(auth);
-    ///
     /// let feature_service = FeatureServiceClient::new(
     ///     "https://services.arcgis.com/org/arcgis/rest/services/Dataset/FeatureServer",
     ///     &client,
@@ -82,13 +112,17 @@ impl<'a> FeatureServiceClient<'a> {
     ///     .build()
     ///     .unwrap();
     ///
-    /// let features = feature_service.query(LayerId::new(0), params).await?;
+    /// let features = feature_service.query_with_params(LayerId::new(0), params).await?;
     /// println!("Retrieved {} features", features.features.len());
     /// # Ok(())
     /// # }
     /// ```
     #[instrument(skip(self, params), fields(layer_id = %layer_id, base_url = %self.base_url))]
-    pub async fn query(&self, layer_id: LayerId, params: FeatureQueryParams) -> Result<FeatureSet> {
+    pub async fn query_with_params(
+        &self,
+        layer_id: LayerId,
+        params: FeatureQueryParams,
+    ) -> Result<FeatureSet> {
         tracing::debug!("Querying feature layer");
 
         // Construct the query URL

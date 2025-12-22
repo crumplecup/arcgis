@@ -65,26 +65,21 @@ async fn test_public_feature_service_accessible() {
 #[tokio::test]
 #[cfg(feature = "api")]
 async fn test_feature_query_with_where_clause() {
-    use arcgis::{FeatureQueryParams, FeatureServiceClient, LayerId};
+    use arcgis::{FeatureServiceClient, LayerId};
 
     let client = common::create_api_key_client();
-
-    // Use ESRI's World Cities sample service (layer 0)
     let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
 
     common::rate_limit().await;
 
-    // Query for cities with population > 5 million
-    let params = FeatureQueryParams::builder()
-        .where_clause("POP > 5000000")
-        .out_fields(vec!["CITY_NAME".to_string(), "POP".to_string()])
-        .return_geometry(true)
-        .result_record_count(10u32)
-        .build()
-        .expect("Failed to build query params");
-
+    // Query for cities with population > 5 million using the fluent API
     let result = feature_service
-        .query(LayerId::new(0), params)
+        .query(LayerId::new(0))
+        .where_clause("POP > 5000000")
+        .out_fields(&["CITY_NAME", "POP"])
+        .return_geometry(true)
+        .limit(10)
+        .execute()
         .await
         .expect("Feature query failed");
 
@@ -115,26 +110,23 @@ async fn test_feature_query_with_where_clause() {
 #[tokio::test]
 #[cfg(feature = "api")]
 async fn test_feature_query_count_only() {
-    use arcgis::{FeatureQueryParams, FeatureServiceClient, LayerId};
+    use arcgis::{FeatureServiceClient, LayerId};
 
     let client = common::create_api_key_client();
     let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
 
     common::rate_limit().await;
 
-    // Query for count of all features
-    let params = FeatureQueryParams::builder()
-        .where_clause("1=1")
-        .return_count_only(true)
-        .build()
-        .expect("Failed to build query params");
-
+    // Query for count of all features using the fluent API
     let _result = feature_service
-        .query(LayerId::new(0), params)
+        .query(LayerId::new(0))
+        .where_clause("1=1")
+        .count_only(true)
+        .execute()
         .await
         .expect("Feature count query failed");
 
-    // When returnCountOnly is true, the query should succeed
+    // When count_only is true, the query should succeed
     // The features array may or may not be empty depending on the API response format
     // The important thing is that the query didn't fail
 }
@@ -142,23 +134,20 @@ async fn test_feature_query_count_only() {
 #[tokio::test]
 #[cfg(feature = "api")]
 async fn test_feature_query_with_object_ids() {
-    use arcgis::{FeatureQueryParams, FeatureServiceClient, LayerId, ObjectId};
+    use arcgis::{FeatureServiceClient, LayerId, ObjectId};
 
     let client = common::create_api_key_client();
     let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
 
     common::rate_limit().await;
 
-    // Query specific features by object ID
-    let params = FeatureQueryParams::builder()
-        .object_ids(vec![ObjectId::new(1), ObjectId::new(2)])
-        .out_fields(vec!["*".to_string()])
-        .return_geometry(false)
-        .build()
-        .expect("Failed to build query params");
-
+    // Query specific features by object ID using the fluent API
     let result = feature_service
-        .query(LayerId::new(0), params)
+        .query(LayerId::new(0))
+        .object_ids(&[ObjectId::new(1), ObjectId::new(2)])
+        .out_fields(&["*"])
+        .return_geometry(false)
+        .execute()
         .await
         .expect("Feature query by object IDs failed");
 
@@ -167,6 +156,42 @@ async fn test_feature_query_with_object_ids() {
     assert!(
         result.features.len() <= 2,
         "Should return at most 2 features"
+    );
+}
+
+#[tokio::test]
+#[cfg(feature = "api")]
+async fn test_feature_query_autopagination() {
+    use arcgis::{FeatureServiceClient, LayerId};
+
+    let client = common::create_api_key_client();
+    let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
+
+    common::rate_limit().await;
+
+    // Use execute_all() to automatically paginate through all results
+    // Using a small page size to force multiple requests
+    let result = feature_service
+        .query(LayerId::new(0))
+        .where_clause("POP > 100000") // Cities with population > 100k
+        .out_fields(&["CITY_NAME", "POP"])
+        .return_geometry(false)
+        .limit(5) // Small page size to test pagination
+        .execute_all()
+        .await
+        .expect("Auto-paginated query failed");
+
+    // Should have retrieved multiple pages of results
+    // The actual count depends on the data, but should be > 5
+    assert!(
+        result.features.len() >= 5,
+        "Auto-pagination should retrieve more than one page"
+    );
+
+    // exceeded_transfer_limit should be false after pagination completes
+    assert!(
+        !result.exceeded_transfer_limit,
+        "Auto-pagination should retrieve all results"
     );
 }
 
