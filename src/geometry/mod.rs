@@ -3,8 +3,8 @@
 //! This module provides conversion functions between ArcGIS geometry JSON
 //! and the Rust [`geo_types`](https://docs.rs/geo-types) types.
 
-pub mod arcgis;
-pub mod convert;
+mod arcgis;
+mod convert;
 
 pub use arcgis::*;
 pub use convert::*;

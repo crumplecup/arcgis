@@ -1,7 +1,7 @@
 //! Shared types used across ArcGIS services.
 
-pub mod geometry;
-pub mod ids;
+mod geometry;
+mod ids;
 
 pub use geometry::*;
 pub use ids::*;

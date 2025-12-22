@@ -1,3 +1,8 @@
 //! ArcGIS service modules.
 
-pub mod feature;
+mod feature;
+
+pub use feature::{
+    Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet,
+    ResponseFormat,
+};

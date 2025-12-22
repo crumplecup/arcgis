@@ -69,7 +69,7 @@ pub use geometry::{
     ArcGISEnvelope, ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
     SpatialReference,
 };
-pub use services::feature::{
+pub use services::{
     Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet,
     ResponseFormat,
 };
