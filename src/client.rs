@@ -14,7 +14,7 @@ use tracing::instrument;
 /// # Example
 ///
 /// ```no_run
-/// use arcgis::{ArcGISClient, auth::ApiKeyAuth};
+/// use arcgis::{ApiKeyAuth, ArcGISClient};
 ///
 /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
 /// let client = ArcGISClient::new(auth);
@@ -33,7 +33,7 @@ impl ArcGISClient {
     /// # Example
     ///
     /// ```no_run
-    /// use arcgis::{ArcGISClient, auth::ApiKeyAuth};
+    /// use arcgis::{ApiKeyAuth, ArcGISClient};
     ///
     /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
     /// let client = ArcGISClient::new(auth);

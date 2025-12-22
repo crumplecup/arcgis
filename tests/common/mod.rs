@@ -3,7 +3,7 @@
 //! These tests target ArcGIS Online (AGOL) and require credentials
 //! set in a `.env` file at the repository root.
 
-use arcgis::{auth::ApiKeyAuth, ArcGISClient};
+use arcgis::{ApiKeyAuth, ArcGISClient};
 use std::sync::OnceLock;
 
 /// Load environment variables from .env file.

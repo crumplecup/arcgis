@@ -17,7 +17,7 @@
 //! ## Quick Start
 //!
 //! ```no_run
-//! use arcgis::{ArcGISClient, auth::ApiKeyAuth};
+//! use arcgis::{ApiKeyAuth, ArcGISClient};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), arcgis::Error> {
@@ -34,7 +34,7 @@
 //! This SDK enforces type safety throughout:
 //!
 //! ```rust
-//! use arcgis::types::{GeometryType, SpatialRel};
+//! use arcgis::{GeometryType, SpatialRel};
 //!
 //! // ✅ Compile-time validated
 //! let geom_type = GeometryType::Point;
@@ -52,31 +52,24 @@
 pub use geo_types;
 pub use geojson;
 
-// Core modules (always available)
-pub mod auth;
-pub mod client;
-pub mod error;
-pub mod geometry;
-pub mod types;
-
-// Optional service modules (feature-gated)
-// TODO: Implement these modules
-// #[cfg(feature = "feature-service")]
-// pub mod feature;
-
-// #[cfg(feature = "map-service")]
-// pub mod map;
-
-// #[cfg(feature = "geocoding")]
-// pub mod geocoding;
-
-// Utility modules
+// Core modules
+mod auth;
+mod client;
+mod error;
+mod geometry;
+mod types;
+mod services;
 mod util;
 
-// Re-exports for convenience
-pub use auth::AuthProvider;
+// Re-exports
+pub use auth::{ApiKeyAuth, AuthProvider};
 pub use client::ArcGISClient;
-pub use error::Error;
+pub use error::{Error, ErrorKind};
+pub use geometry::{ArcGISGeometry, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
+                    ArcGISMultipoint, ArcGISEnvelope, SpatialReference};
+pub use services::feature::{Feature, FeatureSet, FeatureServiceClient,
+                             FeatureQueryParams, FeatureQueryParamsBuilder, ResponseFormat};
+pub use types::{GeometryType, SpatialRel, LayerId, ObjectId};
 
 /// Result type alias using this crate's [`Error`] type.
 pub type Result<T> = std::result::Result<T, Error>;

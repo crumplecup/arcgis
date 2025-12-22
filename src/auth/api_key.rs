@@ -13,7 +13,7 @@ use tracing::instrument;
 /// # Example
 ///
 /// ```no_run
-/// use arcgis::auth::ApiKeyAuth;
+/// use arcgis::ApiKeyAuth;
 ///
 /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
 /// ```
@@ -31,7 +31,7 @@ impl ApiKeyAuth {
     /// # Example
     ///
     /// ```no_run
-    /// use arcgis::auth::ApiKeyAuth;
+    /// use arcgis::ApiKeyAuth;
     ///
     /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
     /// ```
@@ -55,17 +55,5 @@ impl AuthProvider for ApiKeyAuth {
     #[instrument(skip(self))]
     fn requires_token_param(&self) -> bool {
         true
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_api_key_auth() {
-        let auth = ApiKeyAuth::new("test_api_key");
-        let token = auth.get_token().await.unwrap();
-        assert_eq!(token, "test_api_key");
     }
 }

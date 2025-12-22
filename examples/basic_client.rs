@@ -9,8 +9,7 @@
 //! cargo run --example basic_client
 //! ```
 
-use arcgis::auth::ApiKeyAuth;
-use arcgis::ArcGISClient;
+use arcgis::{ApiKeyAuth, ArcGISClient};
 
 fn main() {
     // Set up tracing subscriber for logging
