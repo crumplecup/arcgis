@@ -91,14 +91,10 @@ check-features:
     #!/usr/bin/env bash
     echo "Checking with no features..."
     cargo check --no-default-features
-    echo "Checking with default features..."
-    cargo check
     echo "Checking with all features..."
     cargo check --all-features
-    echo "Checking individual features..."
-    cargo check --no-default-features --features feature-service
-    cargo check --no-default-features --features map-service
-    cargo check --no-default-features --features geocoding
+    echo "Checking with api feature..."
+    cargo check --features api
 
 # Run security audit
 audit:
