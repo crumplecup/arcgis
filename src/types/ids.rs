@@ -68,6 +68,7 @@ impl From<u32> for ObjectId {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Result;
 
     #[test]
     fn test_layer_id_creation() {
@@ -83,16 +84,18 @@ mod tests {
     }
 
     #[test]
-    fn test_object_id_serialization() {
+    fn test_object_id_serialization() -> Result<()> {
         let id = ObjectId::new(123);
-        let json = serde_json::to_string(&id).unwrap();
+        let json = serde_json::to_string(&id)?;
         assert_eq!(json, "123");
+        Ok(())
     }
 
     #[test]
-    fn test_object_id_deserialization() {
+    fn test_object_id_deserialization() -> Result<()> {
         let json = "456";
-        let id: ObjectId = serde_json::from_str(json).unwrap();
+        let id: ObjectId = serde_json::from_str(json)?;
         assert_eq!(id.get(), 456);
+        Ok(())
     }
 }

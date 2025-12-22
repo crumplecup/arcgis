@@ -296,9 +296,10 @@ impl ArcGISGeometry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Result;
 
     #[test]
-    fn test_point_serialization() {
+    fn test_point_serialization() -> Result<()> {
         let point = ArcGISPoint {
             x: -118.15,
             y: 33.80,
@@ -307,24 +308,26 @@ mod tests {
             spatial_reference: Some(SpatialReference::wgs84()),
         };
 
-        let json = serde_json::to_string(&point).unwrap();
+        let json = serde_json::to_string(&point)?;
         assert!(json.contains("\"x\":-118.15"));
         assert!(json.contains("\"y\":33.8"));
         assert!(json.contains("\"wkid\":4326"));
+        Ok(())
     }
 
     #[test]
-    fn test_point_deserialization() {
+    fn test_point_deserialization() -> Result<()> {
         let json = r#"{"x":-118.15,"y":33.80,"spatialReference":{"wkid":4326}}"#;
-        let point: ArcGISPoint = serde_json::from_str(json).unwrap();
+        let point: ArcGISPoint = serde_json::from_str(json)?;
 
         assert_eq!(point.x, -118.15);
         assert_eq!(point.y, 33.80);
         assert_eq!(point.spatial_reference, Some(SpatialReference::wgs84()));
+        Ok(())
     }
 
     #[test]
-    fn test_polygon_serialization() {
+    fn test_polygon_serialization() -> Result<()> {
         let polygon = ArcGISPolygon {
             rings: vec![vec![
                 [-97.06, 32.84],
@@ -335,19 +338,21 @@ mod tests {
             spatial_reference: Some(SpatialReference::wgs84()),
         };
 
-        let json = serde_json::to_string(&polygon).unwrap();
+        let json = serde_json::to_string(&polygon)?;
         assert!(json.contains("\"rings\""));
         assert!(json.contains("-97.06"));
+        Ok(())
     }
 
     #[test]
-    fn test_spatial_reference() {
+    fn test_spatial_reference() -> Result<()> {
         let wgs84 = SpatialReference::wgs84();
-        let json = serde_json::to_string(&wgs84).unwrap();
+        let json = serde_json::to_string(&wgs84)?;
         assert_eq!(json, r#"{"wkid":4326}"#);
 
         let web_merc = SpatialReference::web_mercator();
-        let json = serde_json::to_string(&web_merc).unwrap();
+        let json = serde_json::to_string(&web_merc)?;
         assert_eq!(json, r#"{"wkid":3857}"#);
+        Ok(())
     }
 }

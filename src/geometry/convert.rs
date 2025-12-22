@@ -90,7 +90,9 @@ pub fn from_arcgis_polyline(polyline: &ArcGISPolyline) -> Result<LineString> {
         "Converting ArcGIS Polyline"
     );
     if polyline.paths.is_empty() {
-        return Err(Error::geometry("Polyline has no paths"));
+        return Err(Error::from(crate::ErrorKind::Geometry(
+            "Polyline has no paths".to_string(),
+        )));
     }
 
     let coords: Vec<Coord> = polyline.paths[0]
@@ -166,7 +168,9 @@ pub fn from_arcgis_polygon(polygon: &ArcGISPolygon) -> Result<Polygon> {
         "Converting ArcGIS Polygon"
     );
     if polygon.rings.is_empty() {
-        return Err(Error::geometry("Polygon has no rings"));
+        return Err(Error::from(crate::ErrorKind::Geometry(
+            "Polygon has no rings".to_string(),
+        )));
     }
 
     // First ring is exterior
@@ -304,15 +308,20 @@ pub fn to_arcgis_geometry(geometry: &Geometry) -> Result<ArcGISGeometry> {
             Ok(ArcGISGeometry::Polyline(to_arcgis_polyline_multi(mls)?))
         }
         Geometry::Polygon(pg) => Ok(ArcGISGeometry::Polygon(to_arcgis_polygon(pg)?)),
-        Geometry::MultiPolygon(_mp) => Err(Error::geometry(
-            "MultiPolygon to single ArcGIS Polygon not supported - use to_arcgis_polygon_multi",
-        )),
+        Geometry::MultiPolygon(_mp) => Err(Error::from(crate::ErrorKind::Geometry(
+            "MultiPolygon to single ArcGIS Polygon not supported - use to_arcgis_polygon_multi"
+                .to_string(),
+        ))),
         Geometry::Rect(r) => Ok(ArcGISGeometry::Envelope(to_arcgis_envelope(r)?)),
-        Geometry::Line(_) => Err(Error::geometry("Line geometry not supported by ArcGIS")),
-        Geometry::Triangle(_) => Err(Error::geometry("Triangle geometry not supported by ArcGIS")),
-        Geometry::GeometryCollection(_) => Err(Error::geometry(
-            "GeometryCollection not supported by ArcGIS",
-        )),
+        Geometry::Line(_) => Err(Error::from(crate::ErrorKind::Geometry(
+            "Line geometry not supported by ArcGIS".to_string(),
+        ))),
+        Geometry::Triangle(_) => Err(Error::from(crate::ErrorKind::Geometry(
+            "Triangle geometry not supported by ArcGIS".to_string(),
+        ))),
+        Geometry::GeometryCollection(_) => Err(Error::from(crate::ErrorKind::Geometry(
+            "GeometryCollection not supported by ArcGIS".to_string(),
+        ))),
     }
 }
 
@@ -321,34 +330,36 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_point_conversion() {
+    fn test_point_conversion() -> Result<()> {
         // geo-types -> ArcGIS
         let geo_point = Point::new(-118.15, 33.80);
-        let arcgis_point = to_arcgis_point(&geo_point).unwrap();
+        let arcgis_point = to_arcgis_point(&geo_point)?;
 
         assert_eq!(arcgis_point.x, -118.15);
         assert_eq!(arcgis_point.y, 33.80);
 
         // ArcGIS -> geo-types (round trip)
-        let geo_point2 = from_arcgis_point(&arcgis_point).unwrap();
+        let geo_point2 = from_arcgis_point(&arcgis_point)?;
         assert_eq!(geo_point, geo_point2);
+        Ok(())
     }
 
     #[test]
-    fn test_multipoint_conversion() {
+    fn test_multipoint_conversion() -> Result<()> {
         let points = vec![Point::new(-97.06, 32.84), Point::new(-97.06, 32.85)];
         let geo_multipoint = MultiPoint::new(points);
 
-        let arcgis_mp = to_arcgis_multipoint(&geo_multipoint).unwrap();
+        let arcgis_mp = to_arcgis_multipoint(&geo_multipoint)?;
         assert_eq!(arcgis_mp.points.len(), 2);
         assert_eq!(arcgis_mp.points[0], [-97.06, 32.84]);
 
-        let geo_multipoint2 = from_arcgis_multipoint(&arcgis_mp).unwrap();
+        let geo_multipoint2 = from_arcgis_multipoint(&arcgis_mp)?;
         assert_eq!(geo_multipoint, geo_multipoint2);
+        Ok(())
     }
 
     #[test]
-    fn test_linestring_conversion() {
+    fn test_linestring_conversion() -> Result<()> {
         let coords = vec![
             Coord {
                 x: -97.06,
@@ -361,16 +372,17 @@ mod tests {
         ];
         let geo_line = LineString::new(coords);
 
-        let arcgis_polyline = to_arcgis_polyline(&geo_line).unwrap();
+        let arcgis_polyline = to_arcgis_polyline(&geo_line)?;
         assert_eq!(arcgis_polyline.paths.len(), 1);
         assert_eq!(arcgis_polyline.paths[0].len(), 2);
 
-        let geo_line2 = from_arcgis_polyline(&arcgis_polyline).unwrap();
+        let geo_line2 = from_arcgis_polyline(&arcgis_polyline)?;
         assert_eq!(geo_line, geo_line2);
+        Ok(())
     }
 
     #[test]
-    fn test_polygon_conversion() {
+    fn test_polygon_conversion() -> Result<()> {
         let exterior = LineString::new(vec![
             Coord {
                 x: -97.06,
@@ -391,16 +403,17 @@ mod tests {
         ]);
         let geo_polygon = Polygon::new(exterior, vec![]);
 
-        let arcgis_polygon = to_arcgis_polygon(&geo_polygon).unwrap();
+        let arcgis_polygon = to_arcgis_polygon(&geo_polygon)?;
         assert_eq!(arcgis_polygon.rings.len(), 1);
         assert_eq!(arcgis_polygon.rings[0].len(), 4);
 
-        let geo_polygon2 = from_arcgis_polygon(&arcgis_polygon).unwrap();
+        let geo_polygon2 = from_arcgis_polygon(&arcgis_polygon)?;
         assert_eq!(geo_polygon, geo_polygon2);
+        Ok(())
     }
 
     #[test]
-    fn test_envelope_conversion() {
+    fn test_envelope_conversion() -> Result<()> {
         let rect = Rect::new(
             Coord {
                 x: -109.55,
@@ -412,18 +425,19 @@ mod tests {
             },
         );
 
-        let envelope = to_arcgis_envelope(&rect).unwrap();
+        let envelope = to_arcgis_envelope(&rect)?;
         assert_eq!(envelope.xmin, -109.55);
         assert_eq!(envelope.ymin, 25.76);
         assert_eq!(envelope.xmax, -86.39);
         assert_eq!(envelope.ymax, 49.94);
 
-        let rect2 = from_arcgis_envelope(&envelope).unwrap();
+        let rect2 = from_arcgis_envelope(&envelope)?;
         assert_eq!(rect, rect2);
+        Ok(())
     }
 
     #[test]
-    fn test_polygon_with_holes() {
+    fn test_polygon_with_holes() -> Result<()> {
         let exterior = LineString::new(vec![
             Coord { x: 0.0, y: 0.0 },
             Coord { x: 10.0, y: 0.0 },
@@ -440,10 +454,11 @@ mod tests {
         ]);
         let geo_polygon = Polygon::new(exterior, vec![hole]);
 
-        let arcgis_polygon = to_arcgis_polygon(&geo_polygon).unwrap();
+        let arcgis_polygon = to_arcgis_polygon(&geo_polygon)?;
         assert_eq!(arcgis_polygon.rings.len(), 2); // Exterior + 1 hole
 
-        let geo_polygon2 = from_arcgis_polygon(&arcgis_polygon).unwrap();
+        let geo_polygon2 = from_arcgis_polygon(&arcgis_polygon)?;
         assert_eq!(geo_polygon, geo_polygon2);
+        Ok(())
     }
 }

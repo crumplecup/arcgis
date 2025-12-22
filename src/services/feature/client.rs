@@ -148,10 +148,10 @@ impl<'a> FeatureServiceClient<'a> {
         if !status.is_success() {
             let error_text = response.text().await.unwrap_or_default();
             tracing::error!(status = %status, error = %error_text, "Query request failed");
-            return Err(crate::Error::api(
-                status.as_u16() as i32,
-                format!("HTTP {}: {}", status, error_text),
-            ));
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
         }
 
         // Parse the response

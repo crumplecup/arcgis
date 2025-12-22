@@ -377,6 +377,111 @@ where T: Into<CrateErrorKind>
 }
 ```
 
+### Pattern 5: Error Conversion Macros (Monomorphization)
+
+**Problem:** Blanket `impl<T> From<T>` creates type inference ambiguity,
+requiring manual conversions everywhere.
+
+**Solution:** Macros generate monomorphized `From` impls for perfect
+inference and ergonomic `?` operator.
+
+**Two-macro system:**
+
+```rust
+/// Bridge external errors through wrappers into ErrorKind
+macro_rules! bridge_error {
+    ($external:ty => $wrapper:ty) => {
+        impl From<$external> for ErrorKind {
+            #[track_caller]
+            fn from(err: $external) -> Self {
+                <$wrapper>::from(err).into()
+            }
+        }
+    };
+}
+
+/// Complete the chain: external error → ErrorKind → Error
+macro_rules! error_from {
+    ($source:ty) => {
+        impl From<$source> for Error {
+            #[track_caller]
+            fn from(err: $source) -> Self {
+                let kind = ErrorKind::from(err);
+                tracing::error!(error_kind = %kind, "Error created");
+                Self(Box::new(kind))
+            }
+        }
+    };
+}
+
+// Usage: One line per external error type
+bridge_error!(reqwest::Error => HttpError);
+bridge_error!(serde_json::Error => JsonError);
+bridge_error!(url::ParseError => UrlError);
+
+// Complete the conversion chain
+error_from!(reqwest::Error);
+error_from!(serde_json::Error);
+error_from!(url::ParseError);
+
+// From<ErrorKind> for Error (manual, not macro)
+impl From<ErrorKind> for Error {
+    #[track_caller]
+    fn from(kind: ErrorKind) -> Self {
+        tracing::error!(error_kind = %kind, "Error created");
+        Self(Box::new(kind))
+    }
+}
+```
+
+**Why macros are required:**
+
+Without macros, the compiler cannot infer which `Into<ErrorKind>` impl to use:
+
+```rust
+// ❌ Blanket impl causes ambiguity
+impl<T> From<T> for Error where T: Into<ErrorKind> { ... }
+
+// At call sites:
+let response = reqwest::get(url).await?;
+//                                   ^ ERROR: type annotations needed
+
+// Forces manual conversion everywhere:
+let response = reqwest::get(url)
+    .await
+    .map_err(|e| Error::from(ErrorKind::from(HttpError::from(e))))?;  // Boilerplate!
+```
+
+With macros (monomorphized):
+
+```rust
+// ✅ Concrete implementations via macros
+error_from!(reqwest::Error);  // Generates impl From<reqwest::Error> for Error
+
+// At call sites:
+let response = reqwest::get(url).await?;  // ✅ Just works! Perfect inference.
+```
+
+**Conversion chain:**
+
+```text
+reqwest::Error
+  ↓ (error_from! macro generates From impl)
+ErrorKind::from(reqwest::Error)
+  ↓ (bridge_error! impl: reqwest::Error → HttpError → ErrorKind)
+ErrorKind::Http(HttpError)
+  ↓ (From<ErrorKind> for Error)
+Error(Box<ErrorKind>)
+```
+
+**Benefits:**
+
+- Zero boilerplate at call sites (just use `?`)
+- Perfect type inference (compiler knows exact impl)
+- Explicit error type list (self-documenting)
+- `#[track_caller]` preserved on all conversions
+- Type-safe (only declared types convert)
+
 Reference: See `crates/botticelli_error` for complete implementation.
 
 ---

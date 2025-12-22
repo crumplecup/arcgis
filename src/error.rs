@@ -1,13 +1,133 @@
 //! Error types for the ArcGIS SDK.
 
-use tracing::instrument;
+/// HTTP request error wrapper.
+#[derive(Debug, derive_more::Display, derive_more::Error, derive_getters::Getters)]
+#[display("HTTP request failed: {}", source)]
+pub struct HttpError {
+    /// The underlying reqwest error.
+    source: reqwest::Error,
+    /// Line number where the error occurred.
+    line: u32,
+    /// File where the error occurred.
+    file: &'static str,
+}
+
+impl HttpError {
+    /// Creates a new HTTP error with caller location.
+    #[track_caller]
+    pub fn new(source: reqwest::Error) -> Self {
+        let loc = std::panic::Location::caller();
+        Self {
+            source,
+            line: loc.line(),
+            file: loc.file(),
+        }
+    }
+}
+
+impl From<reqwest::Error> for HttpError {
+    #[track_caller]
+    fn from(source: reqwest::Error) -> Self {
+        Self::new(source)
+    }
+}
+
+/// JSON serialization/deserialization error wrapper.
+#[derive(Debug, derive_more::Display, derive_more::Error, derive_getters::Getters)]
+#[display("JSON error: {}", source)]
+pub struct JsonError {
+    /// The underlying serde_json error.
+    source: serde_json::Error,
+    /// Line number where the error occurred.
+    line: u32,
+    /// File where the error occurred.
+    file: &'static str,
+}
+
+impl JsonError {
+    /// Creates a new JSON error with caller location.
+    #[track_caller]
+    pub fn new(source: serde_json::Error) -> Self {
+        let loc = std::panic::Location::caller();
+        Self {
+            source,
+            line: loc.line(),
+            file: loc.file(),
+        }
+    }
+}
+
+impl From<serde_json::Error> for JsonError {
+    #[track_caller]
+    fn from(source: serde_json::Error) -> Self {
+        Self::new(source)
+    }
+}
+
+/// URL parsing error wrapper.
+#[derive(Debug, derive_more::Display, derive_more::Error, derive_getters::Getters)]
+#[display("Invalid URL: {}", source)]
+pub struct UrlError {
+    /// The underlying url::ParseError.
+    source: url::ParseError,
+    /// Line number where the error occurred.
+    line: u32,
+    /// File where the error occurred.
+    file: &'static str,
+}
+
+impl UrlError {
+    /// Creates a new URL error with caller location.
+    #[track_caller]
+    pub fn new(source: url::ParseError) -> Self {
+        let loc = std::panic::Location::caller();
+        Self {
+            source,
+            line: loc.line(),
+            file: loc.file(),
+        }
+    }
+}
+
+impl From<url::ParseError> for UrlError {
+    #[track_caller]
+    fn from(source: url::ParseError) -> Self {
+        Self::new(source)
+    }
+}
+
+/// Builder error wrapper for derive_builder errors.
+#[derive(Debug, derive_more::Display, derive_more::Error, derive_getters::Getters)]
+#[display("Builder error: {}", message)]
+pub struct BuilderError {
+    /// Error message from the builder.
+    message: String,
+    /// Line number where the error occurred.
+    line: u32,
+    /// File where the error occurred.
+    file: &'static str,
+}
+
+impl BuilderError {
+    /// Creates a new builder error with caller location.
+    #[track_caller]
+    pub fn new(message: impl Into<String>) -> Self {
+        let loc = std::panic::Location::caller();
+        Self {
+            message: message.into(),
+            line: loc.line(),
+            file: loc.file(),
+        }
+    }
+}
 
 /// Specific error conditions for the ArcGIS SDK.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, derive_more::Display)]
+#[derive(Debug, derive_more::Display, derive_more::From)]
 pub enum ErrorKind {
     /// HTTP request error.
-    #[display("HTTP request failed: {}", _0)]
-    Http(String),
+    #[display("{}", _0)]
+    #[from]
+    Http(HttpError),
 
     /// Authentication error.
     #[display("Authentication failed: {}", _0)]
@@ -23,12 +143,19 @@ pub enum ErrorKind {
     },
 
     /// JSON serialization/deserialization error.
-    #[display("JSON error: {}", _0)]
-    Json(String),
+    #[display("{}", _0)]
+    #[from]
+    Json(JsonError),
 
     /// URL parsing error.
-    #[display("Invalid URL: {}", _0)]
-    Url(String),
+    #[display("{}", _0)]
+    #[from]
+    Url(UrlError),
+
+    /// Builder error from derive_builder.
+    #[display("{}", _0)]
+    #[from]
+    Builder(BuilderError),
 
     /// OAuth error.
     #[display("OAuth error: {}", _0)]
@@ -47,89 +174,105 @@ pub enum ErrorKind {
     Other(String),
 }
 
-/// The main error type for the ArcGIS SDK with location tracking.
-#[derive(Debug, Clone, derive_more::Display, derive_more::Error)]
-#[display("ArcGIS SDK: {} at {}:{}", kind, file, line)]
-pub struct Error {
-    /// The specific error condition.
-    pub kind: ErrorKind,
-    /// Line number where the error occurred.
-    pub line: u32,
-    /// File where the error occurred.
-    pub file: &'static str,
+
+/// Macro to generate bridge From implementations for external errors.
+///
+/// This creates the conversion chain: ExternalError → WrapperError → ErrorKind → Error
+///
+/// # Example
+/// ```ignore
+/// bridge_error!(reqwest::Error => HttpError);
+/// // Generates:
+/// // impl From<reqwest::Error> for ErrorKind {
+/// //     #[track_caller]
+/// //     fn from(err: reqwest::Error) -> Self {
+/// //         HttpError::from(err).into()
+/// //     }
+/// // }
+/// ```
+macro_rules! bridge_error {
+    ($external:ty => $wrapper:ty) => {
+        impl From<$external> for ErrorKind {
+            #[track_caller]
+            fn from(err: $external) -> Self {
+                <$wrapper>::from(err).into()
+            }
+        }
+    };
+}
+
+// Bridge From implementations to chain external errors through wrappers
+bridge_error!(reqwest::Error => HttpError);
+bridge_error!(serde_json::Error => JsonError);
+bridge_error!(url::ParseError => UrlError);
+
+/// The main error type for the ArcGIS SDK.
+///
+/// This type wraps all error conditions and provides automatic conversion
+/// from underlying error types through the `?` operator.
+#[derive(Debug, derive_more::Display)]
+#[display("ArcGIS SDK: {}", _0)]
+pub struct Error(Box<ErrorKind>);
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &*self.0 {
+            ErrorKind::Http(e) => Some(e.source()),
+            ErrorKind::Json(e) => Some(e.source()),
+            ErrorKind::Url(e) => Some(e.source()),
+            _ => None,
+        }
+    }
 }
 
 impl Error {
-    /// Creates a new error with the given kind and caller location.
-    #[track_caller]
-    #[instrument(skip(kind), fields(kind = %kind))]
-    pub fn new(kind: ErrorKind) -> Self {
-        let loc = std::panic::Location::caller();
-        tracing::error!(error_kind = %kind, location = %loc, "Error created");
-        Self {
-            kind,
-            line: loc.line(),
-            file: loc.file(),
+    /// Returns a reference to the underlying error kind.
+    pub fn kind(&self) -> &ErrorKind {
+        &self.0
+    }
+}
+
+/// Macro to implement From<SourceError> for Error.
+///
+/// This creates the full conversion chain: SourceError → ErrorKind → Error
+/// with proper location tracking and error logging.
+///
+/// # Example
+/// ```ignore
+/// error_from!(reqwest::Error);
+/// // Generates:
+/// // impl From<reqwest::Error> for Error {
+/// //     #[track_caller]
+/// //     fn from(err: reqwest::Error) -> Self {
+/// //         let kind = ErrorKind::from(err);
+/// //         tracing::error!(error_kind = %kind, "Error created");
+/// //         Self(Box::new(kind))
+/// //     }
+/// // }
+/// ```
+macro_rules! error_from {
+    ($source:ty) => {
+        impl From<$source> for Error {
+            #[track_caller]
+            fn from(err: $source) -> Self {
+                let kind = ErrorKind::from(err);
+                tracing::error!(error_kind = %kind, "Error created");
+                Self(Box::new(kind))
+            }
         }
-    }
+    };
+}
 
-    /// Creates an API error with the given code and message.
+// Implement From<ErrorKind> for Error
+impl From<ErrorKind> for Error {
     #[track_caller]
-    #[instrument(fields(code, message))]
-    pub fn api(code: i32, message: impl Into<String>) -> Self {
-        Self::new(ErrorKind::Api {
-            code,
-            message: message.into(),
-        })
-    }
-
-    /// Creates an authentication error.
-    #[track_caller]
-    #[instrument(skip(message), fields(message))]
-    pub fn auth(message: impl Into<String>) -> Self {
-        Self::new(ErrorKind::Auth(message.into()))
-    }
-
-    /// Creates a geometry conversion error.
-    #[track_caller]
-    #[instrument(skip(message), fields(message))]
-    pub fn geometry(message: impl Into<String>) -> Self {
-        Self::new(ErrorKind::Geometry(message.into()))
-    }
-
-    /// Creates a validation error.
-    #[track_caller]
-    #[instrument(skip(message), fields(message))]
-    pub fn validation(message: impl Into<String>) -> Self {
-        Self::new(ErrorKind::Validation(message.into()))
-    }
-
-    /// Creates an OAuth error.
-    #[track_caller]
-    #[instrument(skip(message), fields(message))]
-    pub fn oauth(message: impl Into<String>) -> Self {
-        Self::new(ErrorKind::OAuth(message.into()))
+    fn from(kind: ErrorKind) -> Self {
+        tracing::error!(error_kind = %kind, "Error created");
+        Self(Box::new(kind))
     }
 }
 
-// Conversions from external error types
-impl From<reqwest::Error> for Error {
-    #[track_caller]
-    fn from(err: reqwest::Error) -> Self {
-        Self::new(ErrorKind::Http(err.to_string()))
-    }
-}
-
-impl From<serde_json::Error> for Error {
-    #[track_caller]
-    fn from(err: serde_json::Error) -> Self {
-        Self::new(ErrorKind::Json(err.to_string()))
-    }
-}
-
-impl From<url::ParseError> for Error {
-    #[track_caller]
-    fn from(err: url::ParseError) -> Self {
-        Self::new(ErrorKind::Url(err.to_string()))
-    }
-}
+// Implement From for all external error types
+error_from!(reqwest::Error);
+error_from!(serde_json::Error);
+error_from!(url::ParseError);
