@@ -121,6 +121,13 @@ impl BuilderError {
     }
 }
 
+impl From<String> for BuilderError {
+    #[track_caller]
+    fn from(message: String) -> Self {
+        Self::new(message)
+    }
+}
+
 /// Specific error conditions for the ArcGIS SDK.
 #[derive(Debug, derive_more::Display, derive_more::From)]
 pub enum ErrorKind {
@@ -173,7 +180,6 @@ pub enum ErrorKind {
     #[display("{}", _0)]
     Other(String),
 }
-
 
 /// Macro to generate bridge From implementations for external errors.
 ///
@@ -276,3 +282,4 @@ impl From<ErrorKind> for Error {
 error_from!(reqwest::Error);
 error_from!(serde_json::Error);
 error_from!(url::ParseError);
+error_from!(BuilderError);
