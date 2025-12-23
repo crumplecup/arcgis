@@ -3,37 +3,39 @@
 use arcgis::ApiKeyAuth;
 use arcgis::{
     ArcGISClient, Feature, FeatureQueryParams, FeatureServiceClient, FeatureSet, GeometryType,
-    ResponseFormat,
+    ResponseFormat, Result,
 };
 use std::collections::HashMap;
 
 #[test]
-fn test_response_format_serialization() {
+fn test_response_format_serialization() -> Result<()> {
     let json_format = ResponseFormat::Json;
-    let serialized = serde_json::to_string(&json_format).unwrap();
+    let serialized = serde_json::to_string(&json_format)?;
     assert_eq!(serialized, "\"json\"");
 
     let geojson_format = ResponseFormat::GeoJson;
-    let serialized = serde_json::to_string(&geojson_format).unwrap();
+    let serialized = serde_json::to_string(&geojson_format)?;
     assert_eq!(serialized, "\"geojson\"");
 
     let pbf_format = ResponseFormat::Pbf;
-    let serialized = serde_json::to_string(&pbf_format).unwrap();
+    let serialized = serde_json::to_string(&pbf_format)?;
     assert_eq!(serialized, "\"pbf\"");
+    Ok(())
 }
 
 #[test]
-fn test_feature_query_params_builder() {
+fn test_feature_query_params_builder() -> Result<()> {
     let params = FeatureQueryParams::builder()
         .where_clause("POPULATION > 100000")
         .out_fields(vec!["NAME".to_string(), "POPULATION".to_string()])
         .return_geometry(true)
         .build()
-        .unwrap();
+        .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
     assert_eq!(params.where_clause, "POPULATION > 100000");
-    assert_eq!(params.out_fields.as_ref().unwrap().len(), 2);
+    assert_eq!(params.out_fields.as_ref().map(|f| f.len()), Some(2));
     assert!(params.return_geometry);
+    Ok(())
 }
 
 #[test]
@@ -45,7 +47,7 @@ fn test_feature_query_params_default() {
 }
 
 #[test]
-fn test_feature_serialization() {
+fn test_feature_serialization() -> Result<()> {
     let mut attributes = HashMap::new();
     attributes.insert("NAME".to_string(), serde_json::json!("Test City"));
     attributes.insert("POPULATION".to_string(), serde_json::json!(100000));
@@ -55,13 +57,14 @@ fn test_feature_serialization() {
         geometry: None,
     };
 
-    let json = serde_json::to_string(&feature).unwrap();
+    let json = serde_json::to_string(&feature)?;
     assert!(json.contains("NAME"));
     assert!(json.contains("Test City"));
+    Ok(())
 }
 
 #[test]
-fn test_feature_set_deserialization() {
+fn test_feature_set_deserialization() -> Result<()> {
     let json = r#"{
         "geometryType": "esriGeometryPoint",
         "features": [
@@ -75,10 +78,11 @@ fn test_feature_set_deserialization() {
         "exceededTransferLimit": false
     }"#;
 
-    let feature_set: FeatureSet = serde_json::from_str(json).unwrap();
+    let feature_set: FeatureSet = serde_json::from_str(json)?;
     assert_eq!(feature_set.geometry_type, Some(GeometryType::Point));
     assert_eq!(feature_set.features.len(), 1);
     assert!(!feature_set.exceeded_transfer_limit);
+    Ok(())
 }
 
 #[test]

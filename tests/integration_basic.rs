@@ -5,12 +5,16 @@
 
 mod common;
 
+#[cfg(feature = "api")]
+use arcgis::Result;
+
 #[tokio::test]
 #[cfg(feature = "api")]
-async fn test_client_creation_with_api_key() {
-    let _client = common::create_api_key_client();
+async fn test_client_creation_with_api_key() -> Result<()> {
+    let _client = common::create_api_key_client()?;
     // Client creation should succeed without panicking
     // Actual API calls will be tested in more specific tests
+    Ok(())
 }
 
 #[test]
@@ -30,7 +34,7 @@ fn test_credentials_available() {
 
 #[tokio::test]
 #[cfg(feature = "api")]
-async fn test_public_feature_service_accessible() {
+async fn test_public_feature_service_accessible() -> Result<()> {
     // This test verifies we can reach a public AGOL service
     // without authentication (read-only)
 
@@ -39,35 +43,29 @@ async fn test_public_feature_service_accessible() {
 
     common::rate_limit().await;
 
-    let response = client
-        .get(&url)
-        .send()
-        .await
-        .expect("Failed to reach AGOL sample service");
+    let response = client.get(&url).send().await?;
 
     assert!(
         response.status().is_success(),
         "Sample feature service should be accessible"
     );
 
-    let json: serde_json::Value = response
-        .json()
-        .await
-        .expect("Response should be valid JSON");
+    let json: serde_json::Value = response.json().await?;
 
     // Verify it's a feature service response
     assert!(
         json.get("layers").is_some() || json.get("tables").is_some(),
         "Response should contain layers or tables"
     );
+    Ok(())
 }
 
 #[tokio::test]
 #[cfg(feature = "api")]
-async fn test_feature_query_with_where_clause() {
+async fn test_feature_query_with_where_clause() -> Result<()> {
     use arcgis::{FeatureServiceClient, LayerId};
 
-    let client = common::create_api_key_client();
+    let client = common::create_api_key_client()?;
     let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
 
     common::rate_limit().await;
@@ -80,8 +78,7 @@ async fn test_feature_query_with_where_clause() {
         .return_geometry(true)
         .limit(10)
         .execute()
-        .await
-        .expect("Feature query failed");
+        .await?;
 
     // Verify we got results
     assert!(
@@ -105,14 +102,15 @@ async fn test_feature_query_with_where_clause() {
         first_feature.geometry.is_some(),
         "Feature should have geometry"
     );
+    Ok(())
 }
 
 #[tokio::test]
 #[cfg(feature = "api")]
-async fn test_feature_query_count_only() {
+async fn test_feature_query_count_only() -> Result<()> {
     use arcgis::{FeatureServiceClient, LayerId};
 
-    let client = common::create_api_key_client();
+    let client = common::create_api_key_client()?;
     let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
 
     common::rate_limit().await;
@@ -123,20 +121,20 @@ async fn test_feature_query_count_only() {
         .where_clause("1=1")
         .count_only(true)
         .execute()
-        .await
-        .expect("Feature count query failed");
+        .await?;
 
     // When count_only is true, the query should succeed
     // The features array may or may not be empty depending on the API response format
     // The important thing is that the query didn't fail
+    Ok(())
 }
 
 #[tokio::test]
 #[cfg(feature = "api")]
-async fn test_feature_query_with_object_ids() {
+async fn test_feature_query_with_object_ids() -> Result<()> {
     use arcgis::{FeatureServiceClient, LayerId, ObjectId};
 
-    let client = common::create_api_key_client();
+    let client = common::create_api_key_client()?;
     let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
 
     common::rate_limit().await;
@@ -148,8 +146,7 @@ async fn test_feature_query_with_object_ids() {
         .out_fields(&["*"])
         .return_geometry(false)
         .execute()
-        .await
-        .expect("Feature query by object IDs failed");
+        .await?;
 
     // May or may not return features depending on if those IDs exist
     // Just verify the query succeeded without error
@@ -157,14 +154,15 @@ async fn test_feature_query_with_object_ids() {
         result.features.len() <= 2,
         "Should return at most 2 features"
     );
+    Ok(())
 }
 
 #[tokio::test]
 #[cfg(feature = "api")]
-async fn test_feature_query_autopagination() {
+async fn test_feature_query_autopagination() -> Result<()> {
     use arcgis::{FeatureServiceClient, LayerId};
 
-    let client = common::create_api_key_client();
+    let client = common::create_api_key_client()?;
     let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
 
     common::rate_limit().await;
@@ -178,8 +176,7 @@ async fn test_feature_query_autopagination() {
         .return_geometry(false)
         .limit(5) // Small page size to test pagination
         .execute_all()
-        .await
-        .expect("Auto-paginated query failed");
+        .await?;
 
     // Should have retrieved multiple pages of results
     // The actual count depends on the data, but should be > 5
@@ -193,6 +190,7 @@ async fn test_feature_query_autopagination() {
         !result.exceeded_transfer_limit,
         "Auto-pagination should retrieve all results"
     );
+    Ok(())
 }
 
 // TODO: Add more integration tests as we implement features:

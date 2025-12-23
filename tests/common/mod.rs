@@ -6,7 +6,7 @@
 use std::sync::OnceLock;
 
 #[cfg(feature = "api")]
-use arcgis::{ApiKeyAuth, ArcGISClient};
+use arcgis::{ApiKeyAuth, ArcGISClient, Error, ErrorKind};
 
 /// Load environment variables from .env file.
 /// Only loads once, subsequent calls are no-ops.
@@ -33,16 +33,20 @@ pub fn api_key() -> Option<String> {
 
 /// Create a test client with API key authentication.
 ///
-/// # Panics
+/// # Errors
 ///
-/// Panics if ARCGIS_API_KEY is not set in environment.
+/// Returns an error if ARCGIS_API_KEY is not set in environment.
 ///
 /// Available with the `api` feature.
 #[cfg(feature = "api")]
-pub fn create_api_key_client() -> ArcGISClient {
-    let key = api_key().expect("ARCGIS_API_KEY not found in environment. Add to .env file");
+pub fn create_api_key_client() -> Result<ArcGISClient, Error> {
+    let key = api_key().ok_or_else(|| {
+        Error::from(ErrorKind::Validation(
+            "ARCGIS_API_KEY not found in environment. Add to .env file".to_string(),
+        ))
+    })?;
     let auth = ApiKeyAuth::new(key);
-    ArcGISClient::new(auth)
+    Ok(ArcGISClient::new(auth))
 }
 
 /// Public ArcGIS Online feature service for testing (read-only).
