@@ -37,6 +37,7 @@
 
 use crate::{AuthProvider, Result};
 use async_trait::async_trait;
+use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -103,8 +104,8 @@ struct StoredToken {
 pub struct ClientCredentialsAuth {
     /// Client ID from ArcGIS Developer dashboard
     client_id: String,
-    /// Client secret (kept confidential)
-    client_secret: String,
+    /// Client secret (kept confidential, never logged)
+    client_secret: SecretString,
     /// HTTP client with security configuration
     http_client: reqwest::Client,
     /// Stored access token
@@ -155,7 +156,7 @@ impl ClientCredentialsAuth {
 
         Ok(Self {
             client_id,
-            client_secret,
+            client_secret: SecretString::new(client_secret.into_boxed_str()),
             http_client,
             token: Arc::new(RwLock::new(None)),
         })
@@ -178,7 +179,7 @@ impl ClientCredentialsAuth {
 
         let params = [
             ("client_id", self.client_id.as_str()),
-            ("client_secret", self.client_secret.as_str()),
+            ("client_secret", self.client_secret.expose_secret()),
             ("grant_type", "client_credentials"),
             ("f", "json"), // ArcGIS requires this for JSON response
         ];
