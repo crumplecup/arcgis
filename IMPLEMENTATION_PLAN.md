@@ -109,108 +109,130 @@ Build a type-safe, ergonomic Rust SDK for the ArcGIS REST API that makes invalid
 
 ## Phase-by-Phase Roadmap
 
-**CRITICAL**: OAuth authentication is Phase 1, Priority 0. Without it, no
+**CRITICAL**: Automated authentication is Phase 1, Priority 0. Without it, no
 development or testing is possible.
 
 ---
 
-## Phase 1: OAuth Authentication (v0.1.0-alpha) - Weeks 1-2
+## Phase 1: Automated Authentication (v0.1.0-alpha) - Week 1
 
-### Milestone 1.1: OAuth + PKCE Implementation (Week 1)
+### Milestone 1.1: OAuth Client Credentials Implementation (Week 1)
 
 **Priority**: P0 - BLOCKING for all other work
 
+**Context**: We need **automated** authentication for servers and scripts.
+OAuth Authorization Code + PKCE requires browser interaction and is NOT
+suitable for our use case.
+
 **Deliverables**:
-- [ ] OAuth 2.0 + PKCE authentication provider
-- [ ] CSRF token validation
+- ✅ API Key authentication (already implemented)
+- [ ] OAuth 2.0 Client Credentials Flow (automated, no human interaction)
 - [ ] Token refresh logic with expiration checking
 - [ ] Secure HTTP client (SSRF prevention)
-- [ ] OAuth session state management
 - [ ] Integration with existing AuthProvider trait
 
 **Technical Tasks**:
 ```rust
-// src/auth/oauth.rs
+// src/auth/client_credentials.rs
 use oauth2::{
     basic::BasicClient,
-    AuthUrl, AuthorizationCode, ClientId, ClientSecret,
-    CsrfToken, PkceCodeChallenge, PkceCodeVerifier,
-    RedirectUrl, TokenUrl,
+    ClientId, ClientSecret, TokenUrl,
 };
 
-pub struct OAuthSession {
-    pub pkce_verifier: PkceCodeVerifier,
-    pub csrf_token: CsrfToken,
-}
-
-pub struct OAuthProvider {
+pub struct ClientCredentialsAuth {
     client: BasicClient,
     http_client: reqwest::Client,
     token: Arc<RwLock<Option<StandardTokenResponse>>>,
 }
 
-impl OAuthProvider {
-    pub fn new(client_id: String, client_secret: String,
-               redirect_uri: String) -> Result<Self> { ... }
-    pub fn authorize_url(&self) -> (url::Url, OAuthSession) { ... }
-    pub async fn exchange_code(&self, code: AuthorizationCode,
-                                session: OAuthSession,
-                                returned_state: CsrfToken) -> Result<()> { ... }
-    pub async fn refresh_token(&self) -> Result<()> { ... }
+impl ClientCredentialsAuth {
+    pub fn new(client_id: String, client_secret: String) -> Result<Self> {
+        let token_url = TokenUrl::new(
+            "https://www.arcgis.com/sharing/rest/oauth2/token".to_string()
+        )?;
+
+        let client = BasicClient::new(ClientId::new(client_id))
+            .set_client_secret(ClientSecret::new(client_secret))
+            .set_token_uri(token_url);
+
+        let http_client = reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .build()?;
+
+        Ok(Self { client, http_client, token: Arc::new(RwLock::new(None)) })
+    }
+
+    async fn fetch_token(&self) -> Result<()> {
+        let token = self.client
+            .exchange_client_credentials()
+            .request_async(&self.http_client)
+            .await?;
+
+        *self.token.write().await = Some(token);
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl AuthProvider for ClientCredentialsAuth {
+    async fn get_token(&self) -> Result<String> {
+        // Fetch token on first use or refresh if expired
+        // Returns access_token string
+    }
 }
 ```
 
 **Success Criteria**:
-- ✅ Can generate OAuth authorization URL with PKCE
-- ✅ Can exchange authorization code for access token
-- ✅ CSRF token validation prevents attacks
-- ✅ Token refresh works automatically before expiration
+- ✅ Can authenticate without human interaction
+- ✅ Token fetch is automatic on first use
+- ✅ Token refresh works automatically before expiration (5-minute buffer)
 - ✅ HTTP client prevents SSRF (redirects disabled)
 - ✅ Implements AuthProvider trait
+- ✅ Works in CI/CD and server environments
 
-### Milestone 1.2: OAuth CLI Example + Documentation (Week 2)
+### Milestone 1.2: Example + Testing (Week 1)
 
 **Deliverables**:
-- [ ] Working CLI example with localhost callback server
-- [ ] OAuth flow documentation with diagrams
+- [ ] Working CLI example demonstrating client credentials
 - [ ] Integration test (manual, with real ArcGIS credentials)
+- [ ] Documentation explaining both auth methods (API Key vs Client Credentials)
 - [ ] Error handling guide
 - [ ] Token refresh verification
 
 **Technical Tasks**:
 ```rust
-// examples/oauth_flow.rs
+// examples/client_credentials_flow.rs
 #[tokio::main]
 async fn main() -> Result<()> {
-    // 1. Create OAuth provider
-    let oauth = OAuthProvider::new(...)?;
+    dotenvy::dotenv().ok();
 
-    // 2. Generate authorization URL
-    let (auth_url, session) = oauth.authorize_url();
-    println!("Visit: {}", auth_url);
+    // Fully automated - no browser required!
+    let auth = ClientCredentialsAuth::new(
+        env::var("CLIENT_ID")?,
+        env::var("CLIENT_SECRET")?,
+    )?;
 
-    // 3. Start local server for callback
-    let listener = TcpListener::bind("127.0.0.1:8080")?;
-    let (code, state) = receive_callback(&listener)?;
+    println!("Fetching access token...");
+    let token = auth.get_token().await?;
+    println!("Token: {}...", &token[..20]);
 
-    // 4. Exchange code for token
-    oauth.exchange_code(code, session, state).await?;
-
-    // 5. Use authenticated client
-    let client = ArcGISClient::new(oauth);
-    // ... make API calls ...
+    // Use authenticated client
+    let client = ArcGISClient::new(auth);
+    // ... make API calls - token refresh is automatic ...
 }
 ```
 
 **Success Criteria**:
 - ✅ CLI example works end-to-end with real credentials
+- ✅ No browser interaction required
 - ✅ Token refresh tested and working
-- ✅ Documentation explains OAuth flow clearly
+- ✅ Documentation explains when to use each auth method
 - ✅ Error messages are helpful
 - ✅ Can make authenticated API requests
 
 **v0.1.0-alpha Release Checklist**:
-- [ ] OAuth authentication working
+- [ ] API Key authentication working (already done)
+- [ ] Client Credentials authentication working
 - [ ] CLI example functional
 - [ ] Documentation complete
 - [ ] Integration test passing

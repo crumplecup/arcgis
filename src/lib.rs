@@ -62,7 +62,7 @@ mod types;
 mod util;
 
 // Re-exports
-pub use auth::{ApiKeyAuth, AuthProvider};
+pub use auth::{ApiKeyAuth, AuthProvider, ClientCredentialsAuth};
 pub use client::ArcGISClient;
 pub use error::{BuilderError, Error, ErrorKind, HttpError, JsonError, UrlError};
 pub use geometry::{

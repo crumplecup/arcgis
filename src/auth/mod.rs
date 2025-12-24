@@ -1,9 +1,9 @@
 //! Authentication providers for ArcGIS services.
 
 mod api_key;
-mod oauth;
+mod client_credentials;
 mod provider;
 
 pub use api_key::ApiKeyAuth;
-pub use oauth::{OAuthProvider, OAuthSession};
+pub use client_credentials::ClientCredentialsAuth;
 pub use provider::AuthProvider;

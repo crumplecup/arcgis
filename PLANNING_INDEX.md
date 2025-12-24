@@ -8,8 +8,8 @@ along with their last associated commit.
 | Document | Purpose | Last Commit | Date |
 |----------|---------|-------------|------|
 | [ARCGIS_REST_API_RESEARCH.md](ARCGIS_REST_API_RESEARCH.md) | ArcGIS REST API research and analysis | `f616763` - feat: initial SDK foundation with type-safe architecture | 2 days ago |
-| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | SDK implementation roadmap and milestones | `f616763` - feat: initial SDK foundation with type-safe architecture | 2 days ago |
-| [PKCE_AUTHENTICATION_STRATEGY.md](PKCE_AUTHENTICATION_STRATEGY.md) | PKCE OAuth authentication implementation strategy | New document | Today |
+| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | SDK implementation roadmap and milestones | Updated | Today |
+| [AUTHENTICATION_STRATEGY.md](AUTHENTICATION_STRATEGY.md) | Automated authentication strategy (API Key + Client Credentials) | New document | Today |
 
 ## Project Standards
 
@@ -34,6 +34,7 @@ but accessible via git history):
 - PROJECT_STATUS.md - Historical project status tracking
 - CLAUDE_MD_COMPLIANCE.md - CLAUDE.md compliance checklist
 - CLAUDE_COMPLIANCE_REVIEW.md - Compliance review findings
+- PKCE_AUTHENTICATION_STRATEGY.md - OAuth PKCE strategy (wrong approach - requires browser)
 
 To view archived documents:
 
