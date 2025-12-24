@@ -286,11 +286,14 @@ impl AuthProvider for ClientCredentialsAuth {
                 self.fetch_token().await?;
 
                 let new_guard = self.token.read().await;
-                return Ok(new_guard
+                let token = new_guard
                     .as_ref()
-                    .expect("Token should exist after fetch")
-                    .access_token
-                    .clone());
+                    .ok_or_else(|| {
+                        crate::ErrorKind::OAuth(
+                            "Token missing after successful fetch".to_string(),
+                        )
+                    })?;
+                return Ok(token.access_token.clone());
             }
 
             tracing::debug!("Returning cached access token");
@@ -302,11 +305,10 @@ impl AuthProvider for ClientCredentialsAuth {
             self.fetch_token().await?;
 
             let guard = self.token.read().await;
-            Ok(guard
-                .as_ref()
-                .expect("Token should exist after fetch")
-                .access_token
-                .clone())
+            let token = guard.as_ref().ok_or_else(|| {
+                crate::ErrorKind::OAuth("Token missing after successful fetch".to_string())
+            })?;
+            Ok(token.access_token.clone())
         }
     }
 }
