@@ -9,6 +9,7 @@ along with their last associated commit.
 |----------|---------|-------------|------|
 | [ARCGIS_REST_API_RESEARCH.md](ARCGIS_REST_API_RESEARCH.md) | ArcGIS REST API research and analysis | `f616763` - feat: initial SDK foundation with type-safe architecture | 2 days ago |
 | [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | SDK implementation roadmap and milestones | `f616763` - feat: initial SDK foundation with type-safe architecture | 2 days ago |
+| [PKCE_AUTHENTICATION_STRATEGY.md](PKCE_AUTHENTICATION_STRATEGY.md) | PKCE OAuth authentication implementation strategy | New document | Today |
 
 ## Project Standards
 

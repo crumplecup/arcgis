@@ -109,63 +109,139 @@ Build a type-safe, ergonomic Rust SDK for the ArcGIS REST API that makes invalid
 
 ## Phase-by-Phase Roadmap
 
+**CRITICAL**: OAuth authentication is Phase 1, Priority 0. Without it, no
+development or testing is possible.
+
 ---
 
-## Phase 1: Foundation (v0.1.0-alpha) - Weeks 1-3
+## Phase 1: OAuth Authentication (v0.1.0-alpha) - Weeks 1-2
 
-### Milestone 1.1: Core Infrastructure (Week 1)
+### Milestone 1.1: OAuth + PKCE Implementation (Week 1)
+
+**Priority**: P0 - BLOCKING for all other work
 
 **Deliverables**:
-- [ ] Project scaffolding (Cargo workspace, CI/CD, licenses)
+- [ ] OAuth 2.0 + PKCE authentication provider
+- [ ] CSRF token validation
+- [ ] Token refresh logic with expiration checking
+- [ ] Secure HTTP client (SSRF prevention)
+- [ ] OAuth session state management
+- [ ] Integration with existing AuthProvider trait
+
+**Technical Tasks**:
+```rust
+// src/auth/oauth.rs
+use oauth2::{
+    basic::BasicClient,
+    AuthUrl, AuthorizationCode, ClientId, ClientSecret,
+    CsrfToken, PkceCodeChallenge, PkceCodeVerifier,
+    RedirectUrl, TokenUrl,
+};
+
+pub struct OAuthSession {
+    pub pkce_verifier: PkceCodeVerifier,
+    pub csrf_token: CsrfToken,
+}
+
+pub struct OAuthProvider {
+    client: BasicClient,
+    http_client: reqwest::Client,
+    token: Arc<RwLock<Option<StandardTokenResponse>>>,
+}
+
+impl OAuthProvider {
+    pub fn new(client_id: String, client_secret: String,
+               redirect_uri: String) -> Result<Self> { ... }
+    pub fn authorize_url(&self) -> (url::Url, OAuthSession) { ... }
+    pub async fn exchange_code(&self, code: AuthorizationCode,
+                                session: OAuthSession,
+                                returned_state: CsrfToken) -> Result<()> { ... }
+    pub async fn refresh_token(&self) -> Result<()> { ... }
+}
+```
+
+**Success Criteria**:
+- ✅ Can generate OAuth authorization URL with PKCE
+- ✅ Can exchange authorization code for access token
+- ✅ CSRF token validation prevents attacks
+- ✅ Token refresh works automatically before expiration
+- ✅ HTTP client prevents SSRF (redirects disabled)
+- ✅ Implements AuthProvider trait
+
+### Milestone 1.2: OAuth CLI Example + Documentation (Week 2)
+
+**Deliverables**:
+- [ ] Working CLI example with localhost callback server
+- [ ] OAuth flow documentation with diagrams
+- [ ] Integration test (manual, with real ArcGIS credentials)
+- [ ] Error handling guide
+- [ ] Token refresh verification
+
+**Technical Tasks**:
+```rust
+// examples/oauth_flow.rs
+#[tokio::main]
+async fn main() -> Result<()> {
+    // 1. Create OAuth provider
+    let oauth = OAuthProvider::new(...)?;
+
+    // 2. Generate authorization URL
+    let (auth_url, session) = oauth.authorize_url();
+    println!("Visit: {}", auth_url);
+
+    // 3. Start local server for callback
+    let listener = TcpListener::bind("127.0.0.1:8080")?;
+    let (code, state) = receive_callback(&listener)?;
+
+    // 4. Exchange code for token
+    oauth.exchange_code(code, session, state).await?;
+
+    // 5. Use authenticated client
+    let client = ArcGISClient::new(oauth);
+    // ... make API calls ...
+}
+```
+
+**Success Criteria**:
+- ✅ CLI example works end-to-end with real credentials
+- ✅ Token refresh tested and working
+- ✅ Documentation explains OAuth flow clearly
+- ✅ Error messages are helpful
+- ✅ Can make authenticated API requests
+
+**v0.1.0-alpha Release Checklist**:
+- [ ] OAuth authentication working
+- [ ] CLI example functional
+- [ ] Documentation complete
+- [ ] Integration test passing
+- [ ] CHANGELOG.md updated
+- [ ] Version bumped
+- [ ] Tagged in git
+
+---
+
+## Phase 2: Core Infrastructure (v0.2.0) - Weeks 3-5
+
+**Note**: Now that OAuth is working, we can build and test the SDK core.
+
+### Milestone 2.1: Foundation & Geometry (Week 3)
+
+**Deliverables**:
 - [ ] Core HTTP client wrapper around `reqwest`
-- [ ] Error type hierarchy with `thiserror`
-- [ ] API Key authentication implementation
+- [ ] Error type hierarchy with `derive_more`
 - [ ] Logging infrastructure with `tracing`
-- [ ] Basic integration test framework
+- [ ] `geo-types` ↔ ArcGIS JSON geometry conversion
+- [ ] Core geometry type enums (GeometryType, SpatialRel)
+- [ ] Spatial reference handling (basic)
 
 **Technical Tasks**:
 ```rust
 // src/client.rs
 pub struct ArcGISClient {
     http: reqwest::Client,
-    auth: AuthProvider,
+    auth: Arc<dyn AuthProvider>,
 }
 
-// src/error.rs
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("HTTP request failed: {0}")]
-    Http(#[from] reqwest::Error),
-
-    #[error("Authentication failed: {0}")]
-    Auth(String),
-
-    #[error("API error: {code} - {message}")]
-    Api { code: i32, message: String },
-}
-
-// src/auth/api_key.rs
-pub struct ApiKeyAuth {
-    key: secrecy::Secret<String>,
-}
-```
-
-**Success Criteria**:
-- ✅ Can make authenticated HTTP requests
-- ✅ Errors are properly typed and structured
-- ✅ Logging captures request/response details
-- ✅ Tests pass on CI
-
-### Milestone 1.2: Geometry Integration (Week 1)
-
-**Deliverables**:
-- [ ] `geo-types` ↔ ArcGIS JSON geometry conversion
-- [ ] Core geometry type enums (GeometryType, SpatialRel)
-- [ ] GeoJSON format support via `geojson` crate
-- [ ] Spatial reference handling (basic)
-
-**Technical Tasks**:
-```rust
 // src/types/geometry.rs
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum GeometryType {
@@ -175,73 +251,24 @@ pub enum GeometryType {
     Polyline,
     #[serde(rename = "esriGeometryPolygon")]
     Polygon,
-    #[serde(rename = "esriGeometryMultipoint")]
-    Multipoint,
-    #[serde(rename = "esriGeometryEnvelope")]
-    Envelope,
 }
-
-// src/geometry/convert.rs
-pub fn to_arcgis_geometry(geom: &geo_types::Geometry) -> ArcGISGeometry { ... }
-pub fn from_arcgis_geometry(geom: &ArcGISGeometry) -> Result<geo_types::Geometry> { ... }
 ```
 
 **Success Criteria**:
-- ✅ Round-trip conversion preserves geometry
-- ✅ All major geometry types supported
-- ✅ Unit tests for each conversion path
+- ✅ Can make authenticated HTTP requests with OAuth
+- ✅ Errors properly typed and structured
+- ✅ Geometry round-trip conversion works
+- ✅ All instrumentation in place
 
-### Milestone 1.3: Feature Query API (Week 2)
+### Milestone 2.2: Feature Query API (Week 4)
 
 **Deliverables**:
 - [ ] Feature Service metadata types
 - [ ] FeatureQueryParams with all query parameters
-- [ ] FeatureQueryResponse with typed fields
 - [ ] Basic query execution
 - [ ] WHERE clause support
-
-**Technical Tasks**:
-```rust
-// src/services/feature/types.rs
-#[derive(Debug, serde::Serialize)]
-pub struct FeatureQueryParams {
-    #[serde(rename = "where")]
-    pub where_clause: String,
-
-    #[serde(rename = "outFields")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub out_fields: Option<Vec<String>>,
-
-    #[serde(rename = "returnGeometry")]
-    pub return_geometry: bool,
-
-    #[serde(rename = "f")]
-    pub format: ResponseFormat,
-
-    // ... 30+ more fields, all strongly typed
-}
-
-// src/services/feature/client.rs
-impl FeatureServiceClient {
-    pub async fn query(&self, layer_id: LayerId, params: FeatureQueryParams)
-        -> Result<FeatureSet> { ... }
-}
-```
-
-**Success Criteria**:
-- ✅ Can query features from a public service
-- ✅ WHERE clauses work correctly
-- ✅ Field filtering works
-- ✅ Geometry is correctly parsed
-
-### Milestone 1.4: Pagination & Polish (Week 3)
-
-**Deliverables**:
-- [ ] Pagination support (offset-based)
-- [ ] High-level query builder
-- [ ] Documentation with examples
-- [ ] Integration tests against live services
-- [ ] README and quickstart guide
+- [ ] Query builder pattern
+- [ ] Pagination support
 
 **Technical Tasks**:
 ```rust
@@ -255,32 +282,44 @@ pub struct QueryBuilder {
 impl QueryBuilder {
     pub fn where_clause(mut self, clause: impl Into<String>) -> Self { ... }
     pub fn out_fields(mut self, fields: &[&str]) -> Self { ... }
-    pub fn return_geometry(mut self, return_geom: bool) -> Self { ... }
     pub async fn execute(self) -> Result<FeatureSet> { ... }
     pub async fn execute_all(self) -> Result<FeatureSet> { /* auto-paginate */ }
 }
 ```
 
 **Success Criteria**:
-- ✅ Can retrieve all features from large datasets
-- ✅ Pagination is automatic and transparent
-- ✅ Documentation includes working examples
-- ✅ Published as v0.1.0-alpha to crates.io
+- ✅ Can query features with OAuth authentication
+- ✅ WHERE clauses work correctly
+- ✅ Pagination automatic and transparent
+- ✅ Can retrieve large datasets
 
-**v0.1.0-alpha Release Checklist**:
+### Milestone 2.3: Documentation & Testing (Week 5)
+
+**Deliverables**:
+- [ ] Comprehensive API documentation
+- [ ] Query examples with OAuth
+- [ ] Integration tests against live services
+- [ ] README and quickstart guide
+- [ ] Performance benchmarks
+
+**Success Criteria**:
+- ✅ All public APIs documented
+- ✅ Examples work end-to-end
+- ✅ Integration tests passing
+- ✅ Ready for v0.2.0 release
+
+**v0.2.0 Release Checklist**:
+- [ ] OAuth + core SDK working
 - [ ] All tests passing
 - [ ] Documentation complete
-- [ ] Examples working
-- [ ] CHANGELOG.md updated
-- [ ] Version bumped
+- [ ] Examples functional
 - [ ] Published to crates.io
-- [ ] GitHub release created
 
 ---
 
-## Phase 2: CRUD Operations (v0.2.0) - Weeks 4-6
+## Phase 3: CRUD Operations (v0.3.0) - Weeks 6-8
 
-### Milestone 2.1: Feature Editing (Week 4)
+### Milestone 3.1: Feature Editing (Week 6)
 
 **Deliverables**:
 - [ ] AddFeatures operation
@@ -316,13 +355,14 @@ impl FeatureServiceClient {
 - ✅ Can delete features
 - ✅ Edit failures properly reported
 
-### Milestone 2.2: Batch Operations (Week 5)
+### Milestone 3.2: Batch Operations (Week 7)
 
 **Deliverables**:
 - [ ] ApplyEdits operation (add + update + delete in one transaction)
 - [ ] Batch result handling
 - [ ] Partial success handling
 - [ ] Edit session support
+- [ ] Attachment support
 
 **Technical Tasks**:
 ```rust
@@ -345,50 +385,32 @@ pub struct ApplyEditsResult {
 - ✅ Can perform complex edits atomically
 - ✅ Partial failures properly reported
 - ✅ Rollback works as expected
+- ✅ Can upload/download attachments
 
-### Milestone 2.3: OAuth Authentication (Week 6)
+### Milestone 3.3: Documentation & Testing (Week 8)
 
 **Deliverables**:
-- [ ] OAuth 2.0 authorization code flow
-- [ ] OAuth 2.0 client credentials flow
-- [ ] Token refresh logic
-- [ ] Token storage abstraction
-- [ ] PKCE support
-
-**Technical Tasks**:
-```rust
-// src/auth/oauth.rs
-use oauth2::{AuthorizationCode, ClientId, ClientSecret, TokenResponse};
-
-pub struct OAuthProvider {
-    client: oauth2::Client,
-    token: Arc<RwLock<Option<TokenResponse>>>,
-}
-
-impl OAuthProvider {
-    pub async fn authorize(&self) -> Result<String> { /* return auth URL */ }
-    pub async fn exchange_code(&self, code: &str) -> Result<()> { ... }
-    pub async fn refresh_token(&self) -> Result<()> { ... }
-}
-```
+- [ ] CRUD operation examples
+- [ ] Integration tests for editing
+- [ ] Error handling documentation
+- [ ] Performance benchmarks for batch operations
 
 **Success Criteria**:
-- ✅ OAuth authorization code flow working
-- ✅ Token refresh automatic
-- ✅ Can authenticate against ArcGIS Online
-- ✅ PKCE flow working for public clients
+- ✅ All CRUD operations documented
+- ✅ Examples demonstrate best practices
+- ✅ Tests cover error scenarios
 
-**v0.2.0 Release Checklist**:
+**v0.3.0 Release Checklist**:
 - [ ] All CRUD operations tested
-- [ ] OAuth flows documented
-- [ ] Migration guide from v0.1.0
+- [ ] Documentation complete
+- [ ] Migration guide from v0.2.0
 - [ ] Published to crates.io
 
 ---
 
-## Phase 3: Multi-Service Support (v0.3.0) - Weeks 7-10
+## Phase 4: Multi-Service Support (v0.4.0) - Weeks 9-12
 
-### Milestone 3.1: Map Service (Weeks 7-8)
+### Milestone 4.1: Map Service (Weeks 9-10)
 
 **Deliverables**:
 - [ ] Map Service metadata
@@ -428,7 +450,7 @@ impl MapServiceClient {
 - ✅ Image formats properly handled
 - ✅ Can retrieve legend graphics
 
-### Milestone 3.2: Geocoding Service (Week 9)
+### Milestone 4.2: Geocoding Service (Week 11)
 
 **Deliverables**:
 - [ ] Forward geocoding (findAddressCandidates)
@@ -466,7 +488,7 @@ impl GeocodeServiceClient {
 - ✅ Autocomplete working
 - ✅ Batch geocoding efficient
 
-### Milestone 3.3: Advanced Queries (Week 10)
+### Milestone 4.3: Advanced Queries (Week 12)
 
 **Deliverables**:
 - [ ] Spatial queries (intersects, contains, etc.)
@@ -501,7 +523,7 @@ impl QueryBuilder {
 - ✅ Can query related records
 - ✅ Statistics queries returning correct aggregates
 
-**v0.3.0 Release Checklist**:
+**v0.4.0 Release Checklist**:
 - [ ] Map, Geocoding services fully functional
 - [ ] Advanced query capabilities documented
 - [ ] Performance acceptable for production use
