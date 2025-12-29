@@ -3,9 +3,10 @@
 use crate::{
     AlterResponse, AlterVersionParams, ArcGISClient, ConflictDetection, ConflictsResponse,
     CreateVersionParams, CreateVersionResponse, DeleteForwardEditsResponse, DeleteResponse,
-    InspectConflictLayer, InspectConflictsResponse, PartialPostRow, PostResponse,
-    ReconcileResponse, Result, SessionId, StartEditingResponse, StartReadingResponse,
-    StopEditingResponse, StopReadingResponse, VersionGuid, VersionInfo, VersionInfosResponse,
+    DifferenceResultType, DifferencesResponse, InspectConflictLayer, InspectConflictsResponse,
+    PartialPostRow, PostResponse, ReconcileResponse, RestoreRowsLayer, RestoreRowsResponse, Result,
+    SessionId, StartEditingResponse, StartReadingResponse, StopEditingResponse,
+    StopReadingResponse, VersionGuid, VersionInfo, VersionInfosResponse,
 };
 use tracing::instrument;
 
@@ -1803,5 +1804,300 @@ impl<'a> VersionManagementClient<'a> {
         }
 
         Ok(delete_response)
+    }
+
+    /// Retrieves differences between version states.
+    ///
+    /// Returns all edits categorized as inserts, updates, or deletes. Can return
+    /// either object IDs (more efficient) or full features with attributes and geometry.
+    ///
+    /// # Arguments
+    ///
+    /// * `version_guid` - The GUID of the version to query
+    /// * `session_id` - Optional session ID for the query
+    /// * `result_type` - Whether to return object IDs or full features
+    /// * `layers` - Optional list of layer IDs to include (defaults to all layers)
+    ///
+    /// # Returns
+    ///
+    /// Returns a [`DifferencesResponse`] with edits organized by layer and type.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The version doesn't exist
+    /// - Authentication fails
+    /// - Network error occurs
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{
+    ///     ArcGISClient, ClientCredentialsAuth, VersionManagementClient,
+    ///     DifferenceResultType,
+    /// };
+    /// use uuid::Uuid;
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// # let auth = ClientCredentialsAuth::new("id".to_string(), "secret".to_string()).expect("Valid");
+    /// # let client = ArcGISClient::new(auth);
+    /// # let vm_client = VersionManagementClient::new("url", &client);
+    /// let version_guid = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000")
+    ///     .expect("Valid UUID");
+    ///
+    /// // Get differences as object IDs (more efficient)
+    /// let diffs = vm_client.differences(
+    ///     version_guid.into(),
+    ///     None,
+    ///     DifferenceResultType::ObjectIds,
+    ///     None, // all layers
+    /// ).await?;
+    ///
+    /// if let Some(differences) = diffs.differences() {
+    ///     for layer_diff in differences {
+    ///         println!("Layer {}: {} inserts, {} updates, {} deletes",
+    ///             layer_diff.layer_id(),
+    ///             layer_diff.inserts().as_ref().map(|i| i.len()).unwrap_or(0),
+    ///             layer_diff.updates().as_ref().map(|u| u.len()).unwrap_or(0),
+    ///             layer_diff.deletes().as_ref().map(|d| d.len()).unwrap_or(0),
+    ///         );
+    ///     }
+    /// }
+    ///
+    /// // Get differences as full features
+    /// let feature_diffs = vm_client.differences(
+    ///     version_guid.into(),
+    ///     None,
+    ///     DifferenceResultType::Features,
+    ///     Some(vec![0, 1]), // only layers 0 and 1
+    /// ).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, layers), fields(
+        base_url = %self.base_url,
+        version_guid = %version_guid,
+        result_type = %result_type
+    ))]
+    pub async fn differences(
+        &self,
+        version_guid: VersionGuid,
+        session_id: Option<SessionId>,
+        result_type: DifferenceResultType,
+        layers: Option<Vec<i64>>,
+    ) -> Result<DifferencesResponse> {
+        tracing::debug!(
+            version_guid = %version_guid,
+            result_type = %result_type,
+            "Retrieving differences"
+        );
+
+        let url = format!("{}/versions/{}/differences", self.base_url, version_guid);
+        let token = self.client.auth().get_token().await?;
+
+        let result_type_str = result_type.to_string();
+
+        let mut form = vec![
+            ("resultType", result_type_str),
+            ("f", "json".to_string()),
+            ("token", token.to_string()),
+        ];
+
+        // Add session ID if provided
+        let session_id_str;
+        if let Some(sid) = session_id {
+            session_id_str = sid.to_string();
+            form.push(("sessionId", session_id_str));
+        }
+
+        // Serialize layers if provided
+        let layers_json;
+        if let Some(layer_list) = layers {
+            layers_json = serde_json::to_string(&layer_list)?;
+            form.push(("layers", layers_json));
+        }
+
+        tracing::debug!(url = %url, "Sending differences request");
+
+        let form_refs: Vec<(&str, &str)> = form.iter().map(|(k, v)| (*k, v.as_str())).collect();
+
+        let response = self
+            .client
+            .http()
+            .post(&url)
+            .form(&form_refs)
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "differences failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let diffs_response: DifferencesResponse = response.json().await?;
+
+        if *diffs_response.success() {
+            tracing::info!(
+                version_guid = %version_guid,
+                result_type = %result_type,
+                "Differences retrieved successfully"
+            );
+        } else {
+            tracing::warn!(
+                version_guid = %version_guid,
+                error = ?diffs_response.error(),
+                "differences reported failure"
+            );
+        }
+
+        Ok(diffs_response)
+    }
+
+    /// Restores rows from the common ancestor version.
+    ///
+    /// This operation is used to resolve Delete-Update conflicts identified during
+    /// reconciliation. It restores features that were deleted in the branch version
+    /// but updated in the default version, bringing them back from the ancestor state.
+    ///
+    /// # Arguments
+    ///
+    /// * `version_guid` - The GUID of the version
+    /// * `session_id` - The session ID from the active edit session
+    /// * `rows` - Specifications of which features to restore in each layer
+    ///
+    /// # Returns
+    ///
+    /// Returns a [`RestoreRowsResponse`] indicating success or failure.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The version doesn't exist
+    /// - No active edit session with matching session ID
+    /// - The specified features don't exist in the ancestor version
+    /// - Authentication fails
+    /// - Network error occurs
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{
+    ///     ArcGISClient, ClientCredentialsAuth, VersionManagementClient,
+    ///     SessionId, RestoreRowsLayer,
+    /// };
+    /// use uuid::Uuid;
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// # let auth = ClientCredentialsAuth::new("id".to_string(), "secret".to_string()).expect("Valid");
+    /// # let client = ArcGISClient::new(auth);
+    /// # let vm_client = VersionManagementClient::new("url", &client);
+    /// let version_guid = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000")
+    ///     .expect("Valid UUID");
+    /// let session_id = SessionId::new();
+    ///
+    /// // Start edit session
+    /// vm_client.start_editing(version_guid.into(), session_id).await?;
+    ///
+    /// // After reconcile detects Delete-Update conflicts, restore specific features
+    /// let rows_to_restore = vec![
+    ///     RestoreRowsLayer::new(3, vec![1, 4, 5, 8]),
+    ///     RestoreRowsLayer::new(5, vec![1, 4, 5, 9, 16, 35]),
+    /// ];
+    ///
+    /// let response = vm_client.restore_rows(
+    ///     version_guid.into(),
+    ///     session_id,
+    ///     rows_to_restore,
+    /// ).await?;
+    ///
+    /// if *response.success() {
+    ///     println!("Rows restored successfully at {:?}", response.moment());
+    /// }
+    ///
+    /// // Continue with reconcile and post workflow...
+    /// vm_client.stop_editing(version_guid.into(), session_id, true).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, rows), fields(
+        base_url = %self.base_url,
+        version_guid = %version_guid,
+        session_id = %session_id
+    ))]
+    pub async fn restore_rows(
+        &self,
+        version_guid: VersionGuid,
+        session_id: SessionId,
+        rows: Vec<RestoreRowsLayer>,
+    ) -> Result<RestoreRowsResponse> {
+        tracing::debug!(
+            version_guid = %version_guid,
+            session_id = %session_id,
+            "Restoring rows from ancestor"
+        );
+
+        let url = format!("{}/versions/{}/restoreRows", self.base_url, version_guid);
+        let token = self.client.auth().get_token().await?;
+
+        // Serialize rows
+        let rows_json = serde_json::to_string(&rows)?;
+
+        tracing::debug!(url = %url, "Sending restore rows request");
+
+        let form = [
+            ("sessionId", session_id.to_string()),
+            ("rows", rows_json),
+            ("f", "json".to_string()),
+            ("token", token.to_string()),
+        ];
+
+        let form_refs: Vec<(&str, &str)> = form.iter().map(|(k, v)| (*k, v.as_str())).collect();
+
+        let response = self
+            .client
+            .http()
+            .post(&url)
+            .form(&form_refs)
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "restore rows failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let restore_response: RestoreRowsResponse = response.json().await?;
+
+        if *restore_response.success() {
+            tracing::info!(
+                version_guid = %version_guid,
+                moment = ?restore_response.moment(),
+                "Rows restored successfully"
+            );
+        } else {
+            tracing::warn!(
+                version_guid = %version_guid,
+                error = ?restore_response.error(),
+                "restore rows reported failure"
+            );
+        }
+
+        Ok(restore_response)
     }
 }

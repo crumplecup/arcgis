@@ -15,9 +15,10 @@ pub use geocode::{
 pub use version_management::{
     AlterResponse, AlterVersionParams, ConflictDetection, ConflictEntry, ConflictFeature,
     ConflictsResponse, CreateVersionParams, CreateVersionResponse, DeleteForwardEditsResponse,
-    DeleteResponse, EditSessionError, InspectConflictFeature, InspectConflictLayer,
-    InspectConflictsResponse, LayerConflicts, PartialPostRow, PostResponse, ReconcileResponse,
-    SessionId, StartEditingResponse, StartReadingResponse, StopEditingResponse,
-    StopReadingResponse, VersionGuid, VersionInfo, VersionInfosResponse, VersionManagementClient,
-    VersionPermission, VersioningType,
+    DeleteResponse, DifferenceFeature, DifferenceResultType, DifferencesResponse, EditSessionError,
+    InspectConflictFeature, InspectConflictLayer, InspectConflictsResponse, LayerConflicts,
+    LayerFeatureDifferences, LayerObjectIdDifferences, PartialPostRow, PostResponse,
+    ReconcileResponse, RestoreRowsLayer, RestoreRowsResponse, SessionId, StartEditingResponse,
+    StartReadingResponse, StopEditingResponse, StopReadingResponse, VersionGuid, VersionInfo,
+    VersionInfosResponse, VersionManagementClient, VersionPermission, VersioningType,
 };

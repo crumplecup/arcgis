@@ -676,3 +676,158 @@ pub struct DeleteForwardEditsResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<EditSessionError>,
 }
+
+/// Result type for differences operation.
+///
+/// Determines whether to return object IDs or full features.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum DifferenceResultType {
+    /// Return only object IDs (default, more efficient)
+    #[default]
+    ObjectIds,
+    /// Return full feature attributes and geometry
+    Features,
+}
+
+impl fmt::Display for DifferenceResultType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ObjectIds => write!(f, "objectIds"),
+            Self::Features => write!(f, "features"),
+        }
+    }
+}
+
+/// Object ID differences for a specific layer.
+///
+/// Contains object IDs for inserted, updated, and deleted features.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct LayerObjectIdDifferences {
+    /// Layer ID
+    layer_id: i64,
+
+    /// Object IDs of inserted features
+    #[serde(skip_serializing_if = "Option::is_none")]
+    inserts: Option<Vec<i64>>,
+
+    /// Object IDs of updated features
+    #[serde(skip_serializing_if = "Option::is_none")]
+    updates: Option<Vec<i64>>,
+
+    /// Object IDs of deleted features
+    #[serde(skip_serializing_if = "Option::is_none")]
+    deletes: Option<Vec<i64>>,
+}
+
+/// Feature data for a difference entry.
+///
+/// Contains feature attributes and geometry.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct DifferenceFeature {
+    /// Feature attributes as key-value pairs
+    #[serde(skip_serializing_if = "Option::is_none")]
+    attributes: Option<serde_json::Map<String, serde_json::Value>>,
+
+    /// Feature geometry
+    #[serde(skip_serializing_if = "Option::is_none")]
+    geometry: Option<serde_json::Value>,
+}
+
+/// Feature differences for a specific layer.
+///
+/// Contains full feature data for inserted, updated, and deleted features.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct LayerFeatureDifferences {
+    /// Layer ID
+    layer_id: i64,
+
+    /// Inserted features with attributes and geometry
+    #[serde(skip_serializing_if = "Option::is_none")]
+    inserts: Option<Vec<DifferenceFeature>>,
+
+    /// Updated features with attributes and geometry
+    #[serde(skip_serializing_if = "Option::is_none")]
+    updates: Option<Vec<DifferenceFeature>>,
+
+    /// Deleted features with attributes and geometry
+    #[serde(skip_serializing_if = "Option::is_none")]
+    deletes: Option<Vec<DifferenceFeature>>,
+}
+
+/// Response from differences operation.
+///
+/// Contains differences between version states, either as object IDs or
+/// full features depending on the result type requested.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct DifferencesResponse {
+    /// Whether the operation succeeded
+    success: bool,
+
+    /// Differences as object IDs (when resultType=objectIds)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    differences: Option<Vec<LayerObjectIdDifferences>>,
+
+    /// Differences as features (when resultType=features)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    features: Option<Vec<LayerFeatureDifferences>>,
+
+    /// Error information if the operation failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<EditSessionError>,
+}
+
+/// Specification for restoring rows in a specific layer.
+///
+/// Identifies which features to restore from the common ancestor version.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestoreRowsLayer {
+    /// Layer ID
+    pub layer_id: i64,
+
+    /// Object IDs of features to restore
+    pub object_ids: Vec<i64>,
+}
+
+impl RestoreRowsLayer {
+    /// Creates a new restore rows layer specification.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_id` - The layer ID
+    /// * `object_ids` - Vector of object IDs to restore
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use arcgis::RestoreRowsLayer;
+    ///
+    /// let layer = RestoreRowsLayer::new(3, vec![1, 4, 5, 8]);
+    /// assert_eq!(layer.layer_id, 3);
+    /// assert_eq!(layer.object_ids.len(), 4);
+    /// ```
+    pub fn new(layer_id: i64, object_ids: Vec<i64>) -> Self {
+        Self {
+            layer_id,
+            object_ids,
+        }
+    }
+}
+
+/// Response from restore rows operation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
+pub struct RestoreRowsResponse {
+    /// Whether the operation succeeded
+    success: bool,
+
+    /// Moment (timestamp) when the restore occurred
+    #[serde(skip_serializing_if = "Option::is_none")]
+    moment: Option<String>,
+
+    /// Error information if the operation failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<EditSessionError>,
+}
