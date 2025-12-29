@@ -1,8 +1,8 @@
 //! Geocoding service client.
 
 use crate::{
-    ArcGISClient, ArcGISPoint, GeocodeResponse, LocationType, ReverseGeocodeResponse,
-    SuggestResponse, Result,
+    ArcGISClient, ArcGISPoint, GeocodeResponse, LocationType, Result, ReverseGeocodeResponse,
+    SuggestResponse,
 };
 use tracing::instrument;
 
@@ -363,7 +363,11 @@ impl<'a> GeocodeServiceClient<'a> {
             .client
             .http()
             .get(&url)
-            .query(&[("text", text.as_str()), ("f", "json"), ("token", token.as_str())])
+            .query(&[
+                ("text", text.as_str()),
+                ("f", "json"),
+                ("token", token.as_str()),
+            ])
             .send()
             .await?;
 

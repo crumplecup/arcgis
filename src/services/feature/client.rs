@@ -234,6 +234,10 @@ impl<'a> FeatureServiceClient<'a> {
         ];
 
         // Add optional parameters
+        let session_id_str = options.session_id.as_ref().map(|s| s.to_string());
+        if let Some(ref session_id) = session_id_str {
+            form.push(("sessionId", session_id.as_str()));
+        }
         if let Some(ref gdb_version) = options.gdb_version {
             form.push(("gdbVersion", gdb_version.as_str()));
         }
@@ -338,6 +342,10 @@ impl<'a> FeatureServiceClient<'a> {
         ];
 
         // Add optional parameters
+        let session_id_str = options.session_id.as_ref().map(|s| s.to_string());
+        if let Some(ref session_id) = session_id_str {
+            form.push(("sessionId", session_id.as_str()));
+        }
         if let Some(ref gdb_version) = options.gdb_version {
             form.push(("gdbVersion", gdb_version.as_str()));
         }
@@ -591,6 +599,10 @@ impl<'a> FeatureServiceClient<'a> {
         }
 
         // Add optional parameters
+        let session_id_str = options.session_id.as_ref().map(|s| s.to_string());
+        if let Some(ref session_id) = session_id_str {
+            form.push(("sessionId", session_id.as_str()));
+        }
         if let Some(ref gdb_version) = options.gdb_version {
             form.push(("gdbVersion", gdb_version.as_str()));
         }

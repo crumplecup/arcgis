@@ -47,7 +47,7 @@
 //! # }
 //! ```
 
-use crate::ObjectId;
+use crate::{ObjectId, SessionId};
 use derive_getters::Getters;
 use serde::{Deserialize, Serialize};
 
@@ -160,6 +160,13 @@ pub struct EditOptions {
     /// When false with rollbackOnFailure=true, returns simple {success: true/false}
     #[serde(skip_serializing_if = "Option::is_none")]
     pub return_edit_results: Option<bool>,
+
+    /// Edit session ID for versioned editing workflows
+    ///
+    /// Required when editing branch-versioned geodatabases. Obtain by calling
+    /// [`VersionManagementClient::start_editing`](crate::VersionManagementClient::start_editing).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<SessionId>,
 }
 
 impl Default for EditOptions {
@@ -169,6 +176,7 @@ impl Default for EditOptions {
             rollback_on_failure: Some(true),
             use_global_ids: None,
             return_edit_results: Some(true),
+            session_id: None,
         }
     }
 }
@@ -203,6 +211,25 @@ impl EditOptions {
     /// Control whether detailed results are returned.
     pub fn with_return_edit_results(mut self, return_results: bool) -> Self {
         self.return_edit_results = Some(return_results);
+        self
+    }
+
+    /// Sets the edit session ID for versioned editing.
+    ///
+    /// Required when editing branch-versioned geodatabases. The session ID is
+    /// obtained by calling
+    /// [`VersionManagementClient::start_editing`](crate::VersionManagementClient::start_editing).
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{EditOptions, SessionId};
+    ///
+    /// let session_id = SessionId::new();
+    /// let options = EditOptions::new().with_session_id(session_id);
+    /// ```
+    pub fn with_session_id(mut self, session_id: SessionId) -> Self {
+        self.session_id = Some(session_id);
         self
     }
 }

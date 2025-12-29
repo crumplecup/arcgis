@@ -62,6 +62,9 @@ derive_setters = "0.1"
 derive-new = "0.7"
 derive_builder = "0.20"
 
+# UUID generation for session IDs
+uuid = { version = "1", features = ["v4", "serde"] }
+
 # Optional dependencies (enabled by features)
 geo = { version = "0.32", optional = true, features = ["use-serde"] }
 geozero = { version = "0.15", optional = true }

@@ -2,6 +2,7 @@
 
 mod feature;
 mod geocode;
+mod version_management;
 
 pub use feature::{
     EditError, EditOptions, EditResult, EditResultItem, Feature, FeatureQueryParams,
@@ -9,5 +10,9 @@ pub use feature::{
 };
 pub use geocode::{
     AddressCandidate, Category, Extent, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,
-    LocationType, ReverseGeocodeResponse, Suggestion, SuggestResponse,
+    LocationType, ReverseGeocodeResponse, SuggestResponse, Suggestion,
+};
+pub use version_management::{
+    EditSessionError, SessionId, StartEditingResponse, StopEditingResponse, VersionGuid,
+    VersionInfo, VersionManagementClient, VersioningType,
 };
