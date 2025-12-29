@@ -75,8 +75,9 @@ pub use services::{
     EditSessionError, Extent, Feature, FeatureQueryParams, FeatureQueryParamsBuilder,
     FeatureServiceClient, FeatureSet, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,
     LocationType, QueryBuilder, ResponseFormat, ReverseGeocodeResponse, SessionId,
-    StartEditingResponse, StopEditingResponse, SuggestResponse, Suggestion, VersionGuid,
-    VersionInfo, VersionInfosResponse, VersionManagementClient, VersionPermission, VersioningType,
+    StartEditingResponse, StartReadingResponse, StopEditingResponse, StopReadingResponse,
+    SuggestResponse, Suggestion, VersionGuid, VersionInfo, VersionInfosResponse,
+    VersionManagementClient, VersionPermission, VersioningType,
 };
 pub use types::{GeometryType, LayerId, ObjectId, SpatialRel};
 

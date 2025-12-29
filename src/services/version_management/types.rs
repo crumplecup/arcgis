@@ -119,6 +119,36 @@ pub struct StopEditingResponse {
     error: Option<EditSessionError>,
 }
 
+/// Response from startReading operation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct StartReadingResponse {
+    /// Whether the operation succeeded
+    success: bool,
+
+    /// Moment (timestamp) when the read session started
+    #[serde(skip_serializing_if = "Option::is_none")]
+    moment: Option<String>,
+
+    /// Error information if the operation failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<EditSessionError>,
+}
+
+/// Response from stopReading operation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct StopReadingResponse {
+    /// Whether the operation succeeded
+    success: bool,
+
+    /// Moment (timestamp) when the read session stopped
+    #[serde(skip_serializing_if = "Option::is_none")]
+    moment: Option<String>,
+
+    /// Error information if the operation failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<EditSessionError>,
+}
+
 /// Error information from edit session operations.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
 pub struct EditSessionError {

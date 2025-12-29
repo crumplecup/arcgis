@@ -52,6 +52,7 @@ mod types;
 pub use client::VersionManagementClient;
 pub use types::{
     AlterResponse, AlterVersionParams, CreateVersionParams, CreateVersionResponse, DeleteResponse,
-    EditSessionError, SessionId, StartEditingResponse, StopEditingResponse, VersionGuid,
-    VersionInfo, VersionInfosResponse, VersionPermission, VersioningType,
+    EditSessionError, SessionId, StartEditingResponse, StartReadingResponse, StopEditingResponse,
+    StopReadingResponse, VersionGuid, VersionInfo, VersionInfosResponse, VersionPermission,
+    VersioningType,
 };
