@@ -3,6 +3,6 @@
 mod feature;
 
 pub use feature::{
-    Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet,
-    QueryBuilder, ResponseFormat,
+    EditError, EditOptions, EditResult, EditResultItem, Feature, FeatureQueryParams,
+    FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet, QueryBuilder, ResponseFormat,
 };

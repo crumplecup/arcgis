@@ -70,8 +70,8 @@ pub use geometry::{
     SpatialReference,
 };
 pub use services::{
-    Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet,
-    QueryBuilder, ResponseFormat,
+    EditError, EditOptions, EditResult, EditResultItem, Feature, FeatureQueryParams,
+    FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet, QueryBuilder, ResponseFormat,
 };
 pub use types::{GeometryType, LayerId, ObjectId, SpatialRel};
 

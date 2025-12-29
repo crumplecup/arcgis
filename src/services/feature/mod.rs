@@ -4,10 +4,12 @@
 //! and edit features with full CRUD support.
 
 mod client;
+mod edit;
 mod query;
 mod types;
 
 pub use client::FeatureServiceClient;
+pub use edit::{EditError, EditOptions, EditResult, EditResultItem};
 pub use query::QueryBuilder;
 pub use types::{
     Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureSet, ResponseFormat,
