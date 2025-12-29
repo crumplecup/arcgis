@@ -568,14 +568,8 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!(url = %url, "Sending applyEdits request");
 
         // Pre-allocate owned strings that need to live for the duration of the request
-        let adds_json = adds
-            .as_ref()
-            .map(|a| serde_json::to_string(a))
-            .transpose()?;
-        let updates_json = updates
-            .as_ref()
-            .map(|u| serde_json::to_string(u))
-            .transpose()?;
+        let adds_json = adds.as_ref().map(serde_json::to_string).transpose()?;
+        let updates_json = updates.as_ref().map(serde_json::to_string).transpose()?;
         let deletes_str = deletes.as_ref().map(|d| {
             d.iter()
                 .map(|id| id.to_string())
