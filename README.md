@@ -11,9 +11,9 @@ A type-safe Rust SDK for the [ArcGIS REST API](https://developers.arcgis.com/res
 
 - 🔒 **Type-safe**: Strong typing with enums instead of strings - invalid states are unrepresentable
 - 🌍 **GeoRust integration**: Native support for `geo-types` and the GeoRust ecosystem
-- 🔐 **Authentication**: API Key, OAuth 2.0 (authorization code & client credentials)
+- 🔐 **Authentication**: API Key and OAuth 2.0 Client Credentials (fully automated, no browser required)
 - ⚡ **Async/await**: Built on `tokio` and `reqwest` for async operations
-- 🎯 **Focused features**: Optional services via Cargo features - only compile what you need
+- 🔄 **Auto-pagination**: Transparent handling of large result sets
 - 📦 **Zero unsafe code**: Memory-safe by default
 - 🧪 **Well-tested**: Comprehensive test coverage with integration tests
 
@@ -30,39 +30,55 @@ tokio = { version = "1", features = ["full"] }
 ### Query Features
 
 ```rust
-use arcgis::{ArcGISClient, auth::ApiKeyAuth, feature::FeatureServiceClient};
+use arcgis::{ApiKeyAuth, ArcGISClient, FeatureServiceClient, LayerId};
 
 #[tokio::main]
-async fn main() -> Result<(), arcgis::Error> {
+async fn main() -> arcgis::Result<()> {
     // Create authenticated client
     let auth = ApiKeyAuth::new("YOUR_API_KEY");
     let client = ArcGISClient::new(auth);
 
     // Connect to a feature service
-    let feature_client = FeatureServiceClient::new(
+    let service = FeatureServiceClient::new(
         "https://services.arcgis.com/org/arcgis/rest/services/Dataset/FeatureServer",
         &client,
     );
 
-    // Query features with type-safe API
-    let features = feature_client
-        .query()
-        .layer(arcgis::types::LayerId(0))
+    // Query features with type-safe builder API
+    let features = service
+        .query(LayerId::new(0))
         .where_clause("POPULATION > 100000")
         .out_fields(&["NAME", "POPULATION", "STATE"])
         .return_geometry(true)
         .execute()
         .await?;
 
+    println!("Retrieved {} features", features.features().len());
+
     // Geometries are returned as geo-types
-    for feature in features.features {
-        if let Some(geometry) = feature.geometry {
-            println!("Feature: {:?}", geometry);
+    for feature in features.features() {
+        if let Some(geometry) = feature.geometry() {
+            println!("Feature geometry: {:?}", geometry);
         }
     }
 
     Ok(())
 }
+```
+
+### Auto-Pagination
+
+For large datasets, use `execute_all()` to automatically paginate:
+
+```rust
+// Retrieve all features matching the query (may make multiple requests)
+let all_features = service
+    .query(LayerId::new(0))
+    .where_clause("STATE = 'CA'")
+    .execute_all()  // Automatically handles pagination
+    .await?;
+
+println!("Retrieved {} total features", all_features.features().len());
 ```
 
 ### Type Safety Example
@@ -79,49 +95,69 @@ Use strongly-typed enums:
 
 ```rust
 // ✅ Compile-time guarantees
-use arcgis::types::{GeometryType, SpatialRel};
+use arcgis::{GeometryType, SpatialRel};
 
 params.geometry_type = GeometryType::Polyline;  // Autocomplete works!
 params.spatial_rel = SpatialRel::Intersects;    // Typos = compile errors!
 ```
 
-## Services Support
+## Authentication
 
-Enable the services you need via Cargo features:
+### API Key (Simplest)
 
-```toml
-[dependencies]
-arcgis = { version = "0.1", features = ["feature-service", "geocoding", "map-service"] }
+Best for development, testing, and simple applications:
+
+```rust
+use arcgis::{ApiKeyAuth, ArcGISClient};
+
+let auth = ApiKeyAuth::new("YOUR_API_KEY");
+let client = ArcGISClient::new(auth);
 ```
 
-### Available Features
+### OAuth 2.0 Client Credentials (Recommended for Production)
 
-| Feature | Service | Status |
-|---------|---------|--------|
-| `feature-service` | Feature Service (default) | ✅ v0.1.0 |
-| `map-service` | Map Service | 🚧 Planned |
-| `geocoding` | Geocoding Service | 🚧 Planned |
-| `geometry-service` | Geometry Service | 🚧 Planned |
-| `routing` | Routing Service | 🚧 Planned |
-| `geoprocessing` | Geoprocessing Service | 🚧 Planned |
-| `stream-service` | Stream Service | 🚧 Planned |
-| `places` | Places Service | 🚧 Planned |
-| `pbf` | Protocol Buffer support | 🚧 Planned |
-| `full` | All services | 🚧 Planned |
+Fully automated server-to-server authentication - no browser or user interaction required:
+
+```rust
+use arcgis::{ClientCredentialsAuth, ArcGISClient, AuthProvider};
+
+#[tokio::main]
+async fn main() -> arcgis::Result<()> {
+    // Create authenticator with client credentials
+    let auth = ClientCredentialsAuth::new(
+        std::env::var("CLIENT_ID")?,
+        std::env::var("CLIENT_SECRET")?,
+    )?;
+
+    // Token is fetched automatically on first use
+    let client = ArcGISClient::new(auth);
+
+    // All subsequent requests automatically use refreshed tokens
+    // No manual token management required!
+
+    Ok(())
+}
+```
+
+**Key features:**
+- Fully automated - no browser interaction
+- Automatic token refresh before expiration
+- Perfect for servers, CLI tools, and CI/CD
+- Short-lived tokens (2 hours) for better security
+
+See [`examples/client_credentials_flow.rs`](examples/client_credentials_flow.rs) for a complete example.
 
 ## Examples
 
 See the [`examples/`](examples/) directory for complete examples:
 
-- [`query_features.rs`](examples/query_features.rs) - Basic feature querying
-- [`spatial_query.rs`](examples/spatial_query.rs) - Spatial relationship queries
-- [`edit_features.rs`](examples/edit_features.rs) - CRUD operations (coming soon)
-- [`oauth_flow.rs`](examples/oauth_flow.rs) - OAuth authentication (coming soon)
+- [`basic_client.rs`](examples/basic_client.rs) - Basic client setup and usage
+- [`client_credentials_flow.rs`](examples/client_credentials_flow.rs) - OAuth 2.0 automated authentication
 
 Run an example:
 
 ```bash
-cargo run --example query_features
+cargo run --example client_credentials_flow
 ```
 
 ## Testing
@@ -158,49 +194,30 @@ Integration tests require ArcGIS credentials and the `api` feature flag.
 
 See [`tests/README.md`](tests/README.md) for more details.
 
-## Authentication
-
-### API Key
-
-```rust
-use arcgis::auth::ApiKeyAuth;
-
-let auth = ApiKeyAuth::new("YOUR_API_KEY");
-let client = ArcGISClient::new(auth);
-```
-
-### OAuth 2.0 (Coming Soon)
-
-```rust
-use arcgis::auth::OAuthProvider;
-
-let oauth = OAuthProvider::new(
-    "client_id",
-    "client_secret",
-    "https://your-app.com/callback"
-);
-
-// Authorization code flow
-let auth_url = oauth.authorize_url().await?;
-// ... redirect user to auth_url ...
-oauth.exchange_code(&authorization_code).await?;
-
-let client = ArcGISClient::new(oauth);
-```
-
 ## GeoRust Integration
 
-Geometries are seamlessly converted to/from `geo-types`:
+All geometries use the GeoRust ecosystem via `geo-types`. ArcGIS geometries are automatically converted when querying features:
 
 ```rust
 use geo_types::{Point, Polygon};
-use arcgis::geometry::convert;
 
-// ArcGIS JSON -> geo-types
-let point: Point = convert::from_arcgis_point(&arcgis_point)?;
+// Query features - geometries are returned as geo-types
+let features = service
+    .query(LayerId::new(0))
+    .return_geometry(true)
+    .execute()
+    .await?;
 
-// geo-types -> ArcGIS JSON
-let arcgis_polygon = convert::to_arcgis_polygon(&polygon)?;
+// Work with native geo-types
+for feature in features.features() {
+    if let Some(geometry) = feature.geometry() {
+        match geometry {
+            geo_types::Geometry::Point(pt) => println!("Point at {}, {}", pt.x(), pt.y()),
+            geo_types::Geometry::Polygon(poly) => println!("Polygon with {} points", poly.exterior().points().count()),
+            _ => {}
+        }
+    }
+}
 ```
 
 ## Design Philosophy
@@ -249,12 +266,20 @@ cargo clippy --all-targets --all-features
 
 See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the detailed roadmap.
 
-- [x] Project structure and research
-- [ ] v0.1.0: Feature Service (query only) + API Key auth
-- [ ] v0.2.0: Feature Service (full CRUD) + OAuth
-- [ ] v0.3.0: Map Service + Geocoding Service
-- [ ] v0.4.0: Geometry + Routing + Geoprocessing Services
-- [ ] v1.0.0: Production-ready with all services
+**Current Status**: End of Phase 2 (v0.2.0-ready)
+
+- [x] **Phase 1**: OAuth 2.0 Client Credentials authentication
+- [x] **Phase 2**: Feature Service query API with auto-pagination
+- [ ] **Phase 3**: Feature Service editing (add, update, delete, batch operations)
+- [ ] **Phase 4**: Additional services (Map, Geocoding, Geometry, Routing)
+- [ ] **Phase 5**: Production hardening (retry logic, caching, circuit breaker)
+
+**Version milestones:**
+- [x] v0.1.0-alpha: Authentication infrastructure
+- [ ] v0.2.0: Feature queries + OAuth (nearly complete)
+- [ ] v0.3.0: Feature editing (CRUD operations)
+- [ ] v0.4.0: Multi-service support
+- [ ] v1.0.0: Production-ready
 
 ## Documentation
 
