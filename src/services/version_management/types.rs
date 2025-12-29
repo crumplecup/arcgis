@@ -493,3 +493,186 @@ impl PartialPostRow {
         }
     }
 }
+
+/// Feature state at a specific version in a conflict.
+///
+/// Contains the feature's attributes and geometry at a particular version
+/// (branch, ancestor, or default).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct ConflictFeature {
+    /// Feature attributes as key-value pairs
+    #[serde(skip_serializing_if = "Option::is_none")]
+    attributes: Option<serde_json::Map<String, serde_json::Value>>,
+
+    /// Feature geometry
+    #[serde(skip_serializing_if = "Option::is_none")]
+    geometry: Option<serde_json::Value>,
+}
+
+/// A conflict entry for a specific feature.
+///
+/// Contains the feature state in branch, ancestor, and default versions,
+/// along with inspection status and notes.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct ConflictEntry {
+    /// Feature state in the branch version
+    #[serde(skip_serializing_if = "Option::is_none")]
+    branch_version: Option<ConflictFeature>,
+
+    /// Feature state at the common ancestor
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ancestor_version: Option<ConflictFeature>,
+
+    /// Feature state in the default version
+    #[serde(skip_serializing_if = "Option::is_none")]
+    default_version: Option<ConflictFeature>,
+
+    /// Conflict notes
+    #[serde(skip_serializing_if = "Option::is_none")]
+    note: Option<String>,
+
+    /// Whether this conflict has been inspected
+    #[serde(skip_serializing_if = "Option::is_none")]
+    is_inspected: Option<bool>,
+}
+
+/// Conflicts for a specific layer.
+///
+/// Groups conflicts by type: update-update, update-delete, and delete-update.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct LayerConflicts {
+    /// Layer ID
+    layer_id: i64,
+
+    /// Features modified in both branch and default versions
+    #[serde(skip_serializing_if = "Option::is_none")]
+    update_update_conflicts: Option<Vec<ConflictEntry>>,
+
+    /// Features updated in branch but deleted in default
+    #[serde(skip_serializing_if = "Option::is_none")]
+    update_delete_conflicts: Option<Vec<ConflictEntry>>,
+
+    /// Features deleted in branch but updated in default
+    #[serde(skip_serializing_if = "Option::is_none")]
+    delete_update_conflicts: Option<Vec<ConflictEntry>>,
+}
+
+/// Response from conflicts operation.
+///
+/// Contains all conflicts detected during the last reconcile operation,
+/// organized by layer and conflict type.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct ConflictsResponse {
+    /// Whether the operation succeeded
+    success: bool,
+
+    /// Conflicts organized by layer
+    #[serde(skip_serializing_if = "Option::is_none")]
+    conflicts: Option<Vec<LayerConflicts>>,
+
+    /// Error information if the operation failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<EditSessionError>,
+}
+
+/// Specification for inspecting a specific feature conflict.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InspectConflictFeature {
+    /// Object ID of the feature
+    pub object_id: i64,
+
+    /// Optional note about the conflict resolution
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+impl InspectConflictFeature {
+    /// Creates a new inspect conflict feature specification.
+    ///
+    /// # Arguments
+    ///
+    /// * `object_id` - The object ID of the feature
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use arcgis::InspectConflictFeature;
+    ///
+    /// let feature = InspectConflictFeature::new(123)
+    ///     .with_note("Resolved by accepting default version");
+    /// assert_eq!(feature.object_id, 123);
+    /// ```
+    pub fn new(object_id: i64) -> Self {
+        Self {
+            object_id,
+            note: None,
+        }
+    }
+
+    /// Sets a note for the conflict resolution.
+    pub fn with_note(mut self, note: impl Into<String>) -> Self {
+        self.note = Some(note.into());
+        self
+    }
+}
+
+/// Specification for inspecting conflicts in a specific layer.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InspectConflictLayer {
+    /// Layer ID
+    pub layer_id: i64,
+
+    /// Features to inspect
+    pub features: Vec<InspectConflictFeature>,
+}
+
+impl InspectConflictLayer {
+    /// Creates a new inspect conflict layer specification.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_id` - The layer ID
+    /// * `features` - Vector of features to inspect
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use arcgis::{InspectConflictLayer, InspectConflictFeature};
+    ///
+    /// let layer = InspectConflictLayer::new(0, vec![
+    ///     InspectConflictFeature::new(1),
+    ///     InspectConflictFeature::new(2),
+    /// ]);
+    /// assert_eq!(layer.layer_id, 0);
+    /// assert_eq!(layer.features.len(), 2);
+    /// ```
+    pub fn new(layer_id: i64, features: Vec<InspectConflictFeature>) -> Self {
+        Self { layer_id, features }
+    }
+}
+
+/// Response from inspect conflicts operation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
+pub struct InspectConflictsResponse {
+    /// Whether the operation succeeded
+    success: bool,
+
+    /// Error information if the operation failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<EditSessionError>,
+}
+
+/// Response from delete forward edits operation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
+pub struct DeleteForwardEditsResponse {
+    /// Whether the operation succeeded
+    success: bool,
+
+    /// Error information if the operation failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<EditSessionError>,
+}

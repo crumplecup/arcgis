@@ -71,14 +71,15 @@ pub use geometry::{
 };
 pub use services::{
     AddressCandidate, AlterResponse, AlterVersionParams, Category, ConflictDetection,
-    CreateVersionParams, CreateVersionResponse, DeleteResponse, EditError, EditOptions, EditResult,
-    EditResultItem, EditSessionError, Extent, Feature, FeatureQueryParams,
-    FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet, GeocodeAddress, GeocodeResponse,
-    GeocodeServiceClient, LocationType, PartialPostRow, PostResponse, QueryBuilder,
-    ReconcileResponse, ResponseFormat, ReverseGeocodeResponse, SessionId, StartEditingResponse,
-    StartReadingResponse, StopEditingResponse, StopReadingResponse, SuggestResponse, Suggestion,
-    VersionGuid, VersionInfo, VersionInfosResponse, VersionManagementClient, VersionPermission,
-    VersioningType,
+    ConflictEntry, ConflictFeature, ConflictsResponse, CreateVersionParams, CreateVersionResponse,
+    DeleteForwardEditsResponse, DeleteResponse, EditError, EditOptions, EditResult, EditResultItem,
+    EditSessionError, Extent, Feature, FeatureQueryParams, FeatureQueryParamsBuilder,
+    FeatureServiceClient, FeatureSet, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,
+    InspectConflictFeature, InspectConflictLayer, InspectConflictsResponse, LayerConflicts,
+    LocationType, PartialPostRow, PostResponse, QueryBuilder, ReconcileResponse, ResponseFormat,
+    ReverseGeocodeResponse, SessionId, StartEditingResponse, StartReadingResponse,
+    StopEditingResponse, StopReadingResponse, SuggestResponse, Suggestion, VersionGuid,
+    VersionInfo, VersionInfosResponse, VersionManagementClient, VersionPermission, VersioningType,
 };
 pub use types::{GeometryType, LayerId, ObjectId, SpatialRel};
 
