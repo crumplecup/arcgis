@@ -13,8 +13,9 @@ pub use geocode::{
     LocationType, ReverseGeocodeResponse, SuggestResponse, Suggestion,
 };
 pub use version_management::{
-    AlterResponse, AlterVersionParams, CreateVersionParams, CreateVersionResponse, DeleteResponse,
-    EditSessionError, SessionId, StartEditingResponse, StartReadingResponse, StopEditingResponse,
+    AlterResponse, AlterVersionParams, ConflictDetection, CreateVersionParams,
+    CreateVersionResponse, DeleteResponse, EditSessionError, PartialPostRow, PostResponse,
+    ReconcileResponse, SessionId, StartEditingResponse, StartReadingResponse, StopEditingResponse,
     StopReadingResponse, VersionGuid, VersionInfo, VersionInfosResponse, VersionManagementClient,
     VersionPermission, VersioningType,
 };

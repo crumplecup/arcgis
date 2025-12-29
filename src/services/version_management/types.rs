@@ -394,3 +394,102 @@ pub struct VersionInfosResponse {
     /// List of versions
     versions: Vec<VersionInfo>,
 }
+
+/// Conflict detection type for reconcile operations.
+///
+/// Determines how conflicts are detected when reconciling versions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum ConflictDetection {
+    /// Conflicts detected at object level (default)
+    #[default]
+    ByObject,
+    /// Conflicts detected at attribute level (more granular)
+    ByAttribute,
+}
+
+impl fmt::Display for ConflictDetection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ByObject => write!(f, "byObject"),
+            Self::ByAttribute => write!(f, "byAttribute"),
+        }
+    }
+}
+
+/// Response from reconcile operation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct ReconcileResponse {
+    /// Whether the operation succeeded
+    success: bool,
+
+    /// Whether conflicts were detected during reconcile
+    #[serde(skip_serializing_if = "Option::is_none")]
+    has_conflicts: Option<bool>,
+
+    /// Moment (timestamp) when the reconcile occurred
+    #[serde(skip_serializing_if = "Option::is_none")]
+    moment: Option<String>,
+
+    /// Whether the post operation was performed (if withPost=true)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    did_post: Option<bool>,
+
+    /// Error information if the operation failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<EditSessionError>,
+}
+
+/// Response from post operation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct PostResponse {
+    /// Whether the operation succeeded
+    success: bool,
+
+    /// Moment (timestamp) when the post occurred
+    #[serde(skip_serializing_if = "Option::is_none")]
+    moment: Option<String>,
+
+    /// Error information if the operation failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<EditSessionError>,
+}
+
+/// Specifies a subset of edits to post for partial post operations.
+///
+/// Each row identifies a layer and the specific object IDs within that layer
+/// to post to the parent version.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PartialPostRow {
+    /// The layer ID containing the objects to post
+    pub layer_id: i32,
+
+    /// The object IDs to post from this layer
+    pub object_ids: Vec<i64>,
+}
+
+impl PartialPostRow {
+    /// Creates a new partial post row specification.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_id` - The layer ID
+    /// * `object_ids` - Vector of object IDs to post
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use arcgis::PartialPostRow;
+    ///
+    /// let row = PartialPostRow::new(0, vec![1, 2, 3]);
+    /// assert_eq!(row.layer_id, 0);
+    /// assert_eq!(row.object_ids, vec![1, 2, 3]);
+    /// ```
+    pub fn new(layer_id: i32, object_ids: Vec<i64>) -> Self {
+        Self {
+            layer_id,
+            object_ids,
+        }
+    }
+}
