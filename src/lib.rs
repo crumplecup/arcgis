@@ -70,12 +70,13 @@ pub use geometry::{
     SpatialReference,
 };
 pub use services::{
-    AddressCandidate, Category, EditError, EditOptions, EditResult, EditResultItem,
+    AddressCandidate, AlterResponse, AlterVersionParams, Category, CreateVersionParams,
+    CreateVersionResponse, DeleteResponse, EditError, EditOptions, EditResult, EditResultItem,
     EditSessionError, Extent, Feature, FeatureQueryParams, FeatureQueryParamsBuilder,
     FeatureServiceClient, FeatureSet, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,
     LocationType, QueryBuilder, ResponseFormat, ReverseGeocodeResponse, SessionId,
     StartEditingResponse, StopEditingResponse, SuggestResponse, Suggestion, VersionGuid,
-    VersionInfo, VersionManagementClient, VersioningType,
+    VersionInfo, VersionInfosResponse, VersionManagementClient, VersionPermission, VersioningType,
 };
 pub use types::{GeometryType, LayerId, ObjectId, SpatialRel};
 
