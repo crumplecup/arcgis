@@ -65,6 +65,37 @@ impl From<u32> for ObjectId {
     }
 }
 
+/// Attachment ID for a feature attachment.
+///
+/// This is the unique identifier for attachments within a feature.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct AttachmentId(pub u32);
+
+impl AttachmentId {
+    /// Creates a new attachment ID.
+    pub fn new(id: u32) -> Self {
+        Self(id)
+    }
+
+    /// Returns the inner ID value.
+    pub fn get(&self) -> u32 {
+        self.0
+    }
+}
+
+impl fmt::Display for AttachmentId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<u32> for AttachmentId {
+    fn from(id: u32) -> Self {
+        Self(id)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -97,5 +128,26 @@ mod tests {
         let id: ObjectId = serde_json::from_str(json)?;
         assert_eq!(id.get(), 456);
         Ok(())
+    }
+
+    #[test]
+    fn test_attachment_id_creation() {
+        let id = AttachmentId::new(789);
+        assert_eq!(id.get(), 789);
+        assert_eq!(id.to_string(), "789");
+    }
+
+    #[test]
+    fn test_attachment_id_serialization() -> Result<()> {
+        let id = AttachmentId::new(101);
+        let json = serde_json::to_string(&id)?;
+        assert_eq!(json, "101");
+        Ok(())
+    }
+
+    #[test]
+    fn test_attachment_id_from_u32() {
+        let id: AttachmentId = 55.into();
+        assert_eq!(id.get(), 55);
     }
 }

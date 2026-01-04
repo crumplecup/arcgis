@@ -64,26 +64,29 @@ mod util;
 // Re-exports
 pub use auth::{ApiKeyAuth, AuthProvider, ClientCredentialsAuth};
 pub use client::ArcGISClient;
-pub use error::{BuilderError, Error, ErrorKind, HttpError, JsonError, UrlError};
+pub use error::{BuilderError, Error, ErrorKind, HttpError, IoError, JsonError, UrlError};
 pub use geometry::{
     ArcGISEnvelope, ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
     SpatialReference,
 };
 pub use services::{
-    AddressCandidate, AlterResponse, AlterVersionParams, Category, ConflictDetection,
-    ConflictEntry, ConflictFeature, ConflictsResponse, CreateVersionParams, CreateVersionResponse,
-    DeleteForwardEditsResponse, DeleteResponse, DifferenceFeature, DifferenceResultType,
-    DifferencesResponse, EditError, EditOptions, EditResult, EditResultItem, EditSessionError,
-    Extent, Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureServiceClient,
-    FeatureSet, GeocodeAddress, GeocodeResponse, GeocodeServiceClient, InspectConflictFeature,
+    AddAttachmentResult, AddressCandidate, AlterResponse, AlterVersionParams, AttachmentInfo,
+    AttachmentInfosResponse, AttachmentSource, Category, ConflictDetection, ConflictEntry,
+    ConflictFeature, ConflictsResponse, CreateVersionParams, CreateVersionResponse,
+    DeleteAttachmentResult, DeleteAttachmentsResponse, DeleteForwardEditsResponse, DeleteResponse,
+    DifferenceFeature, DifferenceResultType, DifferencesResponse, DownloadResult, DownloadTarget,
+    EditError, EditOptions, EditResult, EditResultItem, EditSessionError, Extent, Feature,
+    FeatureQueryParams, FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet,
+    GeocodeAddress, GeocodeResponse, GeocodeServiceClient, InspectConflictFeature,
     InspectConflictLayer, InspectConflictsResponse, LayerConflicts, LayerFeatureDifferences,
     LayerObjectIdDifferences, LocationType, PartialPostRow, PostResponse, QueryBuilder,
     ReconcileResponse, ResponseFormat, RestoreRowsLayer, RestoreRowsResponse,
     ReverseGeocodeResponse, SessionId, StartEditingResponse, StartReadingResponse,
-    StopEditingResponse, StopReadingResponse, SuggestResponse, Suggestion, VersionGuid,
-    VersionInfo, VersionInfosResponse, VersionManagementClient, VersionPermission, VersioningType,
+    StopEditingResponse, StopReadingResponse, SuggestResponse, Suggestion, UpdateAttachmentResult,
+    VersionGuid, VersionInfo, VersionInfosResponse, VersionManagementClient, VersionPermission,
+    VersioningType,
 };
-pub use types::{GeometryType, LayerId, ObjectId, SpatialRel};
+pub use types::{AttachmentId, GeometryType, LayerId, ObjectId, SpatialRel};
 
 /// Result type alias using this crate's [`Error`] type.
 pub type Result<T> = std::result::Result<T, Error>;

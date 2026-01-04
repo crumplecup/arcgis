@@ -5,8 +5,11 @@ mod geocode;
 mod version_management;
 
 pub use feature::{
-    EditError, EditOptions, EditResult, EditResultItem, Feature, FeatureQueryParams,
+    AddAttachmentResult, AttachmentInfo, AttachmentInfosResponse, AttachmentSource,
+    DeleteAttachmentResult, DeleteAttachmentsResponse, DownloadResult, DownloadTarget, EditError,
+    EditOptions, EditResult, EditResultItem, Feature, FeatureQueryParams,
     FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet, QueryBuilder, ResponseFormat,
+    UpdateAttachmentResult,
 };
 pub use geocode::{
     AddressCandidate, Category, Extent, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,

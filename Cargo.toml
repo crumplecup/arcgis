@@ -24,8 +24,11 @@ api = [] # Empty marker for tests that hit live API endpoints
 reqwest = { version = "0.12", default-features = false, features = [
   "json",
   "rustls-tls",
+  "multipart",
+  "stream",
 ] }
-tokio = { version = "1", features = ["rt", "macros"] }
+tokio = { version = "1", features = ["rt", "macros", "fs", "io-util"] }
+futures = "0.3"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -36,6 +39,9 @@ oauth2 = "5"
 
 # URL handling
 url = "2.5"
+
+# MIME type detection for attachments
+mime_guess = "2.0"
 
 # Error handling
 derive_more = { version = "2.0", features = ["display", "error", "from"] }

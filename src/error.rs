@@ -96,6 +96,38 @@ impl From<url::ParseError> for UrlError {
     }
 }
 
+/// File I/O error wrapper.
+#[derive(Debug, derive_more::Display, derive_more::Error, derive_getters::Getters)]
+#[display("I/O error: {}", source)]
+pub struct IoError {
+    /// The underlying std::io::Error.
+    source: std::io::Error,
+    /// Line number where the error occurred.
+    line: u32,
+    /// File where the error occurred.
+    file: &'static str,
+}
+
+impl IoError {
+    /// Creates a new I/O error with caller location.
+    #[track_caller]
+    pub fn new(source: std::io::Error) -> Self {
+        let loc = std::panic::Location::caller();
+        Self {
+            source,
+            line: loc.line(),
+            file: loc.file(),
+        }
+    }
+}
+
+impl From<std::io::Error> for IoError {
+    #[track_caller]
+    fn from(source: std::io::Error) -> Self {
+        Self::new(source)
+    }
+}
+
 /// Builder error wrapper for derive_builder errors.
 #[derive(Debug, derive_more::Display, derive_more::Error, derive_getters::Getters)]
 #[display("Builder error: {}", message)]
@@ -159,6 +191,11 @@ pub enum ErrorKind {
     #[from]
     Url(UrlError),
 
+    /// File I/O error.
+    #[display("{}", _0)]
+    #[from]
+    Io(IoError),
+
     /// Builder error from derive_builder.
     #[display("{}", _0)]
     #[from]
@@ -211,6 +248,7 @@ macro_rules! bridge_error {
 bridge_error!(reqwest::Error => HttpError);
 bridge_error!(serde_json::Error => JsonError);
 bridge_error!(url::ParseError => UrlError);
+bridge_error!(std::io::Error => IoError);
 
 /// The main error type for the ArcGIS SDK.
 ///
@@ -226,6 +264,7 @@ impl std::error::Error for Error {
             ErrorKind::Http(e) => Some(e.source()),
             ErrorKind::Json(e) => Some(e.source()),
             ErrorKind::Url(e) => Some(e.source()),
+            ErrorKind::Io(e) => Some(e.source()),
             _ => None,
         }
     }
@@ -282,4 +321,5 @@ impl From<ErrorKind> for Error {
 error_from!(reqwest::Error);
 error_from!(serde_json::Error);
 error_from!(url::ParseError);
+error_from!(std::io::Error);
 error_from!(BuilderError);
