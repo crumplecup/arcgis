@@ -3,7 +3,7 @@
 ## Current Status (Updated: 2026-01-04)
 
 **Branch**: `dev`
-**Latest Version**: v0.3.0-ready (Map Service complete)
+**Latest Version**: v0.3.0-ready (Statistics Queries complete, Related Records pending)
 
 **✅ Completed Phases**:
 - ✅ **Phase 1**: OAuth 2.0 Client Credentials authentication (fully automated)
@@ -41,11 +41,11 @@
 - Phase 4.3: Advanced Queries - Related Records (queryRelatedRecords)
 
 **Recent Commits**:
-- `780ee4d` - fix(feature_service): add custom serializers for URL query parameters
+- `0658c2f` - feat(feature_service): implement statistics queries with GROUP BY and HAVING
+- `eec12db` - feat(map_service): implement comprehensive Map Service support with binary streaming
+- `1fb67c5` - feat(version_management): complete version management implementation
 - `818e932` - feat(feature_service): implement attachment operations with streaming support
-- `1ad49fc` - feat(version_management): implement differences and restore_rows operations
-- `7969da2` - feat(version_management): implement conflict management operations
-- `fd4985f` - feat(version_management): implement reconcile and post operations
+- `780ee4d` - fix(feature_service): add custom serializers for URL query parameters
 
 ---
 
@@ -109,7 +109,9 @@ Build a type-safe, ergonomic Rust SDK for the ArcGIS REST API that makes invalid
 - ✅ Can geocode addresses and reverse geocode coordinates
 - ✅ Can export map tiles and images
 - ✅ Can perform spatial relationship queries
-- ✅ Can query related records
+- ✅ Can perform statistical aggregate queries (count, sum, avg, min, max, stddev, var, percentiles)
+- ✅ Can use GROUP BY and HAVING clauses for advanced analytics
+- ⏸️ Can query related records (pending)
 - ✅ Async stream-based pagination
 
 ### Advanced Coverage (v0.4.0)
@@ -806,14 +808,15 @@ impl GeocodeServiceClient {
 - ✅ Autocomplete working
 - ✅ Batch geocoding efficient
 
-### Milestone 4.3: Advanced Queries (Week 12)
+### Milestone 4.3: Advanced Queries (Week 12) - ⏸️ PARTIAL
 
 **Deliverables**:
-- [ ] Spatial queries (intersects, contains, etc.)
-- [ ] Related records queries
-- [ ] Query statistics
+- ✅ Spatial queries (intersects, contains, etc.)
+- ⏸️ Related records queries (pending)
+- ✅ Query statistics (count, sum, avg, min, max, stddev, var, percentiles)
+- ✅ GROUP BY and HAVING clause support
 - [ ] Query top features
-- [ ] Spatial relationship enums
+- ✅ Spatial relationship enums (SpatialRel)
 
 **Technical Tasks**:
 ```rust
@@ -838,8 +841,10 @@ impl QueryBuilder {
 
 **Success Criteria**:
 - ✅ All spatial relationship queries working
-- ✅ Can query related records
+- ⏸️ Can query related records (pending)
 - ✅ Statistics queries returning correct aggregates
+- ✅ GROUP BY and HAVING clauses working
+- ✅ All 9 statistical operations supported
 
 **v0.4.0 Release Checklist**:
 - [ ] Map, Geocoding services fully functional
