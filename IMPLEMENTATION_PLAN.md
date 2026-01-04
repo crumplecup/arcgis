@@ -1,6 +1,6 @@
 # ArcGIS Rust SDK - Strategic Implementation Plan
 
-## Current Status (Updated: 2026-01-03)
+## Current Status (Updated: 2026-01-04)
 
 **Branch**: `dev`
 **Latest Version**: v0.3.0-ready (Version Management complete)
@@ -8,7 +8,10 @@
 **✅ Completed Phases**:
 - ✅ **Phase 1**: OAuth 2.0 Client Credentials authentication (fully automated)
 - ✅ **Phase 2**: Feature Service query API with auto-pagination
+  - ✅ Custom URL query parameter serialization (Vec<T> → comma-separated, geometry → JSON)
+  - ✅ Count-only query support with proper response handling
 - ✅ **Phase 3**: Feature Service CRUD operations (add, update, delete, batch)
+- ✅ **Phase 3**: Attachment operations (query, add, update, delete, download with streaming)
 - ✅ **Phase 3**: Edit Sessions for branch-versioned geodatabases (startEditing/stopEditing)
 - ✅ **Phase 3**: Version Management Service (complete operation suite)
   - ✅ Read sessions (startReading/stopReading)
@@ -19,16 +22,15 @@
 - ✅ **Phase 4.2**: Geocoding Service (findAddressCandidates, reverseGeocode, suggest)
 
 **🚧 In Progress**:
-- Phase 3: Attachment support
 - Phase 4.1: Map Service (export map, tiles, legends)
 - Phase 4.3: Advanced Queries (statistics, related records)
 
 **Recent Commits**:
+- `780ee4d` - fix(feature_service): add custom serializers for URL query parameters
+- `818e932` - feat(feature_service): implement attachment operations with streaming support
 - `1ad49fc` - feat(version_management): implement differences and restore_rows operations
 - `7969da2` - feat(version_management): implement conflict management operations
 - `fd4985f` - feat(version_management): implement reconcile and post operations
-- `5903442` - feat(version_management): implement read session operations
-- `6fe611b` - feat(version-mgmt): implement version lifecycle operations
 
 ---
 
@@ -319,10 +321,12 @@ pub enum GeometryType {
 **Deliverables**:
 - ✅ Feature Service metadata types
 - ✅ FeatureQueryParams with all query parameters
+- ✅ Custom serde serializers for URL query parameters (Vec<T>, geometry)
 - ✅ Basic query execution
 - ✅ WHERE clause support
 - ✅ Query builder pattern
 - ✅ Pagination support (auto-pagination with execute_all)
+- ✅ Count-only query support
 
 **Technical Tasks**:
 ```rust
@@ -344,8 +348,10 @@ impl QueryBuilder {
 **Success Criteria**:
 - ✅ Can query features with OAuth authentication
 - ✅ WHERE clauses work correctly
-- ✅ Pagination automatic and transparent
+- ✅ Pagination automatic and transparent (execute_all)
 - ✅ Can retrieve large datasets
+- ✅ Count-only queries return proper count field
+- ✅ All query parameters properly serialized to ArcGIS REST API format
 
 ### Milestone 2.3: Documentation & Testing (Week 5)
 
@@ -417,7 +423,7 @@ impl FeatureServiceClient {
 - ✅ Partial success handling
 - ✅ Edit session support (startEditing/stopEditing for branch versioning)
 - ✅ Session ID integration with edit operations
-- ⏸️ Attachment support (deferred)
+- ✅ Attachment support (query, add, update, delete, download with streaming)
 
 **Technical Tasks**:
 ```rust
@@ -440,7 +446,8 @@ pub struct ApplyEditsResult {
 - ✅ Can perform complex edits atomically
 - ✅ Partial failures properly reported
 - ✅ Rollback works as expected
-- ✅ Can upload/download attachments
+- ✅ Can query, upload, update, delete, and download attachments
+- ✅ Attachment streaming support for large files
 
 ### Milestone 3.3: Documentation & Testing (Week 8)
 
@@ -1199,6 +1206,6 @@ For constrained values:
 
 ---
 
-**Document Version**: 1.2
-**Last Updated**: January 3, 2026
+**Document Version**: 1.3
+**Last Updated**: January 4, 2026
 **Status**: Active Development (Phase 3 complete, Phase 4 in progress)
