@@ -3,7 +3,7 @@
 ## Current Status (Updated: 2026-01-04)
 
 **Branch**: `dev`
-**Latest Version**: v0.3.0-ready (Version Management complete)
+**Latest Version**: v0.3.0-ready (Map Service complete)
 
 **✅ Completed Phases**:
 - ✅ **Phase 1**: OAuth 2.0 Client Credentials authentication (fully automated)
@@ -19,10 +19,17 @@
   - ✅ Reconcile & Post workflow (reconcile, post, partial post)
   - ✅ Conflict management (conflicts, inspect_conflicts, delete_forward_edits)
   - ✅ Analysis operations (differences, restore_rows)
+- ✅ **Phase 4.1**: Map Service (export map, tiles, legends, metadata, identify)
+  - ✅ Export map with dynamic rendering (25+ parameters)
+  - ✅ Export cached tiles
+  - ✅ Legend retrieval
+  - ✅ Service metadata
+  - ✅ Feature identification
+  - ✅ Binary streaming to Path/Bytes/Writer
+  - ✅ Fluent builder API with 20+ methods
 - ✅ **Phase 4.2**: Geocoding Service (findAddressCandidates, reverseGeocode, suggest)
 
 **🚧 In Progress**:
-- Phase 4.1: Map Service (export map, tiles, legends)
 - Phase 4.3: Advanced Queries (statistics, related records)
 
 **Recent Commits**:
@@ -683,45 +690,75 @@ pub struct LayerDifferences {
 
 ## Phase 4: Multi-Service Support (v0.4.0) - Weeks 9-12
 
-### Milestone 4.1: Map Service (Weeks 9-10)
+### Milestone 4.1: Map Service (Weeks 9-10) - ✅ COMPLETE
 
 **Deliverables**:
-- [ ] Map Service metadata
-- [ ] Export Map (dynamic rendering)
-- [ ] Export Tile (cached tiles)
-- [ ] Legend support
-- [ ] Layer info retrieval
-- [ ] Image format enums (PNG, JPEG, etc.)
+- ✅ Map Service metadata (`get_metadata()`)
+- ✅ Export Map (dynamic rendering with 25+ parameters)
+- ✅ Export Tile (cached tiles via `TileCoordinate`)
+- ✅ Legend support (`get_legend()`)
+- ✅ Feature identification (`identify()`)
+- ✅ Image format enums (PNG, PNG8/24/32, JPEG, GIF, PDF, SVG, etc.)
+- ✅ Binary streaming to Path/Bytes/Writer
+- ✅ Fluent builder API (`ExportMapBuilder`)
 
-**Technical Tasks**:
+**Implementation Details**:
 ```rust
-// src/services/map/enums.rs
-#[derive(Debug, Clone, Copy, serde::Serialize)]
+// src/services/map/enums.rs (140 lines)
 pub enum ImageFormat {
-    #[serde(rename = "png")]
-    Png,
-    #[serde(rename = "png8")]
-    Png8,
-    #[serde(rename = "png24")]
-    Png24,
-    #[serde(rename = "jpg")]
-    Jpeg,
-    #[serde(rename = "gif")]
-    Gif,
+    Png, Png8, Png24, Png32, Jpg, Pdf, Bmp, Gif, Svg, Svgz, Emf, Ps
+}
+pub enum LayerOperation { Show, Hide, Include, Exclude }
+pub enum ResponseFormat { Html, Json, PJson, Image, Kmz }
+pub enum LayerSelection { Top, Visible, All }
+pub enum TimeRelation { Overlaps, After, Before }
+
+// src/services/map/types.rs (640 lines)
+pub struct ExportMapParams {
+    pub bbox: String,  // Required
+    pub size: Option<String>,
+    pub dpi: Option<i32>,
+    pub format: Option<ImageFormat>,
+    pub transparent: Option<bool>,
+    // ... 20+ more parameters
+}
+pub enum ExportTarget { Path(PathBuf), Bytes, Writer(Box<dyn AsyncWrite>) }
+pub enum ExportResult { Path(PathBuf), Bytes(Vec<u8>), Written(u64) }
+
+// src/services/map/client.rs (657 lines)
+impl MapServiceClient {
+    pub async fn export_map(&self, params: ExportMapParams, target: ExportTarget)
+        -> Result<ExportResult>
+    pub async fn export_tile(&self, coord: TileCoordinate, target: ExportTarget)
+        -> Result<ExportResult>
+    pub async fn get_legend(&self) -> Result<LegendResponse>
+    pub async fn get_metadata(&self) -> Result<MapServiceMetadata>
+    pub async fn identify(&self, params: IdentifyParams) -> Result<IdentifyResponse>
+    pub fn export(&self) -> ExportMapBuilder  // Fluent API
 }
 
-// src/services/map/client.rs
-impl MapServiceClient {
-    pub async fn export_map(&self, params: ExportMapParams) -> Result<Vec<u8>> { ... }
-    pub async fn export_tile(&self, level: u32, row: u32, col: u32) -> Result<Vec<u8>> { ... }
+// src/services/map/export.rs (361 lines)
+impl ExportMapBuilder {
+    pub fn bbox(self, bbox: impl Into<String>) -> Self
+    pub fn size(self, width: u32, height: u32) -> Self
+    pub fn format(self, format: ImageFormat) -> Self
+    pub fn transparent(self, transparent: bool) -> Self
+    pub fn dpi(self, dpi: i32) -> Self
+    pub fn layer_visibility(self, op: LayerOperation, ids: &[i32]) -> Self
+    // ... 15+ more fluent methods
+    pub async fn execute(self, target: ExportTarget) -> Result<ExportResult>
 }
 ```
 
 **Success Criteria**:
-- ✅ Can export map images
-- ✅ Can retrieve cached tiles
-- ✅ Image formats properly handled
-- ✅ Can retrieve legend graphics
+- ✅ Can export map images with full parameter control
+- ✅ Can retrieve cached tiles efficiently
+- ✅ All 12 image formats properly handled
+- ✅ Can retrieve legend graphics for all layers
+- ✅ Binary streaming working for all target types
+- ✅ Fluent builder provides ergonomic API
+- ✅ All validation passing (clippy, fmt, tests, doctests)
+- ✅ Comprehensive documentation with examples
 
 ### Milestone 4.2: Geocoding Service (Week 11)
 

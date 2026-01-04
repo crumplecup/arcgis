@@ -2,6 +2,7 @@
 
 mod feature;
 mod geocode;
+mod map;
 mod version_management;
 
 pub use feature::{
@@ -14,6 +15,13 @@ pub use feature::{
 pub use geocode::{
     AddressCandidate, Category, Extent, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,
     LocationType, ReverseGeocodeResponse, SuggestResponse, Suggestion,
+};
+pub use map::{
+    ExportExtent, ExportMapBuilder, ExportMapParams, ExportMapParamsBuilder, ExportMapResponse,
+    ExportResult, ExportTarget, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse,
+    IdentifyResult, ImageFormat, LayerLegend, LayerOperation, LayerSelection, LegendResponse,
+    LegendSymbol, LevelOfDetail, MapServiceClient, MapServiceMetadata, ServiceLayer,
+    SpatialReference, TileCoordinate, TileInfo, TimeRelation,
 };
 pub use version_management::{
     AlterResponse, AlterVersionParams, ConflictDetection, ConflictEntry, ConflictFeature,

@@ -67,7 +67,6 @@ pub use client::ArcGISClient;
 pub use error::{BuilderError, Error, ErrorKind, HttpError, IoError, JsonError, UrlError};
 pub use geometry::{
     ArcGISEnvelope, ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
-    SpatialReference,
 };
 pub use services::{
     AddAttachmentResult, AddressCandidate, AlterResponse, AlterVersionParams, AttachmentInfo,
@@ -75,16 +74,20 @@ pub use services::{
     ConflictFeature, ConflictsResponse, CreateVersionParams, CreateVersionResponse,
     DeleteAttachmentResult, DeleteAttachmentsResponse, DeleteForwardEditsResponse, DeleteResponse,
     DifferenceFeature, DifferenceResultType, DifferencesResponse, DownloadResult, DownloadTarget,
-    EditError, EditOptions, EditResult, EditResultItem, EditSessionError, Extent, Feature,
-    FeatureQueryParams, FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet,
-    GeocodeAddress, GeocodeResponse, GeocodeServiceClient, InspectConflictFeature,
-    InspectConflictLayer, InspectConflictsResponse, LayerConflicts, LayerFeatureDifferences,
-    LayerObjectIdDifferences, LocationType, PartialPostRow, PostResponse, QueryBuilder,
-    ReconcileResponse, ResponseFormat, RestoreRowsLayer, RestoreRowsResponse,
-    ReverseGeocodeResponse, SessionId, StartEditingResponse, StartReadingResponse,
-    StopEditingResponse, StopReadingResponse, SuggestResponse, Suggestion, UpdateAttachmentResult,
-    VersionGuid, VersionInfo, VersionInfosResponse, VersionManagementClient, VersionPermission,
-    VersioningType,
+    EditError, EditOptions, EditResult, EditResultItem, EditSessionError, ExportExtent,
+    ExportMapBuilder, ExportMapParams, ExportMapParamsBuilder, ExportMapResponse, ExportResult,
+    ExportTarget, Extent, Feature, FeatureQueryParams, FeatureQueryParamsBuilder,
+    FeatureServiceClient, FeatureSet, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,
+    IdentifyParams, IdentifyParamsBuilder, IdentifyResponse, IdentifyResult, ImageFormat,
+    InspectConflictFeature, InspectConflictLayer, InspectConflictsResponse, LayerConflicts,
+    LayerFeatureDifferences, LayerLegend, LayerObjectIdDifferences, LayerOperation, LayerSelection,
+    LegendResponse, LegendSymbol, LevelOfDetail, LocationType, MapServiceClient,
+    MapServiceMetadata, PartialPostRow, PostResponse, QueryBuilder, ReconcileResponse,
+    ResponseFormat, RestoreRowsLayer, RestoreRowsResponse, ReverseGeocodeResponse, ServiceLayer,
+    SessionId, SpatialReference, StartEditingResponse, StartReadingResponse, StopEditingResponse,
+    StopReadingResponse, SuggestResponse, Suggestion, TileCoordinate, TileInfo, TimeRelation,
+    UpdateAttachmentResult, VersionGuid, VersionInfo, VersionInfosResponse,
+    VersionManagementClient, VersionPermission, VersioningType,
 };
 pub use types::{AttachmentId, GeometryType, LayerId, ObjectId, SpatialRel};
 
