@@ -352,6 +352,7 @@ impl<'a> QueryBuilder<'a> {
         Ok(FeatureSet {
             geometry_type,
             features: all_features,
+            count: None,
             exceeded_transfer_limit: false,
         })
     }

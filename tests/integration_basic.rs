@@ -116,16 +116,28 @@ async fn test_feature_query_count_only() -> Result<()> {
     common::rate_limit().await;
 
     // Query for count of all features using the fluent API
-    let _result = feature_service
+    let result = feature_service
         .query(LayerId::new(0))
         .where_clause("1=1")
         .count_only(true)
         .execute()
         .await?;
 
-    // When count_only is true, the query should succeed
-    // The features array may or may not be empty depending on the API response format
-    // The important thing is that the query didn't fail
+    // When count_only is true, the response should include a count
+    assert!(
+        result.count.is_some(),
+        "Count-only query should return a count"
+    );
+    assert!(
+        result.count.unwrap() > 0,
+        "Should have at least some features in the dataset"
+    );
+
+    // Features array should be empty for count-only queries
+    assert!(
+        result.features.is_empty(),
+        "Count-only query should not return features"
+    );
     Ok(())
 }
 

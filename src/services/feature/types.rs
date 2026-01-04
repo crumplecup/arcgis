@@ -4,6 +4,59 @@ use crate::{ArcGISGeometry, GeometryType, ObjectId, SpatialRel};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Serialization helpers for URL query parameters.
+mod serde_helpers {
+    use serde::Serializer;
+
+    /// Serializes a Vec<String> as a comma-separated string for URL query parameters.
+    pub fn serialize_string_vec<S>(
+        vec: &Option<Vec<String>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match vec {
+            Some(v) => serializer.serialize_str(&v.join(",")),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    /// Serializes a Vec<ObjectId> as a comma-separated string for URL query parameters.
+    pub fn serialize_object_ids<S>(
+        vec: &Option<Vec<crate::ObjectId>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match vec {
+            Some(v) => {
+                let ids: Vec<String> = v.iter().map(|id| id.to_string()).collect();
+                serializer.serialize_str(&ids.join(","))
+            }
+            None => serializer.serialize_none(),
+        }
+    }
+
+    /// Serializes geometry as a JSON string for URL query parameters.
+    pub fn serialize_geometry<S>(
+        geom: &Option<crate::ArcGISGeometry>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match geom {
+            Some(g) => {
+                let json = serde_json::to_string(g).map_err(serde::ser::Error::custom)?;
+                serializer.serialize_str(&json)
+            }
+            None => serializer.serialize_none(),
+        }
+    }
+}
+
 /// Response format for feature service queries.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -37,7 +90,13 @@ pub struct FeatureSet {
     pub geometry_type: Option<GeometryType>,
 
     /// Array of features.
+    /// This field is optional because count-only queries don't return features.
+    #[serde(default)]
     pub features: Vec<Feature>,
+
+    /// Count of features (present when returnCountOnly=true).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub count: Option<u32>,
 
     /// Whether the result set exceeded the transfer limit.
     #[serde(rename = "exceededTransferLimit", default)]
@@ -68,7 +127,11 @@ pub struct FeatureQueryParams {
 
     /// Fields to include in the response.
     /// If None, all fields are returned.
-    #[serde(rename = "outFields", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "outFields",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serde_helpers::serialize_string_vec"
+    )]
     pub out_fields: Option<Vec<String>>,
 
     /// Whether to return geometry with features.
@@ -82,7 +145,10 @@ pub struct FeatureQueryParams {
     pub format: ResponseFormat,
 
     /// Geometry to use for spatial filter.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serde_helpers::serialize_geometry"
+    )]
     pub geometry: Option<ArcGISGeometry>,
 
     /// Geometry type of the geometry parameter.
@@ -102,7 +168,11 @@ pub struct FeatureQueryParams {
     pub result_offset: Option<u32>,
 
     /// Object IDs to query.
-    #[serde(rename = "objectIds", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "objectIds",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serde_helpers::serialize_object_ids"
+    )]
     pub object_ids: Option<Vec<ObjectId>>,
 
     /// Whether to return distinct values only.
@@ -121,13 +191,18 @@ pub struct FeatureQueryParams {
     pub return_count_only: Option<bool>,
 
     /// ORDER BY clause.
-    #[serde(rename = "orderByFields", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "orderByFields",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serde_helpers::serialize_string_vec"
+    )]
     pub order_by_fields: Option<Vec<String>>,
 
     /// GROUP BY clause.
     #[serde(
         rename = "groupByFieldsForStatistics",
-        skip_serializing_if = "Option::is_none"
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serde_helpers::serialize_string_vec"
     )]
     pub group_by_fields: Option<Vec<String>>,
 

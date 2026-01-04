@@ -40,10 +40,7 @@ fn test_attachment_source_from_bytes_with_type() {
     {
         assert_eq!(filename, "test.bin");
         assert_eq!(data, vec![1, 2, 3]);
-        assert_eq!(
-            content_type,
-            Some("application/octet-stream".to_string())
-        );
+        assert_eq!(content_type, Some("application/octet-stream".to_string()));
     } else {
         panic!("Expected Bytes variant");
     }
