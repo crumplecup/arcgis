@@ -214,8 +214,77 @@ impl<'a> QueryBuilder<'a> {
     }
 
     /// Sets the GROUP BY clause for statistics.
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId, StatisticDefinition, StatisticType};
+    /// # async fn example(service: &FeatureServiceClient<'_>) -> arcgis::Result<()> {
+    /// let stats = service
+    ///     .query(LayerId::new(0))
+    ///     .statistics(vec![
+    ///         StatisticDefinition::new(StatisticType::Avg, "POPULATION".to_string(), "avg_pop".to_string())
+    ///     ])
+    ///     .group_by(&["STATE"])
+    ///     .execute()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn group_by(mut self, fields: &[&str]) -> Self {
         self.params.group_by_fields = Some(fields.iter().map(|s| s.to_string()).collect());
+        self
+    }
+
+    /// Sets statistics to calculate (aggregate query).
+    ///
+    /// When using statistics, the query can only include these additional parameters:
+    /// `group_by`, `order_by`, `where_clause`, `time`, and `return_distinct_values`.
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId, StatisticDefinition, StatisticType};
+    /// # async fn example(service: &FeatureServiceClient<'_>) -> arcgis::Result<()> {
+    /// let stats = service
+    ///     .query(LayerId::new(0))
+    ///     .statistics(vec![
+    ///         StatisticDefinition::new(StatisticType::Count, "OBJECTID".to_string(), "total_count".to_string()),
+    ///         StatisticDefinition::new(StatisticType::Sum, "POPULATION".to_string(), "total_population".to_string()),
+    ///         StatisticDefinition::new(StatisticType::Avg, "AREA".to_string(), "avg_area".to_string()),
+    ///     ])
+    ///     .group_by(&["STATE"])
+    ///     .execute()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn statistics(mut self, stats: Vec<crate::StatisticDefinition>) -> Self {
+        self.params.out_statistics = Some(stats);
+        self
+    }
+
+    /// Sets the HAVING clause for filtering aggregated results.
+    ///
+    /// Only valid when `statistics()` has been called. The HAVING clause filters
+    /// the results after aggregation, similar to SQL's HAVING.
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId, StatisticDefinition, StatisticType};
+    /// # async fn example(service: &FeatureServiceClient<'_>) -> arcgis::Result<()> {
+    /// let stats = service
+    ///     .query(LayerId::new(0))
+    ///     .statistics(vec![
+    ///         StatisticDefinition::new(StatisticType::Count, "OBJECTID".to_string(), "count".to_string())
+    ///     ])
+    ///     .group_by(&["STATE"])
+    ///     .having("count > 1000")
+    ///     .execute()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn having(mut self, clause: impl Into<String>) -> Self {
+        self.params.having = Some(clause.into());
         self
     }
 

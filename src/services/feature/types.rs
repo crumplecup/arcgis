@@ -206,6 +206,20 @@ pub struct FeatureQueryParams {
     )]
     pub group_by_fields: Option<Vec<String>>,
 
+    /// Statistics to calculate (aggregate queries).
+    ///
+    /// When specified, only these query parameters can be used:
+    /// groupByFieldsForStatistics, orderByFields, time, returnDistinctValues, where.
+    #[serde(rename = "outStatistics", skip_serializing_if = "Option::is_none")]
+    pub out_statistics: Option<Vec<StatisticDefinition>>,
+
+    /// HAVING clause for filtering aggregated results.
+    ///
+    /// Only valid when `out_statistics` is specified.
+    /// Example: `"COUNT(*) > 1000"` or `"SUM(AREA) > 5000"`
+    #[serde(rename = "having", skip_serializing_if = "Option::is_none")]
+    pub having: Option<String>,
+
     /// Output spatial reference WKID.
     #[serde(rename = "outSR", skip_serializing_if = "Option::is_none")]
     pub out_sr: Option<i32>,
@@ -229,6 +243,8 @@ impl Default for FeatureQueryParams {
             return_count_only: None,
             order_by_fields: None,
             group_by_fields: None,
+            out_statistics: None,
+            having: None,
             out_sr: None,
         }
     }
@@ -239,4 +255,72 @@ impl FeatureQueryParams {
     pub fn builder() -> FeatureQueryParamsBuilder {
         FeatureQueryParamsBuilder::default()
     }
+}
+
+/// Statistical operation type for aggregate queries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum StatisticType {
+    /// Count of records
+    Count,
+    /// Sum of field values
+    Sum,
+    /// Minimum value
+    Min,
+    /// Maximum value
+    Max,
+    /// Average (mean) value
+    Avg,
+    /// Standard deviation
+    Stddev,
+    /// Variance
+    Var,
+    /// Continuous percentile
+    #[serde(rename = "PERCENTILE_CONT")]
+    PercentileCont,
+    /// Discrete percentile
+    #[serde(rename = "PERCENTILE_DISC")]
+    PercentileDisc,
+}
+
+/// Defines a field-based statistic to calculate.
+///
+/// Used with [`FeatureQueryParams::out_statistics`] to perform aggregate queries.
+///
+/// # Example
+///
+/// ```
+/// use arcgis::{StatisticDefinition, StatisticType};
+///
+/// let stat = StatisticDefinition::new(
+///     StatisticType::Avg,
+///     "POPULATION".to_string(),
+///     "avg_population".to_string()
+/// );
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, derive_new::new)]
+#[serde(rename_all = "camelCase")]
+pub struct StatisticDefinition {
+    /// The type of statistic to calculate.
+    pub statistic_type: StatisticType,
+
+    /// The field name to calculate statistics on.
+    pub on_statistic_field: String,
+
+    /// The output field name for the result.
+    pub out_statistic_field_name: String,
+}
+
+/// Response from a feature statistics query.
+///
+/// Contains aggregate results when querying with `outStatistics`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct FeatureStatisticsResponse {
+    /// The features containing statistical results.
+    features: Vec<Feature>,
+
+    /// Field aliases mapping output field names to descriptions.
+    #[serde(default)]
+    field_aliases: HashMap<String, String>,
 }

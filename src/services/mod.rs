@@ -9,8 +9,8 @@ pub use feature::{
     AddAttachmentResult, AttachmentInfo, AttachmentInfosResponse, AttachmentSource,
     DeleteAttachmentResult, DeleteAttachmentsResponse, DownloadResult, DownloadTarget, EditError,
     EditOptions, EditResult, EditResultItem, Feature, FeatureQueryParams,
-    FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet, QueryBuilder, ResponseFormat,
-    UpdateAttachmentResult,
+    FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet, FeatureStatisticsResponse,
+    QueryBuilder, ResponseFormat, StatisticDefinition, StatisticType, UpdateAttachmentResult,
 };
 pub use geocode::{
     AddressCandidate, Category, Extent, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,

@@ -28,9 +28,17 @@
   - ✅ Binary streaming to Path/Bytes/Writer
   - ✅ Fluent builder API with 20+ methods
 - ✅ **Phase 4.2**: Geocoding Service (findAddressCandidates, reverseGeocode, suggest)
+- ✅ **Phase 4.3**: Advanced Queries - Statistics (partial)
+  - ✅ Statistics types (StatisticType enum with 9 variants)
+  - ✅ StatisticDefinition for aggregate queries
+  - ✅ QueryBuilder methods (.statistics(), .having())
+  - ✅ Support for: count, sum, avg, min, max, stddev, var, percentile_cont, percentile_disc
+  - ✅ GROUP BY and HAVING clause support
+  - ✅ 8 integration tests for statistics queries
+  - ⏸️ Related records (queryRelatedRecords endpoint) - pending
 
 **🚧 In Progress**:
-- Phase 4.3: Advanced Queries (statistics, related records)
+- Phase 4.3: Advanced Queries - Related Records (queryRelatedRecords)
 
 **Recent Commits**:
 - `780ee4d` - fix(feature_service): add custom serializers for URL query parameters
