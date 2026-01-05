@@ -19,5 +19,6 @@ pub use edit::{EditError, EditOptions, EditResult, EditResultItem};
 pub use query::QueryBuilder;
 pub use types::{
     Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureSet, FeatureStatisticsResponse,
-    ResponseFormat, StatisticDefinition, StatisticType,
+    RelatedRecordGroup, RelatedRecordsParams, RelatedRecordsParamsBuilder,
+    RelatedRecordsResponse, ResponseFormat, StatisticDefinition, StatisticType,
 };

@@ -3,7 +3,7 @@
 ## Current Status (Updated: 2026-01-04)
 
 **Branch**: `dev`
-**Latest Version**: v0.3.0-ready (Statistics Queries complete, Related Records pending)
+**Latest Version**: v0.3.0-ready (Phase 4.3 complete: Statistics and Related Records)
 
 **✅ Completed Phases**:
 - ✅ **Phase 1**: OAuth 2.0 Client Credentials authentication (fully automated)
@@ -28,24 +28,28 @@
   - ✅ Binary streaming to Path/Bytes/Writer
   - ✅ Fluent builder API with 20+ methods
 - ✅ **Phase 4.2**: Geocoding Service (findAddressCandidates, reverseGeocode, suggest)
-- ✅ **Phase 4.3**: Advanced Queries - Statistics (partial)
+- ✅ **Phase 4.3**: Advanced Queries - Statistics and Related Records (complete)
   - ✅ Statistics types (StatisticType enum with 9 variants)
   - ✅ StatisticDefinition for aggregate queries
   - ✅ QueryBuilder methods (.statistics(), .having())
   - ✅ Support for: count, sum, avg, min, max, stddev, var, percentile_cont, percentile_disc
   - ✅ GROUP BY and HAVING clause support
   - ✅ 8 integration tests for statistics queries
-  - ⏸️ Related records (queryRelatedRecords endpoint) - pending
+  - ✅ Related records (queryRelatedRecords endpoint)
+  - ✅ RelatedRecordsParams with 18 fields (builder pattern)
+  - ✅ RelatedRecordGroup and RelatedRecordsResponse types
+  - ✅ Full support for pagination, ordering, filtering, geometry options
+  - ✅ 10 integration tests for related records queries
 
 **🚧 In Progress**:
-- Phase 4.3: Advanced Queries - Related Records (queryRelatedRecords)
+- None (Phase 4.3 complete)
 
 **Recent Commits**:
+- (pending) - feat(feature_service): implement related records queries with comprehensive parameter support
 - `0658c2f` - feat(feature_service): implement statistics queries with GROUP BY and HAVING
 - `eec12db` - feat(map_service): implement comprehensive Map Service support with binary streaming
 - `1fb67c5` - feat(version_management): complete version management implementation
 - `818e932` - feat(feature_service): implement attachment operations with streaming support
-- `780ee4d` - fix(feature_service): add custom serializers for URL query parameters
 
 ---
 
@@ -111,7 +115,7 @@ Build a type-safe, ergonomic Rust SDK for the ArcGIS REST API that makes invalid
 - ✅ Can perform spatial relationship queries
 - ✅ Can perform statistical aggregate queries (count, sum, avg, min, max, stddev, var, percentiles)
 - ✅ Can use GROUP BY and HAVING clauses for advanced analytics
-- ⏸️ Can query related records (pending)
+- ✅ Can query related records through relationship classes
 - ✅ Async stream-based pagination
 
 ### Advanced Coverage (v0.4.0)

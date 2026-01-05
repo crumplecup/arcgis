@@ -176,6 +176,96 @@ impl<'a> FeatureServiceClient<'a> {
         Ok(feature_set)
     }
 
+    /// Queries related records for specified object IDs.
+    ///
+    /// This method retrieves records from related tables/layers based on relationship classes.
+    /// Results are grouped by source object ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_id` - The layer to query from
+    /// * `params` - Related records query parameters
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, FeatureServiceClient, LayerId, ObjectId, RelatedRecordsParams};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = FeatureServiceClient::new(
+    ///     "https://services.arcgis.com/org/arcgis/rest/services/Dataset/FeatureServer",
+    ///     &client,
+    /// );
+    ///
+    /// let params = RelatedRecordsParams::builder()
+    ///     .object_ids(vec![ObjectId::new(1), ObjectId::new(2)])
+    ///     .relationship_id(3u32)
+    ///     .out_fields(vec!["NAME".to_string(), "STATUS".to_string()])
+    ///     .build()
+    ///     .expect("Valid params");
+    ///
+    /// let response = service.query_related_records(LayerId::new(0), params).await?;
+    /// for group in response.related_record_groups() {
+    ///     println!("Object {}: {} related records",
+    ///         group.object_id(),
+    ///         group.related_records().len());
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, params), fields(layer_id = %layer_id, base_url = %self.base_url))]
+    pub async fn query_related_records(
+        &self,
+        layer_id: LayerId,
+        params: crate::RelatedRecordsParams,
+    ) -> Result<crate::RelatedRecordsResponse> {
+        tracing::debug!("Querying related records");
+
+        // Construct the URL
+        let url = format!("{}/{}/queryRelatedRecords", self.base_url, layer_id);
+
+        // Get authentication token
+        let token = self.client.auth().get_token().await?;
+
+        tracing::debug!(url = %url, "Sending query related records request");
+
+        // Build request with query parameters and token
+        let response = self
+            .client
+            .http()
+            .get(&url)
+            .query(&params)
+            .query(&[("token", token)])
+            .send()
+            .await?;
+
+        // Check for HTTP errors
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error response: {}", e));
+            tracing::error!(status = %status, error = %error_text, "Query related records request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        // Parse the response
+        let result: crate::RelatedRecordsResponse = response.json().await?;
+
+        tracing::debug!(
+            groups_count = result.related_record_groups().len(),
+            "Query related records completed successfully"
+        );
+
+        Ok(result)
+    }
+
     /// Adds new features to a layer.
     ///
     /// # Arguments

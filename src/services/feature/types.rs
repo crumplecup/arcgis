@@ -324,3 +324,167 @@ pub struct FeatureStatisticsResponse {
     #[serde(default)]
     field_aliases: HashMap<String, String>,
 }
+
+/// Parameters for querying related records.
+///
+/// Use [`RelatedRecordsParams::builder()`] to construct instances.
+///
+/// # Example
+///
+/// ```
+/// use arcgis::{RelatedRecordsParams, ObjectId};
+///
+/// let params = RelatedRecordsParams::builder()
+///     .object_ids(vec![ObjectId::new(1), ObjectId::new(2)])
+///     .relationship_id(3u32)
+///     .out_fields(vec!["NAME".to_string(), "STATUS".to_string()])
+///     .build()
+///     .expect("Valid params");
+/// ```
+#[derive(Debug, Clone, Serialize, derive_builder::Builder)]
+#[builder(setter(into, strip_option), default)]
+pub struct RelatedRecordsParams {
+    /// Object IDs of features to query related records for (REQUIRED).
+    #[serde(
+        rename = "objectIds",
+        serialize_with = "serde_helpers::serialize_object_ids"
+    )]
+    pub object_ids: Option<Vec<ObjectId>>,
+
+    /// ID of the relationship to query (REQUIRED).
+    #[serde(rename = "relationshipId")]
+    pub relationship_id: Option<u32>,
+
+    /// Fields to include in the response.
+    #[serde(
+        rename = "outFields",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serde_helpers::serialize_string_vec"
+    )]
+    pub out_fields: Option<Vec<String>>,
+
+    /// WHERE clause to filter related records.
+    #[serde(rename = "definitionExpression", skip_serializing_if = "Option::is_none")]
+    pub definition_expression: Option<String>,
+
+    /// Whether to return geometry with features.
+    #[serde(rename = "returnGeometry", skip_serializing_if = "Option::is_none")]
+    pub return_geometry: Option<bool>,
+
+    /// Output spatial reference WKID.
+    #[serde(rename = "outSR", skip_serializing_if = "Option::is_none")]
+    pub out_sr: Option<i32>,
+
+    /// Maximum offset for geometry generalization.
+    #[serde(rename = "maxAllowableOffset", skip_serializing_if = "Option::is_none")]
+    pub max_allowable_offset: Option<f64>,
+
+    /// Decimal places for geometry coordinates.
+    #[serde(rename = "geometryPrecision", skip_serializing_if = "Option::is_none")]
+    pub geometry_precision: Option<i32>,
+
+    /// Return z-values.
+    #[serde(rename = "returnZ", skip_serializing_if = "Option::is_none")]
+    pub return_z: Option<bool>,
+
+    /// Return m-values.
+    #[serde(rename = "returnM", skip_serializing_if = "Option::is_none")]
+    pub return_m: Option<bool>,
+
+    /// Geodatabase version.
+    #[serde(rename = "gdbVersion", skip_serializing_if = "Option::is_none")]
+    pub gdb_version: Option<String>,
+
+    /// Historic moment (epoch milliseconds).
+    #[serde(rename = "historicMoment", skip_serializing_if = "Option::is_none")]
+    pub historic_moment: Option<i64>,
+
+    /// Return only counts per object ID.
+    #[serde(rename = "returnCountOnly", skip_serializing_if = "Option::is_none")]
+    pub return_count_only: Option<bool>,
+
+    /// ORDER BY clause.
+    #[serde(
+        rename = "orderByFields",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serde_helpers::serialize_string_vec"
+    )]
+    pub order_by_fields: Option<Vec<String>>,
+
+    /// Offset for pagination.
+    #[serde(rename = "resultOffset", skip_serializing_if = "Option::is_none")]
+    pub result_offset: Option<u32>,
+
+    /// Maximum number of features to return per object ID.
+    #[serde(rename = "resultRecordCount", skip_serializing_if = "Option::is_none")]
+    pub result_record_count: Option<u32>,
+
+    /// Response format.
+    #[serde(rename = "f")]
+    #[builder(default = "ResponseFormat::Json")]
+    pub format: ResponseFormat,
+}
+
+impl Default for RelatedRecordsParams {
+    fn default() -> Self {
+        Self {
+            object_ids: None,
+            relationship_id: None,
+            out_fields: None,
+            definition_expression: None,
+            return_geometry: Some(true),
+            out_sr: None,
+            max_allowable_offset: None,
+            geometry_precision: None,
+            return_z: None,
+            return_m: None,
+            gdb_version: None,
+            historic_moment: None,
+            return_count_only: None,
+            order_by_fields: None,
+            result_offset: None,
+            result_record_count: None,
+            format: ResponseFormat::Json,
+        }
+    }
+}
+
+impl RelatedRecordsParams {
+    /// Creates a builder for RelatedRecordsParams.
+    pub fn builder() -> RelatedRecordsParamsBuilder {
+        RelatedRecordsParamsBuilder::default()
+    }
+}
+
+/// A group of related records for a specific source object ID.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct RelatedRecordGroup {
+    /// The source object ID.
+    object_id: ObjectId,
+
+    /// Related records for this object ID.
+    #[serde(default)]
+    related_records: Vec<Feature>,
+}
+
+/// Response from a query related records operation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct RelatedRecordsResponse {
+    /// Groups of related records, one per source object ID.
+    #[serde(default)]
+    related_record_groups: Vec<RelatedRecordGroup>,
+
+    /// Geometry type of the related records (if applicable).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    geometry_type: Option<GeometryType>,
+
+    /// Spatial reference of the geometries.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    spatial_reference: Option<serde_json::Value>,
+
+    /// Field definitions.
+    #[serde(default)]
+    fields: Vec<serde_json::Value>,
+}

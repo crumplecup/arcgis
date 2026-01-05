@@ -140,7 +140,7 @@ fn test_query_builder_statistics_with_order_by() {
 
 #[test]
 fn test_multiple_statistics_types() {
-    let stats = vec![
+    let stats = [
         StatisticDefinition::new(
             StatisticType::Count,
             "OBJECTID".to_string(),
