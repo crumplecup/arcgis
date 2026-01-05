@@ -1,0 +1,1581 @@
+# ArcGIS Rust SDK - Full Coverage Implementation Plan
+
+**Target**: Feature-complete REST API wrapper covering 70-75% of ArcGIS REST API surface area
+
+**Timeline**: 6-8 months focused development
+
+**Last Updated**: 2026-01-04
+
+---
+
+## Executive Summary
+
+### Current State (v0.3.0-ready)
+- **4 services implemented**: Feature, Map, Geocoding, Version Management
+- **~80 operations** across these services
+- **Coverage**: ~30% of essential functionality
+- **Status**: Solid foundation, ready for production use in CRUD-heavy applications
+
+### Target State (v1.0.0)
+- **15-18 services implemented**: All core + most common specialized services
+- **~250-300 operations** across all services
+- **Coverage**: 70-75% of total API surface
+- **Status**: Feature-complete for 95% of GIS application needs
+
+### What "Full Coverage" Means
+We define "full coverage" as implementing:
+- ✅ All Tier 1 services (essential): 100%
+- ✅ All Tier 2 services (important): 100%
+- ✅ Most Tier 3 services (specialized): 70%
+- ❌ Tier 4 services (experimental/admin): 0-30%
+
+This achieves **70-75% total coverage** while providing **95% use case coverage**.
+
+---
+
+## Service Coverage Matrix
+
+| Service | Tier | Current | Target | Priority | Est. Effort |
+|---------|------|---------|--------|----------|-------------|
+| **Feature Service** | 1 | 95% | 100% | P0 | 1 week |
+| **Map Service** | 1 | 80% | 95% | P1 | 1 week |
+| **Geocoding Service** | 1 | 70% | 95% | P1 | 1 week |
+| **Version Management** | 1 | 100% | 100% | ✅ | 0 weeks |
+| **Geometry Service** | 1 | 0% | 100% | P0 | 3 weeks |
+| **Routing/Network Service** | 2 | 0% | 90% | P1 | 3 weeks |
+| **Geoprocessing Service** | 2 | 0% | 85% | P1 | 2 weeks |
+| **Image Service** | 2 | 0% | 70% | P2 | 3 weeks |
+| **Vector Tile Service** | 2 | 0% | 80% | P1 | 2 weeks |
+| **Portal/Content Service** | 2 | 0% | 75% | P2 | 4 weeks |
+| **Scene Service** | 3 | 0% | 60% | P3 | 2 weeks |
+| **Stream Service** | 3 | 0% | 50% | P3 | 3 weeks |
+| **GeoEnrichment Service** | 3 | 0% | 60% | P3 | 2 weeks |
+| **Places Service** | 3 | 0% | 70% | P3 | 1 week |
+| **Elevation Service** | 3 | 0% | 60% | P3 | 2 weeks |
+| **Utility Network Service** | 4 | 0% | 30% | P4 | 4 weeks |
+| **Knowledge Graph Service** | 4 | 0% | 0% | P5 | N/A |
+| **Printing Service** | 4 | 0% | 30% | P5 | 1 week |
+
+**Total Estimated Effort**: 34 weeks (8.5 months)
+
+---
+
+## Phase-by-Phase Implementation Plan
+
+### Phase 1: Complete Core Foundation (v0.3.1) - 2 weeks
+
+**Goal**: Fill critical gaps in Tier 1 services
+
+#### Feature Service - Remaining Operations
+- [ ] `calculateRecords` - Calculate field values
+- [ ] `applyEditsWithGlobalIds` - Edits using global IDs
+- [ ] `truncate` - Delete all features
+- [ ] `queryDomains` - Query coded value domains
+- [ ] `queryFeatureCount` - Get feature count efficiently
+- [ ] Enhanced error responses with field-level validation errors
+
+**Files to Create/Modify**:
+- `src/services/feature/client.rs` - Add new methods
+- `src/services/feature/types.rs` - Add parameter types
+- `tests/feature_advanced_operations_test.rs` - Integration tests
+
+**Success Criteria**:
+- All Feature Service REST operations covered
+- Field validation errors properly typed
+- 100% Feature Service coverage
+
+---
+
+#### Map Service - Remaining Operations
+- [ ] `find` - Find features by text search
+- [ ] `generateKml` - Generate KML output
+- [ ] `generateRenderer` - Generate classification renderer
+- [ ] `queryDomains` - Query map service domains
+- [ ] Enhanced layer definition support
+
+**Files to Create/Modify**:
+- `src/services/map/client.rs` - Add new methods
+- `src/services/map/types.rs` - KML types, renderer types
+- `tests/map_advanced_operations_test.rs` - Integration tests
+
+**Success Criteria**:
+- 95% Map Service coverage
+- KML generation working
+- Dynamic renderer generation
+
+---
+
+#### Geocoding Service - Remaining Operations
+- [ ] `geocodeAddresses` - Batch geocoding
+- [ ] `findAddressCandidatesByBatch` - Batch address matching
+- [ ] `getSuggestionsWithCategory` - Category-filtered suggestions
+- [ ] Enhanced spatial reference support
+
+**Files to Create/Modify**:
+- `src/services/geocode/client.rs` - Add batch methods
+- `src/services/geocode/types.rs` - Batch types
+- `tests/geocode_batch_test.rs` - Batch operation tests
+
+**Success Criteria**:
+- 95% Geocoding Service coverage
+- Batch operations handle 1000+ addresses
+- Efficient batch processing
+
+---
+
+### Phase 2: Geometry Service (v0.4.0) - 3 weeks
+
+**Goal**: Implement complete geometric operations service
+
+**Priority**: **P0 - CRITICAL** - Blocks most spatial analysis workflows
+
+#### Projection & Transformation (Week 1)
+- [ ] `project` - Transform geometries between spatial references
+- [ ] `projectGeographic` - Project with datum transformation
+- [ ] `findTransformations` - List available datum transformations
+- [ ] `SpatialReference` type enhancements
+  - [ ] WKID support
+  - [ ] WKT support
+  - [ ] Custom spatial reference definitions
+
+**Files to Create**:
+- `src/services/geometry/mod.rs`
+- `src/services/geometry/client.rs`
+- `src/services/geometry/types.rs`
+- `src/services/geometry/spatial_reference.rs`
+- `tests/geometry_projection_test.rs`
+
+**Success Criteria**:
+- Accurate coordinate transformations
+- Support for 100+ common spatial references
+- Datum transformation path selection
+
+---
+
+#### Geometric Operations (Week 2)
+- [ ] `buffer` - Create buffer polygons
+- [ ] `union` - Merge geometries
+- [ ] `intersect` - Find geometric intersections
+- [ ] `difference` - Compute geometric difference
+- [ ] `simplify` - Reduce geometry complexity
+- [ ] `generalize` - Generalize with Douglas-Peucker
+- [ ] `offset` - Offset curves and polygons
+- [ ] `cut` - Cut geometry with polyline
+- [ ] `reshape` - Reshape with polyline
+- [ ] `densify` - Add vertices along segments
+- [ ] `trimExtend` - Trim or extend polylines
+- [ ] `convexHull` - Compute convex hull
+
+**Files to Create**:
+- `src/services/geometry/operations.rs`
+- `tests/geometry_operations_test.rs`
+
+**Success Criteria**:
+- All geometric operations accurate
+- Proper handling of invalid geometries
+- Multi-geometry batch operations
+
+---
+
+#### Measurements & Analysis (Week 3)
+- [ ] `areasAndLengths` - Calculate areas and lengths
+- [ ] `lengths` - Calculate polyline lengths
+- [ ] `distance` - Compute distance between geometries
+- [ ] `labelPoints` - Find label points for polygons
+- [ ] `autoComplete` - Auto-complete polygon from lines
+- [ ] `relation` - Test spatial relationships (Clementini model)
+
+**Files to Create**:
+- `src/services/geometry/measurements.rs`
+- `tests/geometry_measurements_test.rs`
+
+**Success Criteria**:
+- Accurate measurements in various units
+- Proper geodesic vs planar calculations
+- Label point placement follows cartographic rules
+
+---
+
+#### Integration
+- [ ] Add `GeometryServiceClient` to main exports
+- [ ] Update `ArcGISClient` to construct geometry client
+- [ ] Comprehensive documentation with geometric examples
+- [ ] Performance benchmarks for common operations
+
+**Module Structure**:
+```
+src/services/geometry/
+├── mod.rs              # Exports and module doc
+├── client.rs           # GeometryServiceClient
+├── types.rs            # Request/response types
+├── spatial_reference.rs # SR definitions
+├── operations.rs       # Geometric operations
+└── measurements.rs     # Measurement operations
+```
+
+---
+
+### Phase 3: Routing & Network Analysis (v0.5.0) - 3 weeks
+
+**Goal**: Implement routing and network analysis capabilities
+
+**Priority**: **P1 - HIGH** - Common use case for location-based apps
+
+#### Route Service (Week 1)
+- [ ] `solve` - Calculate optimal routes
+- [ ] `solveRoute` - Route between stops
+- [ ] `Route` parameter types
+  - [ ] `stops` - Stop locations
+  - [ ] `barriers` - Point, line, polygon barriers
+  - [ ] `returnDirections` - Direction narrative
+  - [ ] `returnRoutes` - Route geometry
+  - [ ] `returnStops` - Stop details
+  - [ ] `outSR` - Output spatial reference
+  - [ ] `impedanceAttribute` - Cost attribute
+  - [ ] `restrictionAttributes` - Restrictions
+  - [ ] `attributeParameterValues` - Dynamic values
+  - [ ] `useHierarchy` - Use road hierarchy
+  - [ ] `timeOfDay` - Traffic-aware routing
+- [ ] `RouteResult` types
+  - [ ] Routes with geometry
+  - [ ] Turn-by-turn directions
+  - [ ] Stop details
+  - [ ] Barriers used
+  - [ ] Messages and warnings
+
+**Files to Create**:
+- `src/services/routing/mod.rs`
+- `src/services/routing/client.rs`
+- `src/services/routing/types.rs`
+- `src/services/routing/route.rs`
+- `tests/routing_route_test.rs`
+
+**Success Criteria**:
+- Calculate multi-stop routes
+- Turn-by-turn directions
+- Traffic-aware routing
+- Custom restrictions (truck routing)
+
+---
+
+#### Service Area (Week 2)
+- [ ] `solveServiceArea` - Compute service/drive time areas
+- [ ] `ServiceAreaParameters`
+  - [ ] `facilities` - Starting points
+  - [ ] `barriers` - Restrictions
+  - [ ] `defaultBreaks` - Time/distance breaks
+  - [ ] `travelDirection` - From/to facility
+  - [ ] `mergeSimilarPolygons` - Combine areas
+  - [ ] `overlapLines` / `overlapPolygons` - Overlap behavior
+  - [ ] `splitPolygonsAtBreaks` - Generate rings
+  - [ ] `trimOuterPolygon` - Trim to extent
+  - [ ] `timeOfDay` - Traffic consideration
+- [ ] `ServiceAreaResult`
+  - [ ] Service area polygons
+  - [ ] Service area lines (network edges)
+  - [ ] Facility details
+  - [ ] Messages
+
+**Files to Create**:
+- `src/services/routing/service_area.rs`
+- `tests/routing_service_area_test.rs`
+
+**Success Criteria**:
+- Drive time polygon generation
+- Multiple break values (5min, 10min, 15min)
+- Network-constrained areas
+- Overlap handling
+
+---
+
+#### Closest Facility & OD Cost Matrix (Week 3)
+- [ ] `solveClosestFacility` - Find nearest facilities
+- [ ] `ClosestFacilityParameters`
+  - [ ] `incidents` - Locations to analyze
+  - [ ] `facilities` - Candidate facilities
+  - [ ] `barriers` - Restrictions
+  - [ ] `defaultTargetFacilityCount` - Number to find
+  - [ ] `travelDirection` - Incident to facility or reverse
+  - [ ] `returnDirections` - Routing directions
+  - [ ] `returnRoutes` - Route geometry
+  - [ ] `timeOfDay` - Traffic consideration
+- [ ] `ClosestFacilityResult`
+  - [ ] Routes to facilities
+  - [ ] Directions
+  - [ ] Costs
+  - [ ] Messages
+
+- [ ] `generateOriginDestinationCostMatrix` - OD matrix
+- [ ] `ODCostMatrixParameters`
+  - [ ] `origins` - Origin points
+  - [ ] `destinations` - Destination points
+  - [ ] `travelDirection` - Origin to destination
+  - [ ] `timeOfDay` - Traffic consideration
+- [ ] `ODCostMatrixResult`
+  - [ ] Cost matrix (origin-destination pairs)
+  - [ ] Messages
+
+**Files to Create**:
+- `src/services/routing/closest_facility.rs`
+- `src/services/routing/od_matrix.rs`
+- `tests/routing_closest_facility_test.rs`
+- `tests/routing_od_matrix_test.rs`
+
+**Success Criteria**:
+- Find N nearest facilities
+- Generate full OD cost matrices
+- Efficient batch processing
+
+---
+
+#### Shared Types & Utilities
+- [ ] `TravelMode` enum - Drive, Walk, Truck, etc.
+- [ ] `ImpedanceAttribute` - Time, Distance, etc.
+- [ ] `RestrictionAttribute` - One-way, height restrictions
+- [ ] `NetworkDataset` types
+- [ ] `NAMessage` - Warning/error messages
+- [ ] `BarrierType` enum - Point, Line, Polygon
+
+**Module Structure**:
+```
+src/services/routing/
+├── mod.rs              # Exports
+├── client.rs           # RoutingServiceClient (NAServer)
+├── types.rs            # Shared types
+├── route.rs            # Route operation
+├── service_area.rs     # Service area
+├── closest_facility.rs # Closest facility
+└── od_matrix.rs        # OD cost matrix
+```
+
+---
+
+### Phase 4: Geoprocessing Service (v0.5.1) - 2 weeks
+
+**Goal**: Enable execution of geoprocessing tools
+
+**Priority**: **P1 - HIGH** - Required for custom analysis workflows
+
+#### Synchronous Execution (Week 1)
+- [ ] `execute` - Run synchronous GP task
+- [ ] `GPExecuteParameters`
+  - [ ] `f` - Output format
+  - [ ] Parameter values (generic HashMap)
+  - [ ] `env:outSR` - Output spatial reference
+  - [ ] `env:processSR` - Processing spatial reference
+  - [ ] `returnZ` / `returnM` - Geometry options
+- [ ] `GPExecuteResult`
+  - [ ] Output parameters
+  - [ ] Messages
+  - [ ] Result geometry/features
+- [ ] Parameter type handling
+  - [ ] `GPString` - String values
+  - [ ] `GPLong` / `GPDouble` - Numeric values
+  - [ ] `GPBoolean` - Boolean values
+  - [ ] `GPDate` - Date/time values
+  - [ ] `GPLinearUnit` / `GPArealUnit` - Measurement units
+  - [ ] `GPFeatureRecordSetLayer` - Feature inputs
+  - [ ] `GPRasterDataLayer` - Raster inputs
+  - [ ] `GPDataFile` - File inputs
+
+**Files to Create**:
+- `src/services/geoprocessing/mod.rs`
+- `src/services/geoprocessing/client.rs`
+- `src/services/geoprocessing/types.rs`
+- `src/services/geoprocessing/parameters.rs`
+- `tests/geoprocessing_sync_test.rs`
+
+**Success Criteria**:
+- Execute simple GP tools (buffer, clip, etc.)
+- Proper parameter type conversion
+- Error handling for GP failures
+
+---
+
+#### Asynchronous Execution (Week 2)
+- [ ] `submitJob` - Submit async GP job
+- [ ] `getJobStatus` - Check job status
+- [ ] `getJobResult` - Retrieve results
+- [ ] `cancelJob` - Cancel running job
+- [ ] `getMessages` - Get job messages
+- [ ] `GPJobParameters` (extends execute params)
+- [ ] `GPJobInfo`
+  - [ ] `jobId` - Job identifier
+  - [ ] `jobStatus` - Status enum (submitted, executing, succeeded, failed)
+  - [ ] `messages` - Job messages
+- [ ] Job polling utilities
+  - [ ] `poll_until_complete()` helper
+  - [ ] Configurable polling interval
+  - [ ] Timeout handling
+
+**Files to Create**:
+- `src/services/geoprocessing/jobs.rs`
+- `src/services/geoprocessing/polling.rs`
+- `tests/geoprocessing_async_test.rs`
+
+**Success Criteria**:
+- Submit long-running GP tasks
+- Poll job status efficiently
+- Retrieve results when complete
+- Handle job failures gracefully
+
+---
+
+#### Service Metadata
+- [ ] Get GP service info (parameters, execution type)
+- [ ] Parameter schema introspection
+- [ ] Default values
+- [ ] Validation rules
+
+**Module Structure**:
+```
+src/services/geoprocessing/
+├── mod.rs          # Exports
+├── client.rs       # GeoprocessingServiceClient
+├── types.rs        # Common types
+├── parameters.rs   # GP parameter types
+├── jobs.rs         # Async job handling
+└── polling.rs      # Polling utilities
+```
+
+---
+
+### Phase 5: Protocol Buffer Support (v0.5.2) - 2 weeks
+
+**Goal**: Add PBF format support for 3-5x performance improvement
+
+**Priority**: **P1 - HIGH** - Major performance optimization
+
+#### PBF Query Support (Week 1)
+- [ ] Update `ResponseFormat` enum to include `Pbf`
+- [ ] PBF deserialization for `FeatureSet`
+- [ ] PBF geometry parsing
+  - [ ] Points
+  - [ ] Multipoints
+  - [ ] Polylines
+  - [ ] Polygons
+- [ ] Field value parsing
+- [ ] Integration with existing query methods
+  - [ ] `query()` with PBF format
+  - [ ] `query_with_params()` with PBF format
+  - [ ] Auto-detection of PBF support
+
+**Dependencies**:
+- Research `prost` vs `protobuf` crate
+- ArcGIS PBF schema definitions
+
+**Files to Modify/Create**:
+- `src/services/feature/types.rs` - Update ResponseFormat
+- `src/services/feature/pbf/mod.rs` - New module
+- `src/services/feature/pbf/decoder.rs` - PBF decoder
+- `src/services/feature/pbf/geometry.rs` - Geometry parsing
+- `tests/feature_pbf_test.rs` - PBF tests
+
+**Success Criteria**:
+- Query with `f=pbf` returns valid FeatureSets
+- Geometry correctly parsed
+- Attributes correctly decoded
+- 3-5x performance improvement vs JSON
+
+---
+
+#### Format Auto-Selection (Week 2)
+- [ ] Service capability detection
+  - [ ] Check `supportsPbf` in service metadata
+  - [ ] Fallback to JSON if unsupported
+- [ ] Builder methods for format selection
+  - [ ] `.prefer_pbf()` - Use PBF if available
+  - [ ] `.force_format(fmt)` - Explicit format
+- [ ] Benchmarking suite
+  - [ ] Compare PBF vs JSON performance
+  - [ ] Various feature counts (100, 1K, 10K, 100K)
+  - [ ] Various geometry types
+  - [ ] Publish benchmark results
+
+**Files to Create**:
+- `src/services/feature/format_selection.rs`
+- `benches/pbf_vs_json.rs`
+- `docs/performance_benchmarks.md`
+
+**Success Criteria**:
+- Automatic PBF detection and use
+- Documented performance improvements
+- Graceful fallback to JSON
+
+---
+
+### Phase 6: Vector Tile Service (v0.6.0) - 2 weeks
+
+**Goal**: Support modern vector tile basemaps
+
+**Priority**: **P1 - HIGH** - Modern web mapping standard
+
+#### Vector Tile Retrieval (Week 1)
+- [ ] `getTile` - Retrieve MVT tiles
+- [ ] `TileCoordinate` - z/x/y tile addressing
+- [ ] MVT (Mapbox Vector Tile) parsing
+  - [ ] Layer extraction
+  - [ ] Feature geometry decoding
+  - [ ] Attribute extraction
+- [ ] Tile caching support
+- [ ] Batch tile requests
+
+**Dependencies**:
+- `mvt` or `prost` for MVT parsing
+
+**Files to Create**:
+- `src/services/vector_tile/mod.rs`
+- `src/services/vector_tile/client.rs`
+- `src/services/vector_tile/types.rs`
+- `src/services/vector_tile/mvt_decoder.rs`
+- `tests/vector_tile_test.rs`
+
+**Success Criteria**:
+- Retrieve vector tiles
+- Parse MVT format
+- Extract layer features
+- Efficient tile batch requests
+
+---
+
+#### Style & Font Support (Week 2)
+- [ ] `getStyle` - Retrieve vector tile style (Mapbox GL style)
+- [ ] `getFonts` - Retrieve font glyphs
+- [ ] Style parsing (JSON)
+  - [ ] Layer definitions
+  - [ ] Paint properties
+  - [ ] Layout properties
+- [ ] Font glyph extraction
+
+**Files to Create**:
+- `src/services/vector_tile/style.rs`
+- `src/services/vector_tile/fonts.rs`
+- `tests/vector_tile_style_test.rs`
+
+**Success Criteria**:
+- Parse Mapbox GL styles
+- Retrieve font resources
+- Complete vector tile workflow
+
+**Module Structure**:
+```
+src/services/vector_tile/
+├── mod.rs          # Exports
+├── client.rs       # VectorTileServiceClient
+├── types.rs        # Tile types
+├── mvt_decoder.rs  # MVT parsing
+├── style.rs        # Style support
+└── fonts.rs        # Font support
+```
+
+---
+
+### Phase 7: Image Service (v0.6.1) - 3 weeks
+
+**Goal**: Support raster/imagery operations
+
+**Priority**: **P2 - MEDIUM** - Important for remote sensing workflows
+
+#### Image Export & Identification (Week 1)
+- [ ] `exportImage` - Export raster image
+- [ ] `ExportImageParameters`
+  - [ ] `bbox` - Bounding box
+  - [ ] `size` - Image dimensions
+  - [ ] `format` - Image format (PNG, JPEG, TIFF)
+  - [ ] `pixelType` - Data type
+  - [ ] `noData` - No data value
+  - [ ] `interpolation` - Resampling method
+  - [ ] `compressionQuality` - JPEG quality
+  - [ ] `bandIds` - Band selection
+  - [ ] `mosaicRule` - Mosaic behavior
+  - [ ] `renderingRule` - Dynamic rendering
+- [ ] `identify` - Get pixel values at location
+- [ ] `IdentifyParameters`
+  - [ ] `geometry` - Point/polygon location
+  - [ ] `mosaicRule` - Which rasters to query
+  - [ ] `renderingRule` - Apply rendering first
+- [ ] `IdentifyResult`
+  - [ ] Pixel values
+  - [ ] Raster properties
+  - [ ] Catalog items
+
+**Files to Create**:
+- `src/services/image/mod.rs`
+- `src/services/image/client.rs`
+- `src/services/image/types.rs`
+- `src/services/image/export.rs`
+- `tests/image_export_test.rs`
+
+**Success Criteria**:
+- Export raster images
+- Get pixel values at locations
+- Band selection working
+- Dynamic rendering applied
+
+---
+
+#### Sampling & Analysis (Week 2)
+- [ ] `getSamples` - Sample pixel values along line/polygon
+- [ ] `SampleParameters`
+  - [ ] `geometry` - Sample locations
+  - [ ] `geometryType` - Point, polyline, polygon
+  - [ ] `sampleCount` - Number of samples
+  - [ ] `sampleDistance` - Spacing
+  - [ ] `outFields` - Fields to return
+  - [ ] `returnGeometry` - Include sample points
+- [ ] `computeHistograms` - Calculate histograms
+- [ ] `HistogramParameters`
+  - [ ] `geometry` - Area of interest
+  - [ ] `mosaicRule` - Raster selection
+  - [ ] `renderingRule` - Pre-processing
+- [ ] `HistogramResult`
+  - [ ] Per-band histograms
+  - [ ] Statistics (min, max, mean, stddev)
+
+**Files to Create**:
+- `src/services/image/sampling.rs`
+- `src/services/image/analysis.rs`
+- `tests/image_sampling_test.rs`
+
+**Success Criteria**:
+- Sample along transects
+- Generate histograms
+- Extract statistics
+
+---
+
+#### Mensuration & Metadata (Week 3)
+- [ ] `measure` - Measure distances/areas on imagery
+- [ ] `MeasureParameters`
+  - [ ] `fromGeometry` - Start geometry
+  - [ ] `toGeometry` - End geometry (for distance)
+  - [ ] `measureOperation` - Operation type
+  - [ ] `linearUnit` / `areaUnit` - Units
+  - [ ] `angularUnit` - Angle units
+- [ ] `computeStatisticsHistograms` - Full statistics
+- [ ] `getRasterInfo` - Metadata about rasters
+- [ ] `getCatalogItems` - Query raster catalog
+- [ ] `download` - Download raster file
+
+**Files to Create**:
+- `src/services/image/mensuration.rs`
+- `src/services/image/metadata.rs`
+- `tests/image_mensuration_test.rs`
+
+**Success Criteria**:
+- Measure on imagery
+- Retrieve raster metadata
+- Query raster catalogs
+
+**Module Structure**:
+```
+src/services/image/
+├── mod.rs          # Exports
+├── client.rs       # ImageServiceClient
+├── types.rs        # Common types
+├── export.rs       # Export operations
+├── sampling.rs     # Sampling operations
+├── analysis.rs     # Analysis operations
+├── mensuration.rs  # Measurement operations
+└── metadata.rs     # Metadata operations
+```
+
+---
+
+### Phase 8: Portal & Content Management (v0.7.0) - 4 weeks
+
+**Goal**: Enable ArcGIS Online/Portal integration
+
+**Priority**: **P2 - MEDIUM** - Required for cloud workflows
+
+#### Authentication & Users (Week 1)
+- [ ] Enhanced OAuth flows
+  - [ ] Authorization code flow (browser-based)
+  - [ ] PKCE support
+  - [ ] Refresh token handling
+- [ ] Portal token exchange
+- [ ] `PortalClient` - Portal-specific client
+- [ ] `getSelf` - Get current user info
+- [ ] `UserInfo` type
+  - [ ] Username, email, full name
+  - [ ] Role, privileges
+  - [ ] Groups
+  - [ ] Storage quota
+
+**Files to Create**:
+- `src/auth/authorization_code.rs`
+- `src/auth/pkce.rs`
+- `src/services/portal/mod.rs`
+- `src/services/portal/client.rs`
+- `src/services/portal/types.rs`
+- `src/services/portal/users.rs`
+- `tests/portal_auth_test.rs`
+
+**Success Criteria**:
+- OAuth authorization code flow
+- User information retrieval
+- Token refresh
+
+---
+
+#### Content & Items (Week 2)
+- [ ] `search` - Search for items
+- [ ] `SearchParameters`
+  - [ ] `q` - Query string
+  - [ ] `bbox` - Spatial filter
+  - [ ] `categories` - Category filter
+  - [ ] `sortField` / `sortOrder` - Sorting
+  - [ ] `start` / `num` - Pagination
+- [ ] `SearchResult`
+  - [ ] Items array
+  - [ ] Total count
+  - [ ] Next start position
+- [ ] `getItem` - Get item by ID
+- [ ] `ItemInfo` type
+  - [ ] ID, title, description
+  - [ ] Type, owner
+  - [ ] URL, thumbnail
+  - [ ] Tags, categories
+  - [ ] Sharing (public, org, groups)
+  - [ ] Metadata
+- [ ] `addItem` - Create new item
+- [ ] `updateItem` - Update item metadata
+- [ ] `deleteItem` - Delete item
+- [ ] `getItemData` - Download item data
+- [ ] `updateItemData` - Upload item data
+
+**Files to Create**:
+- `src/services/portal/content.rs`
+- `src/services/portal/items.rs`
+- `tests/portal_content_test.rs`
+
+**Success Criteria**:
+- Search portal content
+- CRUD operations on items
+- Download/upload item data
+
+---
+
+#### Sharing & Groups (Week 3)
+- [ ] `shareItem` - Share item with groups/public
+- [ ] `SharingParameters`
+  - [ ] `everyone` - Make public
+  - [ ] `org` - Share with organization
+  - [ ] `groups` - Share with groups
+- [ ] `unshareItem` - Remove sharing
+- [ ] `searchGroups` - Find groups
+- [ ] `getGroup` - Get group details
+- [ ] `GroupInfo` type
+  - [ ] ID, title, description
+  - [ ] Owner, tags
+  - [ ] Access (public, org, private)
+  - [ ] Members
+- [ ] `createGroup` - Create new group
+- [ ] `updateGroup` - Update group
+- [ ] `deleteGroup` - Delete group
+- [ ] `joinGroup` / `leaveGroup` - Membership
+- [ ] `inviteToGroup` - Invite users
+- [ ] `addToGroup` / `removeFromGroup` - Manage items
+
+**Files to Create**:
+- `src/services/portal/sharing.rs`
+- `src/services/portal/groups.rs`
+- `tests/portal_sharing_test.rs`
+
+**Success Criteria**:
+- Share items with groups/public
+- Manage group membership
+- Group CRUD operations
+
+---
+
+#### Service Publishing (Week 4)
+- [ ] `publish` - Publish hosted service
+- [ ] `PublishParameters`
+  - [ ] `name` - Service name
+  - [ ] `serviceDescription` - Metadata
+  - [ ] `hasStaticData` - Static vs dynamic
+  - [ ] `maxRecordCount` - Query limits
+  - [ ] `capabilities` - Service capabilities
+  - [ ] `spatialReference` - Default SR
+- [ ] `getServiceStatus` - Check publish status
+- [ ] `updateServiceDefinition` - Modify service
+- [ ] `deleteService` - Remove hosted service
+- [ ] Hosted feature layer utilities
+  - [ ] Publish from file geodatabase
+  - [ ] Publish from shapefile
+  - [ ] Publish from GeoJSON
+  - [ ] Overwrite existing service
+
+**Files to Create**:
+- `src/services/portal/publishing.rs`
+- `tests/portal_publishing_test.rs`
+
+**Success Criteria**:
+- Publish hosted feature layers
+- Update service definitions
+- Overwrite workflows
+
+**Module Structure**:
+```
+src/services/portal/
+├── mod.rs          # Exports
+├── client.rs       # PortalClient
+├── types.rs        # Common types
+├── users.rs        # User operations
+├── content.rs      # Content search
+├── items.rs        # Item CRUD
+├── sharing.rs      # Sharing operations
+├── groups.rs       # Group management
+└── publishing.rs   # Service publishing
+```
+
+---
+
+### Phase 9: Specialized Services (v0.8.0) - 6 weeks
+
+**Goal**: Implement Tier 3 specialized services
+
+**Priority**: **P3 - MEDIUM-LOW** - For specific use cases
+
+#### Scene Service (Week 1)
+- [ ] `SceneServiceClient`
+- [ ] `getSceneInfo` - Service metadata
+- [ ] `getLayers` - Scene layers
+- [ ] `getStatistics` - Layer statistics
+- [ ] `query` - Query 3D features
+- [ ] `queryObjectIds` - Get object IDs
+- [ ] Scene layer types
+  - [ ] 3D Object
+  - [ ] Integrated Mesh
+  - [ ] Point Cloud
+  - [ ] Building Scene Layer
+
+**Files to Create**:
+- `src/services/scene/mod.rs`
+- `src/services/scene/client.rs`
+- `src/services/scene/types.rs`
+- `tests/scene_test.rs`
+
+**Success Criteria**:
+- Query 3D features
+- Retrieve scene metadata
+- Support major scene layer types
+
+---
+
+#### Stream Service (Weeks 2-3)
+- [ ] `StreamServiceClient`
+- [ ] WebSocket connection management
+- [ ] `subscribe` - Subscribe to stream
+- [ ] `unsubscribe` - Unsubscribe from stream
+- [ ] `StreamEvent` types
+  - [ ] Feature updates
+  - [ ] Deletions
+  - [ ] Attribute changes
+- [ ] Stream filters
+  - [ ] Spatial filter
+  - [ ] Attribute filter
+  - [ ] Time window
+- [ ] Async event handling
+- [ ] Reconnection logic
+
+**Files to Create**:
+- `src/services/stream/mod.rs`
+- `src/services/stream/client.rs`
+- `src/services/stream/types.rs`
+- `src/services/stream/websocket.rs`
+- `tests/stream_test.rs`
+
+**Dependencies**:
+- `tokio-tungstenite` for WebSocket
+
+**Success Criteria**:
+- Real-time feature updates
+- Reliable WebSocket connections
+- Efficient event processing
+
+---
+
+#### GeoEnrichment Service (Week 4)
+- [ ] `GeoEnrichmentClient`
+- [ ] `enrich` - Enrich locations with data
+- [ ] `EnrichParameters`
+  - [ ] `studyAreas` - Locations to enrich
+  - [ ] `dataCollections` - Data to retrieve
+  - [ ] `analysisVariables` - Specific variables
+  - [ ] `returnGeometry` - Include boundaries
+- [ ] `EnrichmentResult`
+  - [ ] Demographic data
+  - [ ] Business data
+  - [ ] Landscape data
+- [ ] Data collections catalog
+- [ ] Variable introspection
+
+**Files to Create**:
+- `src/services/geoenrichment/mod.rs`
+- `src/services/geoenrichment/client.rs`
+- `src/services/geoenrichment/types.rs`
+- `tests/geoenrichment_test.rs`
+
+**Success Criteria**:
+- Enrich points with demographics
+- Multiple data collections
+- Proper data attribution
+
+---
+
+#### Places Service (Week 5)
+- [ ] `PlacesClient`
+- [ ] `findPlacesNearPoint` - Nearby places
+- [ ] `PlaceSearchParameters`
+  - [ ] `location` - Center point
+  - [ ] `radius` - Search radius
+  - [ ] `categoryIds` - POI categories
+  - [ ] `searchText` - Text query
+  - [ ] `pageSize` - Results per page
+- [ ] `getPlaceDetails` - Detailed place info
+- [ ] `getCategories` - List POI categories
+- [ ] `PlaceInfo` type
+  - [ ] Name, address
+  - [ ] Categories
+  - [ ] Location
+  - [ ] Attributes (phone, hours, etc.)
+
+**Files to Create**:
+- `src/services/places/mod.rs`
+- `src/services/places/client.rs`
+- `src/services/places/types.rs`
+- `tests/places_test.rs`
+
+**Success Criteria**:
+- Find nearby places
+- Filter by category
+- Detailed place information
+
+---
+
+#### Elevation Service (Week 6)
+- [ ] `ElevationClient`
+- [ ] `profile` - Elevation profile along line
+- [ ] `ProfileParameters`
+  - [ ] `inputGeometry` - Line or points
+  - [ ] `profileIDField` - Grouping field
+  - [ ] `DEMResolution` - Resolution
+  - [ ] `returnFirstPoint` / `returnLastPoint` - Endpoints
+- [ ] `summarizeElevation` - Statistics within polygon
+- [ ] `SummarizeElevationParameters`
+  - [ ] `inputGeometry` - Polygon
+  - [ ] `DEMResolution` - Resolution
+  - [ ] `feature` - Input feature
+- [ ] `viewshed` - Viewshed analysis
+- [ ] `ViewshedParameters`
+  - [ ] `inputPoints` - Observer points
+  - [ ] `maximumDistance` - View distance
+  - [ ] `observerHeight` - Height above ground
+  - [ ] `DEMResolution` - Resolution
+
+**Files to Create**:
+- `src/services/elevation/mod.rs`
+- `src/services/elevation/client.rs`
+- `src/services/elevation/types.rs`
+- `tests/elevation_test.rs`
+
+**Success Criteria**:
+- Generate elevation profiles
+- Summarize elevation statistics
+- Viewshed analysis
+
+---
+
+### Phase 10: Production Hardening (v0.9.0) - 3 weeks
+
+**Goal**: Add production-grade reliability features
+
+**Priority**: **P1 - HIGH** - Required for production deployments
+
+#### Retry & Circuit Breaker (Week 1)
+- [ ] Automatic retry with exponential backoff
+- [ ] `RetryPolicy` configuration
+  - [ ] `max_retries` - Maximum attempts
+  - [ ] `initial_backoff` - Starting delay
+  - [ ] `max_backoff` - Maximum delay
+  - [ ] `backoff_multiplier` - Growth rate
+  - [ ] `retryable_status_codes` - Which codes to retry
+- [ ] Circuit breaker pattern
+- [ ] `CircuitBreakerPolicy`
+  - [ ] `failure_threshold` - Failures before opening
+  - [ ] `success_threshold` - Successes to close
+  - [ ] `timeout` - How long to stay open
+  - [ ] `half_open_max_requests` - Test requests
+- [ ] Request timeout configuration
+- [ ] Rate limit handling
+  - [ ] Detect 429 responses
+  - [ ] Respect Retry-After header
+  - [ ] Automatic backoff
+
+**Files to Create**:
+- `src/client/retry.rs`
+- `src/client/circuit_breaker.rs`
+- `src/client/timeout.rs`
+- `src/client/rate_limit.rs`
+- `tests/reliability_test.rs`
+
+**Success Criteria**:
+- Transient failures automatically retried
+- Circuit breaker prevents cascading failures
+- Rate limits respected
+- Configurable timeout policies
+
+---
+
+#### Caching Layer (Week 2)
+- [ ] Response caching
+- [ ] `CachePolicy` configuration
+  - [ ] `enabled` - Enable/disable
+  - [ ] `max_size` - Memory limit
+  - [ ] `ttl` - Time to live
+  - [ ] `cache_key_strategy` - How to generate keys
+- [ ] Cache backends
+  - [ ] In-memory (default)
+  - [ ] Redis (optional feature)
+  - [ ] File system (optional)
+- [ ] Service metadata caching
+  - [ ] Cache layer definitions
+  - [ ] Cache service capabilities
+  - [ ] Smart invalidation
+- [ ] Cache invalidation strategies
+  - [ ] TTL-based
+  - [ ] Manual invalidation
+  - [ ] Version-based
+- [ ] Cache statistics
+  - [ ] Hit/miss rates
+  - [ ] Memory usage
+  - [ ] Eviction counts
+
+**Files to Create**:
+- `src/client/cache/mod.rs`
+- `src/client/cache/memory.rs`
+- `src/client/cache/redis.rs` (feature-gated)
+- `src/client/cache/filesystem.rs` (feature-gated)
+- `src/client/cache/policy.rs`
+- `tests/cache_test.rs`
+
+**Success Criteria**:
+- Repeated queries hit cache
+- Memory usage bounded
+- Cache invalidation working
+- Redis support optional
+
+---
+
+#### Performance & Observability (Week 3)
+- [ ] Performance benchmarks
+  - [ ] Query operations
+  - [ ] Editing operations
+  - [ ] Geometric operations
+  - [ ] PBF vs JSON
+  - [ ] Caching impact
+- [ ] Tracing enhancements
+  - [ ] Distributed tracing support (OpenTelemetry)
+  - [ ] Span attributes for all operations
+  - [ ] Performance metrics
+- [ ] Metrics collection
+  - [ ] Request counts
+  - [ ] Response times
+  - [ ] Error rates
+  - [ ] Cache hit rates
+- [ ] Memory profiling
+- [ ] Connection pool optimization
+
+**Files to Create**:
+- `benches/query_benchmark.rs`
+- `benches/edit_benchmark.rs`
+- `benches/geometry_benchmark.rs`
+- `src/client/metrics.rs`
+- `src/client/tracing.rs`
+- `docs/performance_guide.md`
+
+**Success Criteria**:
+- Comprehensive benchmarks
+- OpenTelemetry integration
+- Metrics dashboard ready
+- Performance tuning guide
+
+---
+
+### Phase 11: Documentation & Examples (v1.0.0-rc1) - 2 weeks
+
+**Goal**: Comprehensive documentation for 1.0 release
+
+**Priority**: **P0 - CRITICAL** - Required for 1.0
+
+#### API Documentation (Week 1)
+- [ ] Review all public APIs for documentation completeness
+- [ ] Add examples to every public method
+- [ ] Document error conditions
+- [ ] Document performance characteristics
+- [ ] Cross-reference related operations
+- [ ] Generate documentation site (docs.rs)
+- [ ] Add search functionality
+- [ ] Category organization
+
+**Documentation Checklist**:
+- [ ] All public types documented
+- [ ] All public methods documented
+- [ ] All parameters explained
+- [ ] Return values documented
+- [ ] Errors documented
+- [ ] Examples provided
+- [ ] Performance notes included
+- [ ] Links to REST API docs
+
+---
+
+#### Guides & Tutorials (Week 2)
+- [ ] Getting Started Guide
+  - [ ] Installation
+  - [ ] First query
+  - [ ] Authentication setup
+  - [ ] Common patterns
+- [ ] Feature Service Guide
+  - [ ] Querying features
+  - [ ] CRUD operations
+  - [ ] Attachments
+  - [ ] Advanced queries
+- [ ] Map Service Guide
+  - [ ] Exporting maps
+  - [ ] Legend retrieval
+  - [ ] Identify operations
+- [ ] Geometry Service Guide
+  - [ ] Projections
+  - [ ] Geometric operations
+  - [ ] Measurements
+- [ ] Routing Guide
+  - [ ] Calculate routes
+  - [ ] Service areas
+  - [ ] Closest facility
+- [ ] Portal Guide
+  - [ ] Authentication
+  - [ ] Content management
+  - [ ] Publishing
+- [ ] Performance Guide
+  - [ ] PBF usage
+  - [ ] Caching strategies
+  - [ ] Batch operations
+  - [ ] Connection pooling
+- [ ] Migration Guide
+  - [ ] From other SDKs
+  - [ ] Version upgrade paths
+- [ ] Troubleshooting Guide
+  - [ ] Common errors
+  - [ ] Debugging tips
+  - [ ] Performance issues
+
+**Files to Create**:
+- `docs/getting_started.md`
+- `docs/guides/feature_service.md`
+- `docs/guides/map_service.md`
+- `docs/guides/geometry_service.md`
+- `docs/guides/routing.md`
+- `docs/guides/portal.md`
+- `docs/guides/performance.md`
+- `docs/migration_guide.md`
+- `docs/troubleshooting.md`
+
+---
+
+#### Example Applications
+- [ ] CLI Examples
+  - [ ] Query tool
+  - [ ] Geocoder
+  - [ ] Map export utility
+  - [ ] Feature editor
+- [ ] Web Service Examples
+  - [ ] REST API wrapper (Actix/Axum)
+  - [ ] GraphQL server
+  - [ ] WebSocket streaming
+- [ ] Desktop Examples
+  - [ ] Feature browser (egui)
+  - [ ] Map viewer
+  - [ ] Batch processor
+- [ ] Integration Examples
+  - [ ] Database sync
+  - [ ] ETL pipelines
+  - [ ] Monitoring dashboards
+
+**Files to Create**:
+- `examples/cli_query.rs`
+- `examples/cli_geocode.rs`
+- `examples/web_service.rs`
+- `examples/feature_browser.rs`
+- `examples/batch_processor.rs`
+
+---
+
+### Phase 12: Final Polish & Release (v1.0.0) - 1 week
+
+**Goal**: Production-ready 1.0.0 release
+
+#### Release Preparation
+- [ ] Final API review
+  - [ ] Breaking change audit
+  - [ ] Naming consistency
+  - [ ] Error handling review
+  - [ ] Type safety verification
+- [ ] Security audit
+  - [ ] Dependency vulnerabilities
+  - [ ] Authentication flows
+  - [ ] Input validation
+  - [ ] SQL injection prevention
+- [ ] Performance validation
+  - [ ] Run all benchmarks
+  - [ ] Memory leak testing
+  - [ ] Concurrent request testing
+  - [ ] Large dataset testing
+- [ ] Test coverage
+  - [ ] Minimum 80% coverage
+  - [ ] All critical paths tested
+  - [ ] Integration tests comprehensive
+  - [ ] Error conditions tested
+- [ ] Documentation review
+  - [ ] All examples tested
+  - [ ] Links verified
+  - [ ] Formatting consistent
+  - [ ] Code snippets accurate
+
+---
+
+#### Release Execution
+- [ ] Version bump to 1.0.0
+- [ ] CHANGELOG.md completion
+- [ ] Release notes drafted
+- [ ] GitHub release created
+- [ ] crates.io publication
+- [ ] Documentation site deployed
+- [ ] Announcement blog post
+- [ ] Social media announcements
+- [ ] Update README with examples
+- [ ] Add badges (crates.io, docs.rs, CI)
+
+---
+
+## Cross-Cutting Concerns
+
+### Testing Strategy
+
+**Unit Tests** (inline with implementation):
+- [ ] All public methods have unit tests
+- [ ] Builder patterns validated
+- [ ] Serialization/deserialization tested
+- [ ] Error conditions covered
+
+**Integration Tests** (in `tests/` directory):
+- [ ] Service operation tests (may use mocks)
+- [ ] End-to-end workflows
+- [ ] Authentication flows
+- [ ] Error handling
+- [ ] Rate limit handling
+
+**API Tests** (feature-gated):
+- [ ] Real service calls (expensive)
+- [ ] Minimal token usage
+- [ ] Run on-demand only
+- [ ] CI/CD for critical paths
+
+**Benchmark Tests** (in `benches/`):
+- [ ] Query performance
+- [ ] Geometry operations
+- [ ] PBF vs JSON
+- [ ] Caching impact
+- [ ] Concurrent requests
+
+---
+
+### Feature Flags
+
+**Current Features**:
+- `backend-eframe` - eframe/wgpu (default)
+- `text-detection` - OpenCV text detection
+- `logo-detection` - OpenCV logo detection
+- `ocr` - Tesseract OCR
+- `dev` - All optional features
+- `api` - Empty marker for API tests
+
+**Planned Features**:
+- [ ] `pbf` - Protocol buffer support
+- [ ] `redis-cache` - Redis caching backend
+- [ ] `fs-cache` - File system caching
+- [ ] `opentelemetry` - Distributed tracing
+- [ ] `portal` - Portal/content management
+- [ ] `routing` - Routing/network analysis
+- [ ] `geoprocessing` - GP service support
+- [ ] `image-service` - Image service support
+- [ ] `vector-tiles` - Vector tile support
+- [ ] `stream` - Stream service support (WebSocket)
+- [ ] `geoenrichment` - GeoEnrichment service
+- [ ] `places` - Places service
+- [ ] `elevation` - Elevation service
+- [ ] `scene` - Scene service (3D)
+- [ ] `utility-network` - Utility Network service
+
+---
+
+### Error Handling Strategy
+
+**Error Categories**:
+- [ ] `HttpError` - Network/HTTP failures
+- [ ] `ApiError` - ArcGIS REST API errors
+- [ ] `ParseError` - JSON/PBF parsing errors
+- [ ] `AuthError` - Authentication failures
+- [ ] `ValidationError` - Input validation
+- [ ] `TimeoutError` - Request timeouts
+- [ ] `RateLimitError` - Rate limiting
+- [ ] `CircuitBreakerError` - Circuit breaker open
+
+**Error Metadata**:
+- [ ] Error codes from ArcGIS
+- [ ] HTTP status codes
+- [ ] Request context (URL, method)
+- [ ] Retry information
+- [ ] Suggested remediation
+
+---
+
+### Performance Targets
+
+**Query Performance**:
+- [ ] 100 features: < 100ms
+- [ ] 1,000 features: < 500ms
+- [ ] 10,000 features: < 2s (JSON), < 800ms (PBF)
+- [ ] 100,000 features: < 10s (streamed)
+
+**Geometry Operations**:
+- [ ] Project 1,000 points: < 50ms
+- [ ] Buffer 100 polygons: < 200ms
+- [ ] Union 50 polygons: < 500ms
+
+**Routing**:
+- [ ] Simple route (2 stops): < 1s
+- [ ] Complex route (10 stops): < 3s
+- [ ] Service area: < 2s
+
+**Memory**:
+- [ ] Base client: < 10 MB
+- [ ] 100K features loaded: < 100 MB
+- [ ] Cache: Configurable (default 256 MB)
+
+---
+
+## Success Metrics
+
+### Coverage Metrics
+- [ ] **15+ services implemented** (target: 18)
+- [ ] **250+ operations** across all services
+- [ ] **70-75% API coverage** (measured by operation count)
+- [ ] **95% use case coverage** (surveyed from community)
+
+### Quality Metrics
+- [ ] **Zero clippy warnings** in CI
+- [ ] **80%+ test coverage** (measured by tarpaulin)
+- [ ] **100% public API documented**
+- [ ] **All examples compile and run**
+
+### Performance Metrics
+- [ ] **3-5x improvement** with PBF vs JSON
+- [ ] **Cache hit rate > 60%** for typical workloads
+- [ ] **< 100ms p95 latency** for simple queries
+- [ ] **Memory usage < 256 MB** for typical workflows
+
+### Community Metrics
+- [ ] **100+ GitHub stars** (initial traction)
+- [ ] **10+ contributors** (community building)
+- [ ] **50+ crates.io downloads/day** (adoption)
+- [ ] **Active Discord/Discussions** (support channel)
+
+---
+
+## Risk Management
+
+### Technical Risks
+
+**Risk**: ArcGIS REST API changes break compatibility
+- **Mitigation**: Version detection, graceful degradation
+- **Contingency**: Maintain compatibility matrices
+
+**Risk**: PBF parsing complexity
+- **Mitigation**: Start early, comprehensive testing
+- **Contingency**: PBF as optional feature, JSON fallback
+
+**Risk**: WebSocket reliability (Stream Service)
+- **Mitigation**: Robust reconnection logic, buffering
+- **Contingency**: Polling fallback for unreliable networks
+
+**Risk**: Performance targets not met
+- **Mitigation**: Early benchmarking, profiling
+- **Contingency**: Async/streaming APIs, caching
+
+### Resource Risks
+
+**Risk**: Scope creep extends timeline
+- **Mitigation**: Strict prioritization, phase gates
+- **Contingency**: Defer Tier 4 services to 1.1+
+
+**Risk**: API testing costs (token usage)
+- **Mitigation**: Mocking, minimal real API tests
+- **Contingency**: Community-contributed API keys
+
+**Risk**: Maintenance burden too high
+- **Mitigation**: Comprehensive automation, clear contribution guidelines
+- **Contingency**: Focus on Tier 1-2, community maintains Tier 3
+
+---
+
+## Release Roadmap
+
+| Version | Focus | Timeline | Coverage |
+|---------|-------|----------|----------|
+| v0.3.1 | Complete Tier 1 | 2 weeks | 35% |
+| v0.4.0 | Geometry Service | 3 weeks | 42% |
+| v0.5.0 | Routing | 3 weeks | 50% |
+| v0.5.1 | Geoprocessing | 2 weeks | 53% |
+| v0.5.2 | PBF Support | 2 weeks | 53% |
+| v0.6.0 | Vector Tiles | 2 weeks | 56% |
+| v0.6.1 | Image Service | 3 weeks | 60% |
+| v0.7.0 | Portal | 4 weeks | 65% |
+| v0.8.0 | Specialized Services | 6 weeks | 70% |
+| v0.9.0 | Production Hardening | 3 weeks | 70% |
+| v1.0.0-rc1 | Documentation | 2 weeks | 70% |
+| v1.0.0 | Final Release | 1 week | 70-75% |
+
+**Total Timeline**: 32 weeks (8 months)
+
+---
+
+## Appendix: Service Operation Inventory
+
+### Feature Service (FeatureServer)
+**Current**: 24/28 operations (85%)
+
+✅ Implemented:
+- query, queryRelatedRecords, queryTopFeatures
+- applyEdits (add, update, delete)
+- queryAttachments, addAttachment, updateAttachment, deleteAttachments
+- downloadAttachment (streaming)
+- generateRenderer (partial)
+
+❌ Missing:
+- calculateRecords
+- applyEditsWithGlobalIds
+- truncate
+- queryDomains
+
+---
+
+### Map Service (MapServer)
+**Current**: 5/8 operations (62%)
+
+✅ Implemented:
+- export, exportTile, legend, identify
+- Service metadata
+
+❌ Missing:
+- find
+- generateKml
+- generateRenderer (full)
+
+---
+
+### Geocoding Service (GeocodeServer)
+**Current**: 3/5 operations (60%)
+
+✅ Implemented:
+- findAddressCandidates, reverseGeocode, suggest
+
+❌ Missing:
+- geocodeAddresses (batch)
+- findAddressCandidatesByBatch
+
+---
+
+### Geometry Service (GeometryServer)
+**Current**: 0/18 operations (0%)
+
+❌ All operations:
+- project, buffer, simplify
+- union, intersect, difference
+- areasAndLengths, lengths, distance
+- offset, cut, reshape, densify
+- trimExtend, convexHull, labelPoints
+- autoComplete, relation
+
+---
+
+### Routing/Network Service (NAServer)
+**Current**: 0/4 major operations (0%)
+
+❌ All operations:
+- solve (route)
+- solveServiceArea
+- solveClosestFacility
+- generateOriginDestinationCostMatrix
+
+---
+
+### Version Management Service (VersionManagementServer)
+**Current**: 13/13 operations (100%)
+
+✅ All implemented:
+- startReading, stopReading
+- startEditing, stopEditing
+- create, alter, delete, getInfo, list
+- reconcile, post, conflicts, inspect
+- differences, deleteForwardEdits, restoreRows
+
+---
+
+### Geoprocessing Service (GPServer)
+**Current**: 0/6 operations (0%)
+
+❌ All operations:
+- execute, submitJob
+- getJobStatus, getJobResult
+- cancelJob, getMessages
+
+---
+
+### Image Service (ImageServer)
+**Current**: 0/12 operations (0%)
+
+❌ All operations:
+- exportImage, identify
+- getSamples, computeHistograms
+- measure, computeStatisticsHistograms
+- getRasterInfo, getCatalogItems
+- download, project
+
+---
+
+### Vector Tile Service (VectorTileServer)
+**Current**: 0/3 operations (0%)
+
+❌ All operations:
+- getTile
+- getStyle
+- getFonts
+
+---
+
+### Portal/Sharing Service
+**Current**: 0/20+ operations (0%)
+
+❌ Major operations:
+- search, getItem, addItem, updateItem, deleteItem
+- shareItem, unshareItem
+- searchGroups, getGroup, createGroup, updateGroup
+- publish, updateServiceDefinition
+- getSelf, etc.
+
+---
+
+This plan provides a comprehensive roadmap to achieve feature-complete coverage of the ArcGIS REST API while maintaining high quality and performance standards.
