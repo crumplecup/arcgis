@@ -266,6 +266,100 @@ impl<'a> FeatureServiceClient<'a> {
         Ok(result)
     }
 
+    /// Queries top features from a layer based on ranking within groups.
+    ///
+    /// The queryTopFeatures operation returns features based on top features by order within a group.
+    /// For example, you can query the top 3 most populous cities from each state.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_id` - The layer to query
+    /// * `params` - Top features query parameters including topFilter (required)
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, FeatureServiceClient, LayerId, TopFeaturesParams, TopFilter};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = FeatureServiceClient::new(
+    ///     "https://services.arcgis.com/org/arcgis/rest/services/Dataset/FeatureServer",
+    ///     &client,
+    /// );
+    ///
+    /// // Get top 3 most populous cities from each state
+    /// let filter = TopFilter::new(
+    ///     vec!["State".to_string()],
+    ///     3,
+    ///     vec!["Population DESC".to_string()],
+    /// );
+    ///
+    /// let params = TopFeaturesParams::builder()
+    ///     .top_filter(filter)
+    ///     .out_fields(vec!["Name".to_string(), "State".to_string(), "Population".to_string()])
+    ///     .build()
+    ///     .expect("Valid params");
+    ///
+    /// let feature_set = service.query_top_features(LayerId::new(0), params).await?;
+    /// for feature in feature_set.features {
+    ///     println!("City: {:?}", feature.attributes.get("Name"));
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, params), fields(layer_id = %layer_id, base_url = %self.base_url))]
+    pub async fn query_top_features(
+        &self,
+        layer_id: LayerId,
+        params: crate::TopFeaturesParams,
+    ) -> Result<crate::FeatureSet> {
+        tracing::debug!("Querying top features");
+
+        // Construct the URL
+        let url = format!("{}/{}/queryTopFeatures", self.base_url, layer_id);
+
+        // Get authentication token
+        let token = self.client.auth().get_token().await?;
+
+        tracing::debug!(url = %url, "Sending query top features request");
+
+        // Build request with query parameters and token
+        let response = self
+            .client
+            .http()
+            .get(&url)
+            .query(&params)
+            .query(&[("token", token)])
+            .send()
+            .await?;
+
+        // Check for HTTP errors
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error response: {}", e));
+            tracing::error!(status = %status, error = %error_text, "Query top features request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        // Parse the response
+        let result: crate::FeatureSet = response.json().await?;
+
+        tracing::debug!(
+            features_count = result.features.len(),
+            "Query top features completed successfully"
+        );
+
+        Ok(result)
+    }
+
     /// Adds new features to a layer.
     ///
     /// # Arguments

@@ -28,7 +28,7 @@
   - ✅ Binary streaming to Path/Bytes/Writer
   - ✅ Fluent builder API with 20+ methods
 - ✅ **Phase 4.2**: Geocoding Service (findAddressCandidates, reverseGeocode, suggest)
-- ✅ **Phase 4.3**: Advanced Queries - Statistics and Related Records (complete)
+- ✅ **Phase 4.3**: Advanced Queries - Statistics, Related Records, and Top Features (complete)
   - ✅ Statistics types (StatisticType enum with 9 variants)
   - ✅ StatisticDefinition for aggregate queries
   - ✅ QueryBuilder methods (.statistics(), .having())
@@ -40,16 +40,21 @@
   - ✅ RelatedRecordGroup and RelatedRecordsResponse types
   - ✅ Full support for pagination, ordering, filtering, geometry options
   - ✅ 10 integration tests for related records queries
+  - ✅ Top features (queryTopFeatures endpoint)
+  - ✅ TopFilter specification (group by, count, order by)
+  - ✅ TopFeaturesParams with 24 fields (builder pattern)
+  - ✅ Full support for spatial filters, geometry options, time filters
+  - ✅ 12 integration tests for top features queries
 
 **🚧 In Progress**:
-- None (Phase 4.3 complete)
+- None (Phase 4 - Intermediate Coverage complete)
 
 **Recent Commits**:
-- (pending) - feat(feature_service): implement related records queries with comprehensive parameter support
+- (pending) - feat(feature_service): implement query top features with group-based ranking
+- `a10a58a` - feat(feature_service): implement related records queries with comprehensive parameter support
 - `0658c2f` - feat(feature_service): implement statistics queries with GROUP BY and HAVING
 - `eec12db` - feat(map_service): implement comprehensive Map Service support with binary streaming
 - `1fb67c5` - feat(version_management): complete version management implementation
-- `818e932` - feat(feature_service): implement attachment operations with streaming support
 
 ---
 
@@ -116,6 +121,7 @@ Build a type-safe, ergonomic Rust SDK for the ArcGIS REST API that makes invalid
 - ✅ Can perform statistical aggregate queries (count, sum, avg, min, max, stddev, var, percentiles)
 - ✅ Can use GROUP BY and HAVING clauses for advanced analytics
 - ✅ Can query related records through relationship classes
+- ✅ Can query top features based on ranking within groups
 - ✅ Async stream-based pagination
 
 ### Advanced Coverage (v0.4.0)
@@ -812,14 +818,14 @@ impl GeocodeServiceClient {
 - ✅ Autocomplete working
 - ✅ Batch geocoding efficient
 
-### Milestone 4.3: Advanced Queries (Week 12) - ⏸️ PARTIAL
+### Milestone 4.3: Advanced Queries (Week 12) - ✅ COMPLETE
 
 **Deliverables**:
 - ✅ Spatial queries (intersects, contains, etc.)
-- ⏸️ Related records queries (pending)
+- ✅ Related records queries (queryRelatedRecords)
 - ✅ Query statistics (count, sum, avg, min, max, stddev, var, percentiles)
 - ✅ GROUP BY and HAVING clause support
-- [ ] Query top features
+- ✅ Query top features (queryTopFeatures)
 - ✅ Spatial relationship enums (SpatialRel)
 
 **Technical Tasks**:
@@ -845,7 +851,8 @@ impl QueryBuilder {
 
 **Success Criteria**:
 - ✅ All spatial relationship queries working
-- ⏸️ Can query related records (pending)
+- ✅ Can query related records through relationships
+- ✅ Can query top N features from each group
 - ✅ Statistics queries returning correct aggregates
 - ✅ GROUP BY and HAVING clauses working
 - ✅ All 9 statistical operations supported

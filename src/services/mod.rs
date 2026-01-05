@@ -11,8 +11,8 @@ pub use feature::{
     EditOptions, EditResult, EditResultItem, Feature, FeatureQueryParams,
     FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet, FeatureStatisticsResponse,
     QueryBuilder, RelatedRecordGroup, RelatedRecordsParams, RelatedRecordsParamsBuilder,
-    RelatedRecordsResponse, ResponseFormat, StatisticDefinition, StatisticType,
-    UpdateAttachmentResult,
+    RelatedRecordsResponse, ResponseFormat, StatisticDefinition, StatisticType, TopFeaturesParams,
+    TopFeaturesParamsBuilder, TopFilter, UpdateAttachmentResult,
 };
 pub use geocode::{
     AddressCandidate, Category, Extent, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,

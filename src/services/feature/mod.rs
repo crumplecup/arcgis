@@ -20,5 +20,6 @@ pub use query::QueryBuilder;
 pub use types::{
     Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureSet, FeatureStatisticsResponse,
     RelatedRecordGroup, RelatedRecordsParams, RelatedRecordsParamsBuilder,
-    RelatedRecordsResponse, ResponseFormat, StatisticDefinition, StatisticType,
+    RelatedRecordsResponse, ResponseFormat, StatisticDefinition, StatisticType, TopFeaturesParams,
+    TopFeaturesParamsBuilder, TopFilter,
 };

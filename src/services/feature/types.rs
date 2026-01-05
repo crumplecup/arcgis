@@ -488,3 +488,201 @@ pub struct RelatedRecordsResponse {
     #[serde(default)]
     fields: Vec<serde_json::Value>,
 }
+
+/// Top filter specification for queryTopFeatures operations.
+///
+/// Specifies how to group results, how many features to return from each group,
+/// and how to order results within each group.
+///
+/// # Example
+///
+/// ```
+/// use arcgis::TopFilter;
+///
+/// // Get top 3 most populous cities from each state
+/// let filter = TopFilter::new(
+///     vec!["State".to_string()],
+///     3,
+///     vec!["Population DESC".to_string()],
+/// );
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, derive_new::new)]
+#[serde(rename_all = "camelCase")]
+pub struct TopFilter {
+    /// Fields to group results by.
+    pub group_by_fields: Vec<String>,
+
+    /// Number of top features to return from each group.
+    pub top_count: u32,
+
+    /// Fields to order results by (format: "FieldName ASC" or "FieldName DESC").
+    pub order_by_fields: Vec<String>,
+}
+
+/// Parameters for querying top features from a feature service layer.
+///
+/// The queryTopFeatures operation returns features based on ranking within groups.
+/// For example, you can query the top 3 most populous cities from each state.
+///
+/// # Example
+///
+/// ```
+/// use arcgis::{TopFeaturesParams, TopFilter};
+///
+/// let filter = TopFilter::new(
+///     vec!["State".to_string()],
+///     3,
+///     vec!["Population DESC".to_string()],
+/// );
+///
+/// let params = TopFeaturesParams::builder()
+///     .top_filter(filter)
+///     .where_("Population > 100000")
+///     .out_fields(vec!["Name".to_string(), "Population".to_string()])
+///     .build()
+///     .expect("Valid params");
+/// ```
+#[derive(Debug, Clone, Serialize, derive_builder::Builder)]
+#[builder(setter(into, strip_option), default)]
+pub struct TopFeaturesParams {
+    /// Required: Top filter specification (group by, count, order by).
+    #[serde(rename = "topFilter")]
+    pub top_filter: Option<TopFilter>,
+
+    /// WHERE clause for the query filter.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub where_: Option<String>,
+
+    /// Object IDs to query.
+    #[serde(
+        rename = "objectIds",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serde_helpers::serialize_object_ids"
+    )]
+    pub object_ids: Option<Vec<ObjectId>>,
+
+    /// Time instant or extent to query.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub time: Option<String>,
+
+    /// Geometry to apply as spatial filter.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serde_helpers::serialize_geometry"
+    )]
+    pub geometry: Option<ArcGISGeometry>,
+
+    /// Type of geometry being used as spatial filter.
+    #[serde(rename = "geometryType", skip_serializing_if = "Option::is_none")]
+    pub geometry_type: Option<GeometryType>,
+
+    /// Spatial reference of input geometry.
+    #[serde(rename = "inSR", skip_serializing_if = "Option::is_none")]
+    pub in_sr: Option<i32>,
+
+    /// Spatial relationship for the query.
+    #[serde(rename = "spatialRel", skip_serializing_if = "Option::is_none")]
+    pub spatial_rel: Option<SpatialRel>,
+
+    /// Buffer distance for input geometries.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub distance: Option<f64>,
+
+    /// Units for distance parameter.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub units: Option<String>,
+
+    /// Fields to include in the response.
+    #[serde(
+        rename = "outFields",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serde_helpers::serialize_string_vec"
+    )]
+    pub out_fields: Option<Vec<String>>,
+
+    /// Whether to return geometry with the results (default: true).
+    #[serde(rename = "returnGeometry", skip_serializing_if = "Option::is_none")]
+    pub return_geometry: Option<bool>,
+
+    /// Maximum offset for geometry generalization.
+    #[serde(
+        rename = "maxAllowableOffset",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub max_allowable_offset: Option<f64>,
+
+    /// Number of decimal places for returned geometries.
+    #[serde(
+        rename = "geometryPrecision",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub geometry_precision: Option<i32>,
+
+    /// Spatial reference for returned geometry.
+    #[serde(rename = "outSR", skip_serializing_if = "Option::is_none")]
+    pub out_sr: Option<i32>,
+
+    /// Whether to return only object IDs.
+    #[serde(rename = "returnIdsOnly", skip_serializing_if = "Option::is_none")]
+    pub return_ids_only: Option<bool>,
+
+    /// Whether to return only the feature count.
+    #[serde(rename = "returnCountOnly", skip_serializing_if = "Option::is_none")]
+    pub return_count_only: Option<bool>,
+
+    /// Whether to return only the extent.
+    #[serde(rename = "returnExtentOnly", skip_serializing_if = "Option::is_none")]
+    pub return_extent_only: Option<bool>,
+
+    /// Whether to include z-values if available.
+    #[serde(rename = "returnZ", skip_serializing_if = "Option::is_none")]
+    pub return_z: Option<bool>,
+
+    /// Whether to include m-values if available.
+    #[serde(rename = "returnM", skip_serializing_if = "Option::is_none")]
+    pub return_m: Option<bool>,
+
+    /// Control on the number of features returned.
+    #[serde(rename = "resultType", skip_serializing_if = "Option::is_none")]
+    pub result_type: Option<String>,
+
+    /// Output format (json, geojson, pbf).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub f: Option<String>,
+}
+
+impl Default for TopFeaturesParams {
+    fn default() -> Self {
+        Self {
+            top_filter: None,
+            where_: None,
+            object_ids: None,
+            time: None,
+            geometry: None,
+            geometry_type: None,
+            in_sr: None,
+            spatial_rel: None,
+            distance: None,
+            units: None,
+            out_fields: None,
+            return_geometry: Some(true),
+            max_allowable_offset: None,
+            geometry_precision: None,
+            out_sr: None,
+            return_ids_only: None,
+            return_count_only: None,
+            return_extent_only: None,
+            return_z: None,
+            return_m: None,
+            result_type: None,
+            f: Some("json".to_string()),
+        }
+    }
+}
+
+impl TopFeaturesParams {
+    /// Creates a builder for TopFeaturesParams.
+    pub fn builder() -> TopFeaturesParamsBuilder {
+        TopFeaturesParamsBuilder::default()
+    }
+}

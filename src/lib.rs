@@ -79,8 +79,8 @@ pub use services::{
     ExportTarget, Extent, Feature, FeatureQueryParams, FeatureQueryParamsBuilder,
     FeatureServiceClient, FeatureSet, FeatureStatisticsResponse, GeocodeAddress, GeocodeResponse,
     GeocodeServiceClient, RelatedRecordGroup, RelatedRecordsParams, RelatedRecordsParamsBuilder,
-    RelatedRecordsResponse,
-    IdentifyParams, IdentifyParamsBuilder, IdentifyResponse, IdentifyResult, ImageFormat,
+    RelatedRecordsResponse, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse,
+    IdentifyResult, ImageFormat,
     InspectConflictFeature, InspectConflictLayer, InspectConflictsResponse, LayerConflicts,
     LayerFeatureDifferences, LayerLegend, LayerObjectIdDifferences, LayerOperation, LayerSelection,
     LegendResponse, LegendSymbol, LevelOfDetail, LocationType, MapServiceClient,
@@ -88,8 +88,8 @@ pub use services::{
     ResponseFormat, RestoreRowsLayer, RestoreRowsResponse, ReverseGeocodeResponse, ServiceLayer,
     SessionId, SpatialReference, StartEditingResponse, StartReadingResponse, StatisticDefinition,
     StatisticType, StopEditingResponse, StopReadingResponse, SuggestResponse, Suggestion,
-    TileCoordinate, TileInfo, TimeRelation, UpdateAttachmentResult, VersionGuid, VersionInfo,
-    VersionInfosResponse,
+    TileCoordinate, TileInfo, TimeRelation, TopFeaturesParams, TopFeaturesParamsBuilder, TopFilter,
+    UpdateAttachmentResult, VersionGuid, VersionInfo, VersionInfosResponse,
     VersionManagementClient, VersionPermission, VersioningType,
 };
 pub use types::{AttachmentId, GeometryType, LayerId, ObjectId, SpatialRel};
