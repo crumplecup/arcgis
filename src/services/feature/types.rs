@@ -364,7 +364,10 @@ pub struct RelatedRecordsParams {
     pub out_fields: Option<Vec<String>>,
 
     /// WHERE clause to filter related records.
-    #[serde(rename = "definitionExpression", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "definitionExpression",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub definition_expression: Option<String>,
 
     /// Whether to return geometry with features.
@@ -605,17 +608,11 @@ pub struct TopFeaturesParams {
     pub return_geometry: Option<bool>,
 
     /// Maximum offset for geometry generalization.
-    #[serde(
-        rename = "maxAllowableOffset",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "maxAllowableOffset", skip_serializing_if = "Option::is_none")]
     pub max_allowable_offset: Option<f64>,
 
     /// Number of decimal places for returned geometries.
-    #[serde(
-        rename = "geometryPrecision",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "geometryPrecision", skip_serializing_if = "Option::is_none")]
     pub geometry_precision: Option<i32>,
 
     /// Spatial reference for returned geometry.
@@ -685,4 +682,105 @@ impl TopFeaturesParams {
     pub fn builder() -> TopFeaturesParamsBuilder {
         TopFeaturesParamsBuilder::default()
     }
+}
+
+/// Response from truncate operation.
+///
+/// Indicates whether the truncate operation completed successfully.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
+pub struct TruncateResult {
+    /// Whether the operation succeeded.
+    success: bool,
+}
+
+/// Response from queryDomains operation.
+///
+/// Contains domain and subtype information for requested layers.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+pub struct QueryDomainsResponse {
+    /// Array of layer domain information.
+    layers: Vec<LayerDomainInfo>,
+}
+
+/// Domain information for a single layer.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct LayerDomainInfo {
+    /// Layer ID.
+    id: i32,
+
+    /// Layer name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
+
+    /// Field domains.
+    #[serde(default)]
+    domains: HashMap<String, Domain>,
+
+    /// Subtypes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    subtypes: Option<Vec<Subtype>>,
+}
+
+/// A coded value domain.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct Domain {
+    /// Domain type (usually "codedValue" or "range").
+    #[serde(rename = "type")]
+    domain_type: String,
+
+    /// Domain name.
+    name: String,
+
+    /// Coded values (for coded value domains).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    coded_values: Option<Vec<CodedValue>>,
+
+    /// Range (for range domains).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    range: Option<Vec<serde_json::Value>>,
+}
+
+/// A coded value in a domain.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+pub struct CodedValue {
+    /// The coded value.
+    code: serde_json::Value,
+
+    /// The human-readable name.
+    name: String,
+}
+
+/// Subtype information.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct Subtype {
+    /// Subtype code.
+    code: i32,
+
+    /// Subtype name.
+    name: String,
+
+    /// Default values for fields.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    default_values: Option<HashMap<String, serde_json::Value>>,
+
+    /// Field domains for this subtype.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    domains: Option<HashMap<String, Domain>>,
+}
+
+/// Field calculation expression for calculateRecords operation.
+///
+/// Defines a field and the SQL expression to calculate its value.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_new::new)]
+#[serde(rename_all = "camelCase")]
+pub struct FieldCalculation {
+    /// Name of the field to update.
+    field: String,
+
+    /// SQL expression to calculate the field value.
+    #[serde(rename = "sqlExpression")]
+    sql_expression: String,
 }

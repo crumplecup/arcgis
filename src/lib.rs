@@ -64,33 +64,38 @@ mod util;
 // Re-exports
 pub use auth::{ApiKeyAuth, AuthProvider, ClientCredentialsAuth};
 pub use client::ArcGISClient;
-pub use error::{BuilderError, Error, ErrorKind, HttpError, IoError, JsonError, UrlError};
+pub use error::{
+    BuilderError, Error, ErrorKind, HttpError, IoError, JsonError, UrlEncodedError, UrlError,
+};
 pub use geometry::{
     ArcGISEnvelope, ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
 };
 pub use services::{
     AddAttachmentResult, AddressCandidate, AlterResponse, AlterVersionParams, AttachmentInfo,
-    AttachmentInfosResponse, AttachmentSource, Category, ConflictDetection, ConflictEntry,
-    ConflictFeature, ConflictsResponse, CreateVersionParams, CreateVersionResponse,
+    AttachmentInfosResponse, AttachmentSource, BatchCandidateResult, BatchCandidatesResponse,
+    BatchGeocodeResponse, BatchLocation, Category, ClassBreakInfo, CodedValue, ConflictDetection,
+    ConflictEntry, ConflictFeature, ConflictsResponse, CreateVersionParams, CreateVersionResponse,
     DeleteAttachmentResult, DeleteAttachmentsResponse, DeleteForwardEditsResponse, DeleteResponse,
-    DifferenceFeature, DifferenceResultType, DifferencesResponse, DownloadResult, DownloadTarget,
-    EditError, EditOptions, EditResult, EditResultItem, EditSessionError, ExportExtent,
-    ExportMapBuilder, ExportMapParams, ExportMapParamsBuilder, ExportMapResponse, ExportResult,
-    ExportTarget, Extent, Feature, FeatureQueryParams, FeatureQueryParamsBuilder,
-    FeatureServiceClient, FeatureSet, FeatureStatisticsResponse, GeocodeAddress, GeocodeResponse,
-    GeocodeServiceClient, RelatedRecordGroup, RelatedRecordsParams, RelatedRecordsParamsBuilder,
-    RelatedRecordsResponse, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse,
-    IdentifyResult, ImageFormat,
-    InspectConflictFeature, InspectConflictLayer, InspectConflictsResponse, LayerConflicts,
-    LayerFeatureDifferences, LayerLegend, LayerObjectIdDifferences, LayerOperation, LayerSelection,
-    LegendResponse, LegendSymbol, LevelOfDetail, LocationType, MapServiceClient,
-    MapServiceMetadata, PartialPostRow, PostResponse, QueryBuilder, ReconcileResponse,
+    DifferenceFeature, DifferenceResultType, DifferencesResponse, Domain, DownloadResult,
+    DownloadTarget, EditError, EditOptions, EditResult, EditResultItem, EditSessionError,
+    ExportExtent, ExportMapBuilder, ExportMapParams, ExportMapParamsBuilder, ExportMapResponse,
+    ExportResult, ExportTarget, Extent, Feature, FeatureQueryParams, FeatureQueryParamsBuilder,
+    FeatureServiceClient, FeatureSet, FeatureStatisticsResponse, FieldCalculation, FindParams,
+    FindParamsBuilder, FindResponse, FindResult, GenerateKmlParams, GenerateKmlParamsBuilder,
+    GenerateRendererParams, GenerateRendererParamsBuilder, GeocodeAddress, GeocodeResponse,
+    GeocodeServiceClient, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse, IdentifyResult,
+    ImageFormat, InspectConflictFeature, InspectConflictLayer, InspectConflictsResponse,
+    LayerConflicts, LayerDomainInfo, LayerFeatureDifferences, LayerLegend,
+    LayerObjectIdDifferences, LayerOperation, LayerSelection, LegendResponse, LegendSymbol,
+    LevelOfDetail, LocationType, MapServiceClient, MapServiceMetadata, PartialPostRow,
+    PostResponse, QueryBuilder, QueryDomainsResponse, ReconcileResponse, RelatedRecordGroup,
+    RelatedRecordsParams, RelatedRecordsParamsBuilder, RelatedRecordsResponse, RendererResponse,
     ResponseFormat, RestoreRowsLayer, RestoreRowsResponse, ReverseGeocodeResponse, ServiceLayer,
     SessionId, SpatialReference, StartEditingResponse, StartReadingResponse, StatisticDefinition,
-    StatisticType, StopEditingResponse, StopReadingResponse, SuggestResponse, Suggestion,
+    StatisticType, StopEditingResponse, StopReadingResponse, Subtype, SuggestResponse, Suggestion,
     TileCoordinate, TileInfo, TimeRelation, TopFeaturesParams, TopFeaturesParamsBuilder, TopFilter,
-    UpdateAttachmentResult, VersionGuid, VersionInfo, VersionInfosResponse,
-    VersionManagementClient, VersionPermission, VersioningType,
+    TruncateResult, UniqueValueInfo, UpdateAttachmentResult, VersionGuid, VersionInfo,
+    VersionInfosResponse, VersionManagementClient, VersionPermission, VersioningType,
 };
 pub use types::{AttachmentId, GeometryType, LayerId, ObjectId, SpatialRel};
 

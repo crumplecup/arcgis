@@ -688,3 +688,267 @@ pub struct MapServiceMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     tile_info: Option<TileInfo>,
 }
+
+/// Parameters for the find operation.
+///
+/// Use [`FindParams::builder()`] to construct instances.
+#[derive(Debug, Clone, Serialize, derive_builder::Builder, Getters)]
+#[builder(setter(into, strip_option))]
+#[serde(rename_all = "camelCase")]
+pub struct FindParams {
+    /// Text to search for (REQUIRED).
+    search_text: String,
+
+    /// Comma-separated list of field names to search (REQUIRED).
+    #[serde(serialize_with = "serialize_vec_as_comma")]
+    search_fields: Vec<String>,
+
+    /// Comma-separated list of layer IDs to search.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(serialize_with = "serialize_opt_vec_as_comma")]
+    layers: Option<Vec<i32>>,
+
+    /// Whether the search text should match the exact whole value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    contains: Option<bool>,
+
+    /// Whether to return geometry with results.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    return_geometry: Option<bool>,
+
+    /// Output spatial reference WKID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sr: Option<i32>,
+
+    /// Layer definitions (WHERE clauses for layers).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    layer_defs: Option<String>,
+
+    /// Whether to return Z-values.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    return_z: Option<bool>,
+
+    /// Whether to return M-values.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    return_m: Option<bool>,
+}
+
+impl FindParams {
+    /// Creates a builder for FindParams.
+    pub fn builder() -> FindParamsBuilder {
+        FindParamsBuilder::default()
+    }
+}
+
+/// Helper to serialize Vec<String> as comma-separated.
+fn serialize_vec_as_comma<S>(vec: &[String], serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(&vec.join(","))
+}
+
+/// Helper to serialize Option<Vec<i32>> as comma-separated.
+fn serialize_opt_vec_as_comma<S>(vec: &Option<Vec<i32>>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match vec {
+        Some(v) => {
+            let s = v
+                .iter()
+                .map(|i| i.to_string())
+                .collect::<Vec<_>>()
+                .join(",");
+            serializer.serialize_str(&s)
+        }
+        None => serializer.serialize_none(),
+    }
+}
+
+/// Response from find operation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct FindResponse {
+    /// Array of find results.
+    results: Vec<FindResult>,
+}
+
+/// A single find result.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct FindResult {
+    /// Layer ID where the feature was found.
+    layer_id: i32,
+
+    /// Layer name.
+    layer_name: String,
+
+    /// Display field name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    display_field_name: Option<String>,
+
+    /// Field name where the value was found.
+    found_field_name: String,
+
+    /// Value that was found.
+    value: serde_json::Value,
+
+    /// Feature attributes.
+    attributes: HashMap<String, serde_json::Value>,
+
+    /// Feature geometry.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    geometry: Option<ArcGISGeometry>,
+
+    /// Geometry type.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    geometry_type: Option<GeometryType>,
+}
+
+/// Parameters for generating KML output.
+///
+/// Use [`GenerateKmlParams::builder()`] to construct instances.
+#[derive(Debug, Clone, Serialize, derive_builder::Builder, Getters)]
+#[builder(setter(into, strip_option))]
+#[serde(rename_all = "camelCase")]
+pub struct GenerateKmlParams {
+    /// Name for the KML document (REQUIRED).
+    doc_name: String,
+
+    /// Comma-separated list of layer IDs to include.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(serialize_with = "serialize_opt_vec_as_comma")]
+    layers: Option<Vec<i32>>,
+
+    /// Layer definitions (WHERE clauses).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    layer_defs: Option<String>,
+
+    /// Image format for ground overlay.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    image_format: Option<String>,
+
+    /// DPI for image.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    dpi: Option<i32>,
+
+    /// Image size (width,height).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    image_size: Option<String>,
+}
+
+impl GenerateKmlParams {
+    /// Creates a builder for GenerateKmlParams.
+    pub fn builder() -> GenerateKmlParamsBuilder {
+        GenerateKmlParamsBuilder::default()
+    }
+}
+
+/// Parameters for generating a classification renderer.
+///
+/// Use [`GenerateRendererParams::builder()`] to construct instances.
+#[derive(Debug, Clone, Serialize, derive_builder::Builder, Getters)]
+#[builder(setter(into, strip_option))]
+#[serde(rename_all = "camelCase")]
+pub struct GenerateRendererParams {
+    /// Field to classify (REQUIRED).
+    classification_field: String,
+
+    /// Classification method: "equal-interval", "natural-breaks", "quantile", "standard-deviation".
+    classification_method: String,
+
+    /// Number of classes/breaks.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    break_count: Option<i32>,
+
+    /// Normalization field.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    normalization_field: Option<String>,
+
+    /// Normalization type: "field", "log", "percent-of-total".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    normalization_type: Option<String>,
+
+    /// Base symbol definition (as JSON string).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    base_symbol: Option<String>,
+
+    /// Color ramp definition.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    color_ramp: Option<serde_json::Value>,
+}
+
+impl GenerateRendererParams {
+    /// Creates a builder for GenerateRendererParams.
+    pub fn builder() -> GenerateRendererParamsBuilder {
+        GenerateRendererParamsBuilder::default()
+    }
+}
+
+/// Response from generateRenderer operation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct RendererResponse {
+    /// Renderer type (e.g., "classBreaks", "uniqueValue").
+    #[serde(rename = "type")]
+    renderer_type: String,
+
+    /// Field name used for classification.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    field: Option<String>,
+
+    /// Default symbol.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    default_symbol: Option<serde_json::Value>,
+
+    /// Default label.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    default_label: Option<String>,
+
+    /// Classification breaks (for classBreaks renderer).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    class_break_infos: Option<Vec<ClassBreakInfo>>,
+
+    /// Unique value infos (for uniqueValue renderer).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    unique_value_infos: Option<Vec<UniqueValueInfo>>,
+}
+
+/// Information about a classification break.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct ClassBreakInfo {
+    /// Minimum value for this class.
+    class_min_value: f64,
+
+    /// Maximum value for this class.
+    class_max_value: f64,
+
+    /// Label for this class.
+    label: String,
+
+    /// Description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    description: Option<String>,
+
+    /// Symbol for this class.
+    symbol: serde_json::Value,
+}
+
+/// Information about a unique value.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct UniqueValueInfo {
+    /// The unique value.
+    value: serde_json::Value,
+
+    /// Label for this value.
+    label: String,
+
+    /// Description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    description: Option<String>,
+
+    /// Symbol for this value.
+    symbol: serde_json::Value,
+}

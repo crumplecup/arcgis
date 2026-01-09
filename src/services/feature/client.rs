@@ -1514,4 +1514,370 @@ impl<'a> FeatureServiceClient<'a> {
             }
         }
     }
+
+    /// Deletes all features from a layer.
+    ///
+    /// This operation removes all features from the specified layer while preserving
+    /// the layer structure and schema. Use with caution as this operation cannot be undone.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_id` - The layer to truncate
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = FeatureServiceClient::new("https://example.com/FeatureServer", &client);
+    ///
+    /// // Delete all features from layer 0
+    /// let result = service.truncate(LayerId::new(0)).await?;
+    /// println!("Truncate successful: {}", result.success());
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self), fields(layer_id = %layer_id))]
+    pub async fn truncate(&self, layer_id: LayerId) -> Result<crate::TruncateResult> {
+        tracing::debug!("Truncating layer");
+
+        let url = format!("{}/{}/truncate", self.base_url, layer_id);
+        let token = self.client.auth().get_token().await?;
+
+        tracing::debug!(url = %url, "Sending truncate request");
+
+        let form = vec![("f", "json"), ("token", token.as_str())];
+
+        let response = self.client.http().post(&url).form(&form).send().await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "truncate request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let result: crate::TruncateResult = response.json().await?;
+
+        tracing::info!(success = result.success(), "Truncate completed");
+
+        Ok(result)
+    }
+
+    /// Queries domains and subtypes for a layer.
+    ///
+    /// Returns coded value domains and subtype information for specified layers.
+    /// This is useful for getting valid values for fields with domains.
+    ///
+    /// # Arguments
+    ///
+    /// * `layers` - Layer IDs to query domains for. If empty, queries all layers.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = FeatureServiceClient::new("https://example.com/FeatureServer", &client);
+    ///
+    /// // Query domains for specific layers
+    /// let result = service.query_domains(vec![LayerId::new(0), LayerId::new(1)]).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self), fields(layer_count = layers.len()))]
+    pub async fn query_domains(&self, layers: Vec<LayerId>) -> Result<crate::QueryDomainsResponse> {
+        tracing::debug!("Querying domains");
+
+        let url = format!("{}/queryDomains", self.base_url);
+        let token = self.client.auth().get_token().await?;
+
+        let layers_str = layers
+            .iter()
+            .map(|id| id.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
+
+        tracing::debug!(url = %url, layers = %layers_str, "Sending queryDomains request");
+
+        let mut form = vec![("f", "json"), ("token", token.as_str())];
+
+        if !layers_str.is_empty() {
+            form.push(("layers", &layers_str));
+        }
+
+        let response = self.client.http().post(&url).form(&form).send().await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "queryDomains request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let result: crate::QueryDomainsResponse = response.json().await?;
+
+        tracing::info!(
+            layer_count = result.layers().len(),
+            "queryDomains completed"
+        );
+
+        Ok(result)
+    }
+
+    /// Calculates field values for features using SQL expressions.
+    ///
+    /// This operation performs field calculations on existing features, similar
+    /// to a field calculator. Supports both simple field assignments and complex
+    /// SQL expressions.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_id` - The layer containing features to update
+    /// * `where_clause` - SQL WHERE clause to select features to update
+    /// * `calc_expression` - Array of field calculation expressions
+    /// * `options` - Edit options (session, versioning, etc.)
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId, EditOptions, FieldCalculation};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = FeatureServiceClient::new("https://example.com/FeatureServer", &client);
+    ///
+    /// // Calculate field values
+    /// let calculations = vec![
+    ///     FieldCalculation::new("STATUS".to_string(), "CASE WHEN POPULATION > 100000 THEN 'Large' ELSE 'Small' END".to_string()),
+    /// ];
+    ///
+    /// let result = service
+    ///     .calculate_records(
+    ///         LayerId::new(0),
+    ///         "STATE = 'CA'",
+    ///         calculations,
+    ///         EditOptions::default(),
+    ///     )
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, where_clause, calc_expression, options), fields(layer_id = %layer_id))]
+    pub async fn calculate_records(
+        &self,
+        layer_id: LayerId,
+        where_clause: impl Into<String>,
+        calc_expression: Vec<crate::FieldCalculation>,
+        options: EditOptions,
+    ) -> Result<EditResult> {
+        tracing::debug!("Calculating field values");
+
+        let url = format!("{}/{}/calculate", self.base_url, layer_id);
+        let token = self.client.auth().get_token().await?;
+
+        let where_str = where_clause.into();
+        let calc_json = serde_json::to_string(&calc_expression)?;
+
+        tracing::debug!(url = %url, where_clause = %where_str, "Sending calculate request");
+
+        let mut form = vec![
+            ("where", where_str.as_str()),
+            ("calcExpression", calc_json.as_str()),
+            ("f", "json"),
+            ("token", token.as_str()),
+        ];
+
+        // Add optional parameters
+        let session_id_str = options.session_id.as_ref().map(|s| s.to_string());
+        if let Some(ref session_id) = session_id_str {
+            form.push(("sessionId", session_id.as_str()));
+        }
+        if let Some(ref gdb_version) = options.gdb_version {
+            form.push(("gdbVersion", gdb_version.as_str()));
+        }
+        if let Some(rollback) = options.rollback_on_failure {
+            form.push(("rollbackOnFailure", if rollback { "true" } else { "false" }));
+        }
+
+        let response = self.client.http().post(&url).form(&form).send().await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "calculate request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let result: EditResult = response.json().await?;
+
+        tracing::info!(
+            success_count = result.success_count(),
+            failure_count = result.failure_count(),
+            "Calculate completed"
+        );
+
+        Ok(result)
+    }
+
+    /// Applies edits to a layer using global IDs instead of object IDs.
+    ///
+    /// This method is similar to [`apply_edits`](Self::apply_edits) but uses global IDs
+    /// for identifying features. Global IDs are stable across replicas and are useful
+    /// in disconnected editing scenarios.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_id` - The layer to apply edits to
+    /// * `adds` - Optional vector of features to add
+    /// * `updates` - Optional vector of features to update (must include globalId attribute)
+    /// * `deletes` - Optional vector of global IDs to delete
+    /// * `options` - Edit options (session, versioning, etc.)
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId, Feature, EditOptions};
+    /// use serde_json::json;
+    /// use std::collections::HashMap;
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = FeatureServiceClient::new("https://example.com/FeatureServer", &client);
+    ///
+    /// // Update using global IDs
+    /// let mut update_attrs = HashMap::new();
+    /// update_attrs.insert("globalId".to_string(), json!("{12345678-1234-1234-1234-123456789012}"));
+    /// update_attrs.insert("STATUS".to_string(), json!("Updated"));
+    /// let updated_feature = Feature {
+    ///     attributes: update_attrs,
+    ///     geometry: None,
+    /// };
+    ///
+    /// // Delete by global IDs
+    /// let global_ids_to_delete = vec![
+    ///     "{87654321-4321-4321-4321-210987654321}".to_string(),
+    /// ];
+    ///
+    /// let result = service
+    ///     .apply_edits_with_global_ids(
+    ///         LayerId::new(0),
+    ///         None,
+    ///         Some(vec![updated_feature]),
+    ///         Some(global_ids_to_delete),
+    ///         EditOptions::default(),
+    ///     )
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(
+        skip(self, adds, updates, deletes, options),
+        fields(
+            layer_id = %layer_id,
+            add_count = adds.as_ref().map(|v| v.len()).unwrap_or(0),
+            update_count = updates.as_ref().map(|v| v.len()).unwrap_or(0),
+            delete_count = deletes.as_ref().map(|v| v.len()).unwrap_or(0)
+        )
+    )]
+    pub async fn apply_edits_with_global_ids(
+        &self,
+        layer_id: LayerId,
+        adds: Option<Vec<Feature>>,
+        updates: Option<Vec<Feature>>,
+        deletes: Option<Vec<String>>,
+        options: EditOptions,
+    ) -> Result<EditResult> {
+        tracing::debug!("Applying batch edits to layer using global IDs");
+
+        let url = format!("{}/{}/applyEdits", self.base_url, layer_id);
+        let token = self.client.auth().get_token().await?;
+
+        tracing::debug!(url = %url, "Sending applyEdits (global IDs) request");
+
+        // Pre-allocate owned strings that need to live for the duration of the request
+        let adds_json = adds.as_ref().map(serde_json::to_string).transpose()?;
+        let updates_json = updates.as_ref().map(serde_json::to_string).transpose()?;
+        let deletes_json = deletes.as_ref().map(serde_json::to_string).transpose()?;
+
+        // Build form data with references to owned strings
+        let mut form: Vec<(&str, &str)> = vec![
+            ("f", "json"),
+            ("token", token.as_str()),
+            ("useGlobalIds", "true"),
+        ];
+
+        if let Some(ref adds) = adds_json {
+            form.push(("adds", adds.as_str()));
+        }
+        if let Some(ref updates) = updates_json {
+            form.push(("updates", updates.as_str()));
+        }
+        if let Some(ref deletes) = deletes_json {
+            form.push(("deletes", deletes.as_str()));
+        }
+
+        // Add optional parameters
+        let session_id_str = options.session_id.as_ref().map(|s| s.to_string());
+        if let Some(ref session_id) = session_id_str {
+            form.push(("sessionId", session_id.as_str()));
+        }
+        if let Some(ref gdb_version) = options.gdb_version {
+            form.push(("gdbVersion", gdb_version.as_str()));
+        }
+        if let Some(rollback) = options.rollback_on_failure {
+            form.push(("rollbackOnFailure", if rollback { "true" } else { "false" }));
+        }
+
+        let response = self.client.http().post(&url).form(&form).send().await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "applyEditsWithGlobalIds request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let result: EditResult = response.json().await?;
+
+        tracing::info!(
+            success_count = result.success_count(),
+            failure_count = result.failure_count(),
+            "applyEditsWithGlobalIds completed"
+        );
+
+        Ok(result)
+    }
 }

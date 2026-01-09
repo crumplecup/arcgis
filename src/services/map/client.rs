@@ -639,4 +639,223 @@ impl<'a> MapServiceClient<'a> {
             }
         }
     }
+
+    /// Searches for features containing the specified text in a map service.
+    ///
+    /// The find operation searches for text in one or more fields across multiple layers.
+    /// It returns features that contain the search text along with their attributes and geometries.
+    ///
+    /// # Arguments
+    ///
+    /// * `params` - Find parameters including search text, layers, and fields to search
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ArcGISClient, ApiKeyAuth, MapServiceClient, FindParams};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = MapServiceClient::new("https://example.com/MapServer", &client);
+    ///
+    /// let params = FindParams::builder()
+    ///     .search_text("Main Street")
+    ///     .layers(vec![0, 1])
+    ///     .search_fields(vec!["NAME".to_string(), "STREET".to_string()])
+    ///     .build()
+    ///     .expect("Valid params");
+    ///
+    /// let result = service.find(params).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, params))]
+    pub async fn find(&self, params: crate::FindParams) -> Result<crate::FindResponse> {
+        tracing::debug!("Finding features by text search");
+
+        let url = format!("{}/find", self.base_url);
+        let token = self.client.auth().get_token().await?;
+
+        tracing::debug!(url = %url, search_text = %params.search_text(), "Sending find request");
+
+        let form = serde_urlencoded::to_string(&params)?;
+        let response = self
+            .client
+            .http()
+            .get(&url)
+            .query(&[("token", token.as_str())])
+            .query(&[("f", "json")])
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(form)
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "find request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let result: crate::FindResponse = response.json().await?;
+
+        tracing::info!(result_count = result.results().len(), "Find completed");
+
+        Ok(result)
+    }
+
+    /// Generates KML (Keyhole Markup Language) output for the map service.
+    ///
+    /// This operation returns a KML representation of the map that can be used
+    /// in Google Earth and other KML viewers.
+    ///
+    /// # Arguments
+    ///
+    /// * `params` - Parameters for KML generation including layers and image options
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ArcGISClient, ApiKeyAuth, MapServiceClient, GenerateKmlParams};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = MapServiceClient::new("https://example.com/MapServer", &client);
+    ///
+    /// let params = GenerateKmlParams::builder()
+    ///     .doc_name("MyMap")
+    ///     .layers(vec![0, 1])
+    ///     .build()
+    ///     .expect("Valid params");
+    ///
+    /// let kml = service.generate_kml(params).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, params))]
+    pub async fn generate_kml(&self, params: crate::GenerateKmlParams) -> Result<String> {
+        tracing::debug!("Generating KML");
+
+        let url = format!("{}/generateKml", self.base_url);
+        let token = self.client.auth().get_token().await?;
+
+        tracing::debug!(url = %url, doc_name = %params.doc_name(), "Sending generateKml request");
+
+        let form = serde_urlencoded::to_string(&params)?;
+        let response = self
+            .client
+            .http()
+            .get(&url)
+            .query(&[("token", token.as_str())])
+            .query(&[("f", "kmz")]) // KML format
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(form)
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "generateKml request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let kml = response.text().await?;
+
+        tracing::info!(kml_length = kml.len(), "KML generation completed");
+
+        Ok(kml)
+    }
+
+    /// Generates a classification renderer for a layer.
+    ///
+    /// This operation generates renderer definitions (symbols, colors, class breaks)
+    /// based on the data in a layer field. Useful for creating dynamic visualizations
+    /// like choropleth maps, graduated symbols, etc.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_id` - The layer to generate renderer for
+    /// * `params` - Parameters for renderer generation including classification method
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ArcGISClient, ApiKeyAuth, MapServiceClient, GenerateRendererParams};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = MapServiceClient::new("https://example.com/MapServer", &client);
+    ///
+    /// let params = GenerateRendererParams::builder()
+    ///     .classification_field("POPULATION")
+    ///     .classification_method("natural-breaks")
+    ///     .break_count(5)
+    ///     .build()
+    ///     .expect("Valid params");
+    ///
+    /// let renderer = service.generate_renderer(0, params).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, params), fields(layer_id = layer_id))]
+    pub async fn generate_renderer(
+        &self,
+        layer_id: i32,
+        params: crate::GenerateRendererParams,
+    ) -> Result<crate::RendererResponse> {
+        tracing::debug!("Generating renderer for layer");
+
+        let url = format!("{}/{}/generateRenderer", self.base_url, layer_id);
+        let token = self.client.auth().get_token().await?;
+
+        tracing::debug!(
+            url = %url,
+            classification_field = %params.classification_field(),
+            "Sending generateRenderer request"
+        );
+
+        let params_json = serde_json::to_string(&params)?;
+        let form = vec![
+            ("classificationDef", params_json.as_str()),
+            ("f", "json"),
+            ("token", token.as_str()),
+        ];
+
+        let response = self.client.http().post(&url).form(&form).send().await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "generateRenderer request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let result: crate::RendererResponse = response.json().await?;
+
+        tracing::info!("Renderer generation completed");
+
+        Ok(result)
+    }
 }

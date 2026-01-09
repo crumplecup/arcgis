@@ -165,8 +165,10 @@ pub use client::MapServiceClient;
 pub use enums::{ImageFormat, LayerOperation, LayerSelection, ResponseFormat, TimeRelation};
 pub use export::ExportMapBuilder;
 pub use types::{
-    ExportExtent, ExportMapParams, ExportMapParamsBuilder, ExportMapResponse, ExportResult,
-    ExportTarget, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse, IdentifyResult,
-    LayerLegend, LegendResponse, LegendSymbol, LevelOfDetail, MapServiceMetadata, ServiceLayer,
-    SpatialReference, TileCoordinate, TileInfo,
+    ClassBreakInfo, ExportExtent, ExportMapParams, ExportMapParamsBuilder, ExportMapResponse,
+    ExportResult, ExportTarget, FindParams, FindParamsBuilder, FindResponse, FindResult,
+    GenerateKmlParams, GenerateKmlParamsBuilder, GenerateRendererParams,
+    GenerateRendererParamsBuilder, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse,
+    IdentifyResult, LayerLegend, LegendResponse, LegendSymbol, LevelOfDetail, MapServiceMetadata,
+    RendererResponse, ServiceLayer, SpatialReference, TileCoordinate, TileInfo, UniqueValueInfo,
 };

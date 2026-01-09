@@ -6,24 +6,28 @@ mod map;
 mod version_management;
 
 pub use feature::{
-    AddAttachmentResult, AttachmentInfo, AttachmentInfosResponse, AttachmentSource,
-    DeleteAttachmentResult, DeleteAttachmentsResponse, DownloadResult, DownloadTarget, EditError,
-    EditOptions, EditResult, EditResultItem, Feature, FeatureQueryParams,
+    AddAttachmentResult, AttachmentInfo, AttachmentInfosResponse, AttachmentSource, CodedValue,
+    DeleteAttachmentResult, DeleteAttachmentsResponse, Domain, DownloadResult, DownloadTarget,
+    EditError, EditOptions, EditResult, EditResultItem, Feature, FeatureQueryParams,
     FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet, FeatureStatisticsResponse,
-    QueryBuilder, RelatedRecordGroup, RelatedRecordsParams, RelatedRecordsParamsBuilder,
-    RelatedRecordsResponse, ResponseFormat, StatisticDefinition, StatisticType, TopFeaturesParams,
-    TopFeaturesParamsBuilder, TopFilter, UpdateAttachmentResult,
+    FieldCalculation, LayerDomainInfo, QueryBuilder, QueryDomainsResponse, RelatedRecordGroup,
+    RelatedRecordsParams, RelatedRecordsParamsBuilder, RelatedRecordsResponse, ResponseFormat,
+    StatisticDefinition, StatisticType, Subtype, TopFeaturesParams, TopFeaturesParamsBuilder,
+    TopFilter, TruncateResult, UpdateAttachmentResult,
 };
 pub use geocode::{
-    AddressCandidate, Category, Extent, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,
+    AddressCandidate, BatchCandidateResult, BatchCandidatesResponse, BatchGeocodeResponse,
+    BatchLocation, Category, Extent, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,
     LocationType, ReverseGeocodeResponse, SuggestResponse, Suggestion,
 };
 pub use map::{
-    ExportExtent, ExportMapBuilder, ExportMapParams, ExportMapParamsBuilder, ExportMapResponse,
-    ExportResult, ExportTarget, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse,
+    ClassBreakInfo, ExportExtent, ExportMapBuilder, ExportMapParams, ExportMapParamsBuilder,
+    ExportMapResponse, ExportResult, ExportTarget, FindParams, FindParamsBuilder, FindResponse,
+    FindResult, GenerateKmlParams, GenerateKmlParamsBuilder, GenerateRendererParams,
+    GenerateRendererParamsBuilder, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse,
     IdentifyResult, ImageFormat, LayerLegend, LayerOperation, LayerSelection, LegendResponse,
-    LegendSymbol, LevelOfDetail, MapServiceClient, MapServiceMetadata, ServiceLayer,
-    SpatialReference, TileCoordinate, TileInfo, TimeRelation,
+    LegendSymbol, LevelOfDetail, MapServiceClient, MapServiceMetadata, RendererResponse,
+    ServiceLayer, SpatialReference, TileCoordinate, TileInfo, TimeRelation, UniqueValueInfo,
 };
 pub use version_management::{
     AlterResponse, AlterVersionParams, ConflictDetection, ConflictEntry, ConflictFeature,

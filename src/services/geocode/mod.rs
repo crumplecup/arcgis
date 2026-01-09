@@ -9,6 +9,7 @@ mod types;
 
 pub use client::GeocodeServiceClient;
 pub use types::{
-    AddressCandidate, Category, Extent, GeocodeAddress, GeocodeResponse, LocationType,
+    AddressCandidate, BatchCandidateResult, BatchCandidatesResponse, BatchGeocodeResponse,
+    BatchLocation, Category, Extent, GeocodeAddress, GeocodeResponse, LocationType,
     ReverseGeocodeResponse, SuggestResponse, Suggestion,
 };

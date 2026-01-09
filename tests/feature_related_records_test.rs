@@ -75,10 +75,7 @@ fn test_related_records_params_with_ordering() -> Result<()> {
         .build()
         .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
-    assert_eq!(
-        params.order_by_fields.as_ref().map(|f| f.len()),
-        Some(2)
-    );
+    assert_eq!(params.order_by_fields.as_ref().map(|f| f.len()), Some(2));
 
     Ok(())
 }

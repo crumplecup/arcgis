@@ -18,8 +18,9 @@ pub use client::FeatureServiceClient;
 pub use edit::{EditError, EditOptions, EditResult, EditResultItem};
 pub use query::QueryBuilder;
 pub use types::{
-    Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureSet, FeatureStatisticsResponse,
-    RelatedRecordGroup, RelatedRecordsParams, RelatedRecordsParamsBuilder,
-    RelatedRecordsResponse, ResponseFormat, StatisticDefinition, StatisticType, TopFeaturesParams,
-    TopFeaturesParamsBuilder, TopFilter,
+    CodedValue, Domain, Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureSet,
+    FeatureStatisticsResponse, FieldCalculation, LayerDomainInfo, QueryDomainsResponse,
+    RelatedRecordGroup, RelatedRecordsParams, RelatedRecordsParamsBuilder, RelatedRecordsResponse,
+    ResponseFormat, StatisticDefinition, StatisticType, Subtype, TopFeaturesParams,
+    TopFeaturesParamsBuilder, TopFilter, TruncateResult,
 };

@@ -1,7 +1,7 @@
 //! Tests for Feature Service top features queries.
 
 use arcgis::{
-    ApiKeyAuth, ArcGISClient, FeatureServiceClient, TopFeaturesParams, TopFilter, Result,
+    ApiKeyAuth, ArcGISClient, FeatureServiceClient, Result, TopFeaturesParams, TopFilter,
 };
 
 #[test]
@@ -59,10 +59,7 @@ fn test_top_features_params_builder() -> Result<()> {
         .expect("Valid params");
 
     assert!(params.top_filter.is_some());
-    assert_eq!(
-        params.top_filter.unwrap().group_by_fields,
-        vec!["State"]
-    );
+    assert_eq!(params.top_filter.unwrap().group_by_fields, vec!["State"]);
     assert_eq!(params.where_, Some("Population > 100000".to_string()));
     assert_eq!(params.out_fields.as_ref().map(|f| f.len()), Some(2));
     assert_eq!(params.return_geometry, Some(false));
@@ -96,10 +93,7 @@ fn test_top_features_params_with_spatial_filter() -> Result<()> {
         .build()
         .expect("Valid params");
 
-    assert_eq!(
-        params.spatial_rel,
-        Some(arcgis::SpatialRel::Intersects)
-    );
+    assert_eq!(params.spatial_rel, Some(arcgis::SpatialRel::Intersects));
     assert_eq!(params.distance, Some(1000.0));
     assert_eq!(params.units, Some("esriSRUnit_Meter".to_string()));
 
@@ -165,9 +159,7 @@ fn test_top_features_client_method_compiles() {
         vec!["Population DESC".to_string()],
     );
 
-    let _params = TopFeaturesParams::builder()
-        .top_filter(filter)
-        .build();
+    let _params = TopFeaturesParams::builder().top_filter(filter).build();
 
     // This won't execute but verifies the API compiles
     drop(service);
@@ -217,11 +209,7 @@ fn test_top_filter_serialization() -> Result<()> {
 
 #[test]
 fn test_top_features_params_with_time_filter() -> Result<()> {
-    let filter = TopFilter::new(
-        vec!["Year".to_string()],
-        10,
-        vec!["Sales DESC".to_string()],
-    );
+    let filter = TopFilter::new(vec!["Year".to_string()], 10, vec!["Sales DESC".to_string()]);
 
     let params = TopFeaturesParams::builder()
         .top_filter(filter)

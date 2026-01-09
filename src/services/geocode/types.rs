@@ -205,3 +205,79 @@ impl From<&str> for Category {
         }
     }
 }
+
+impl GeocodeAddress {
+    /// Creates a new GeocodeAddress with just the address string.
+    ///
+    /// This is useful for batch geocoding where you just have address strings.
+    pub fn new(address: impl Into<String>) -> Self {
+        Self {
+            match_addr: Some(address.into()),
+            long_label: None,
+            short_label: None,
+            addr_type: None,
+            feature_type: None,
+            place_name: None,
+            add_num: None,
+            st_name: None,
+            st_type: None,
+            city: None,
+            region: None,
+            region_abbr: None,
+            postal: None,
+            postal_ext: None,
+            country_code: None,
+            cntry_name: None,
+        }
+    }
+}
+
+/// Response from batch geocoding (geocodeAddresses).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct BatchGeocodeResponse {
+    /// Array of geocoded locations.
+    locations: Vec<BatchLocation>,
+
+    /// Spatial reference of results.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    spatial_reference: Option<SpatialReference>,
+}
+
+/// A single result from batch geocoding.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct BatchLocation {
+    /// Address that was geocoded.
+    address: String,
+
+    /// Geographic location.
+    location: ArcGISPoint,
+
+    /// Match score (0-100).
+    score: f64,
+
+    /// Detailed attributes.
+    #[serde(default)]
+    attributes: HashMap<String, serde_json::Value>,
+}
+
+/// Response from batch findAddressCandidates.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct BatchCandidatesResponse {
+    /// Array of candidate results for each input address.
+    candidates: Vec<BatchCandidateResult>,
+
+    /// Spatial reference of results.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    spatial_reference: Option<SpatialReference>,
+}
+
+/// Candidates for a single address in batch processing.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct BatchCandidateResult {
+    /// The input address.
+    address: String,
+
+    /// All candidates found for this address.
+    candidates: Vec<AddressCandidate>,
+}
