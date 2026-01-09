@@ -37,9 +37,9 @@ This achieves **70-75% total coverage** while providing **95% use case coverage*
 
 | Service | Tier | Current | Target | Priority | Est. Effort |
 |---------|------|---------|--------|----------|-------------|
-| **Feature Service** | 1 | 98% | 100% | P0 | 0.5 weeks |
-| **Map Service** | 1 | 90% | 95% | P1 | 0.5 weeks |
-| **Geocoding Service** | 1 | 85% | 95% | P1 | 0.5 weeks |
+| **Feature Service** | 1 | 100% | 100% | ✅ | 0 weeks |
+| **Map Service** | 1 | 95% | 95% | ✅ | 0 weeks |
+| **Geocoding Service** | 1 | 95% | 95% | ✅ | 0 weeks |
 | **Version Management** | 1 | 100% | 100% | ✅ | 0 weeks |
 | **Geometry Service** | 1 | 0% | 100% | P0 | 3 weeks |
 | **Routing/Network Service** | 2 | 0% | 90% | P1 | 3 weeks |
@@ -62,7 +62,7 @@ This achieves **70-75% total coverage** while providing **95% use case coverage*
 
 ## Phase-by-Phase Implementation Plan
 
-### Phase 1: Complete Core Foundation (v0.3.1) - 2 weeks
+### Phase 1: Complete Core Foundation (v0.3.1) - ✅ COMPLETE
 
 **Goal**: Fill critical gaps in Tier 1 services
 
@@ -71,8 +71,8 @@ This achieves **70-75% total coverage** while providing **95% use case coverage*
 - [x] `applyEditsWithGlobalIds` - Edits using global IDs ✅ `9d9c007`
 - [x] `truncate` - Delete all features ✅ `9d9c007`
 - [x] `queryDomains` - Query coded value domains ✅ `9d9c007`
-- [ ] `queryFeatureCount` - Get feature count efficiently
-- [ ] Enhanced error responses with field-level validation errors
+- [x] `queryFeatureCount` - Get feature count efficiently ✅ `8b4e236`
+- [x] Enhanced error responses with field-level validation errors ✅ `8b4e236`
 
 **Files to Create/Modify**:
 - `src/services/feature/client.rs` - Add new methods
@@ -90,8 +90,8 @@ This achieves **70-75% total coverage** while providing **95% use case coverage*
 - [x] `find` - Find features by text search ✅ `9d9c007`
 - [x] `generateKml` - Generate KML output ✅ `9d9c007`
 - [x] `generateRenderer` - Generate classification renderer ✅ `9d9c007`
-- [ ] `queryDomains` - Query map service domains
-- [ ] Enhanced layer definition support
+- [x] `queryDomains` - Query map service domains ✅ `8b4e236`
+- [x] Enhanced layer definition support (LayerDefinitions builder) ✅ `8b4e236`
 
 **Files to Create/Modify**:
 - `src/services/map/client.rs` - Add new methods
@@ -108,8 +108,8 @@ This achieves **70-75% total coverage** while providing **95% use case coverage*
 #### Geocoding Service - Remaining Operations
 - [x] `geocodeAddresses` - Batch geocoding ✅ `9d9c007`
 - [x] `findAddressCandidatesByBatch` - Batch address matching ✅ `9d9c007`
-- [ ] `getSuggestionsWithCategory` - Category-filtered suggestions
-- [ ] Enhanced spatial reference support
+- [x] `suggestWithCategory` - Category-filtered suggestions ✅ `8b4e236`
+- [x] Enhanced spatial reference support (with_sr methods) ✅ `8b4e236`
 
 **Files to Create/Modify**:
 - `src/services/geocode/client.rs` - Add batch methods
