@@ -243,6 +243,91 @@ impl<'a> GeocodeServiceClient<'a> {
         Ok(geocode_response)
     }
 
+    /// Finds address candidates with custom spatial reference.
+    ///
+    /// This extends the basic `find_address_candidates` operation by allowing you to
+    /// specify the output spatial reference for the returned coordinates.
+    ///
+    /// # Arguments
+    ///
+    /// * `address` - The address to geocode
+    /// * `out_sr` - The WKID of the desired output spatial reference
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, GeocodeServiceClient};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let geocoder = GeocodeServiceClient::new("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer", &client);
+    ///
+    /// // Geocode with Web Mercator output (WKID: 3857)
+    /// let result = geocoder
+    ///     .find_address_candidates_with_sr("380 New York St, Redlands, CA", 3857)
+    ///     .await?;
+    ///
+    /// // Geocode with State Plane California Zone 6 (WKID: 2230)
+    /// let result_sp = geocoder
+    ///     .find_address_candidates_with_sr("380 New York St, Redlands, CA", 2230)
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, address), fields(out_sr = out_sr))]
+    pub async fn find_address_candidates_with_sr(
+        &self,
+        address: impl Into<String>,
+        out_sr: i32,
+    ) -> Result<GeocodeResponse> {
+        let address = address.into();
+        tracing::debug!(address = %address, out_sr = out_sr, "Finding address candidates with custom SR");
+
+        let url = format!("{}/findAddressCandidates", self.base_url);
+        let token = self.client.auth().get_token().await?;
+
+        tracing::debug!(url = %url, "Sending findAddressCandidates request");
+
+        let response = self
+            .client
+            .http()
+            .get(&url)
+            .query(&[
+                ("SingleLine", address.as_str()),
+                ("outSR", out_sr.to_string().as_str()),
+                ("f", "json"),
+                ("token", token.as_str()),
+                ("outFields", "*"),
+                ("maxLocations", "50"),
+            ])
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "findAddressCandidates with SR failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let geocode_response: GeocodeResponse = response.json().await?;
+
+        tracing::info!(
+            candidate_count = geocode_response.candidates().len(),
+            out_sr = out_sr,
+            "findAddressCandidates with SR completed"
+        );
+
+        Ok(geocode_response)
+    }
+
     /// Converts a location (coordinates) to an address.
     ///
     /// This performs reverse geocoding - converting coordinates to an address.
@@ -322,6 +407,97 @@ impl<'a> GeocodeServiceClient<'a> {
         Ok(reverse_response)
     }
 
+    /// Reverse geocodes a location with custom spatial reference.
+    ///
+    /// This extends the basic `reverse_geocode` operation by allowing you to specify
+    /// the output spatial reference for the returned coordinates.
+    ///
+    /// # Arguments
+    ///
+    /// * `location` - The point to reverse geocode
+    /// * `out_sr` - The WKID of the desired output spatial reference
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, GeocodeServiceClient, ArcGISPoint};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let geocoder = GeocodeServiceClient::new("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer", &client);
+    ///
+    /// // Reverse geocode with Web Mercator output
+    /// let point = ArcGISPoint {
+    ///     x: -122.4194,
+    ///     y: 37.7749,
+    ///     z: None,
+    ///     m: None,
+    ///     spatial_reference: None,
+    /// };
+    /// let result = geocoder
+    ///     .reverse_geocode_with_sr(&point, 3857)  // Web Mercator output
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, location), fields(x = location.x, y = location.y, out_sr = out_sr))]
+    pub async fn reverse_geocode_with_sr(
+        &self,
+        location: &ArcGISPoint,
+        out_sr: i32,
+    ) -> Result<ReverseGeocodeResponse> {
+        tracing::debug!(
+            x = location.x,
+            y = location.y,
+            out_sr = out_sr,
+            "Reverse geocoding location with custom SR"
+        );
+
+        let url = format!("{}/reverseGeocode", self.base_url);
+        let token = self.client.auth().get_token().await?;
+
+        let location_str = format!("{},{}", location.x, location.y);
+
+        tracing::debug!(url = %url, location = %location_str, "Sending reverseGeocode request");
+
+        let response = self
+            .client
+            .http()
+            .get(&url)
+            .query(&[
+                ("location", location_str.as_str()),
+                ("outSR", out_sr.to_string().as_str()),
+                ("f", "json"),
+                ("token", token.as_str()),
+            ])
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "reverseGeocode with SR failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let reverse_response: ReverseGeocodeResponse = response.json().await?;
+
+        tracing::info!(
+            address = ?reverse_response.address().match_addr(),
+            out_sr = out_sr,
+            "reverseGeocode with SR completed"
+        );
+
+        Ok(reverse_response)
+    }
+
     /// Gets autocomplete suggestions for partial address input.
     ///
     /// This is useful for implementing search-as-you-type functionality.
@@ -389,6 +565,89 @@ impl<'a> GeocodeServiceClient<'a> {
         tracing::info!(
             suggestion_count = suggest_response.suggestions().len(),
             "suggest completed"
+        );
+
+        Ok(suggest_response)
+    }
+
+    /// Gets autocomplete suggestions filtered by category.
+    ///
+    /// This method extends the basic `suggest` operation by allowing you to filter
+    /// results by location category (e.g., "Address", "City", "POI").
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The partial address text to get suggestions for
+    /// * `category` - The category to filter by (e.g., "Address", "City", "POI")
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, GeocodeServiceClient, Category};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let geocoder = GeocodeServiceClient::new("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer", &client);
+    ///
+    /// // Get suggestions for POIs only
+    /// let poi_suggestions = geocoder
+    ///     .suggest_with_category("Starbucks", Category::Poi)
+    ///     .await?;
+    ///
+    /// // Get suggestions for food establishments only
+    /// let food_suggestions = geocoder
+    ///     .suggest_with_category("Pizza", Category::Food)
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, text, category), fields(text_len = text.as_ref().len()))]
+    pub async fn suggest_with_category(
+        &self,
+        text: impl Into<String> + AsRef<str>,
+        category: crate::Category,
+    ) -> Result<SuggestResponse> {
+        let text = text.into();
+        tracing::debug!(text = %text, category = ?category, "Getting category-filtered suggestions");
+
+        let url = format!("{}/suggest", self.base_url);
+        let token = self.client.auth().get_token().await?;
+
+        tracing::debug!(url = %url, "Sending suggest request with category filter");
+
+        let response = self
+            .client
+            .http()
+            .get(&url)
+            .query(&[
+                ("text", text.as_str()),
+                ("category", category.as_str()),
+                ("f", "json"),
+                ("token", token.as_str()),
+            ])
+            .send()
+            .await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "suggest with category failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let suggest_response: SuggestResponse = response.json().await?;
+
+        tracing::info!(
+            suggestion_count = suggest_response.suggestions().len(),
+            category = ?category,
+            "suggest with category completed"
         );
 
         Ok(suggest_response)

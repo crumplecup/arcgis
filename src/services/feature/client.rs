@@ -1643,6 +1643,64 @@ impl<'a> FeatureServiceClient<'a> {
         Ok(result)
     }
 
+    /// Efficiently counts features matching a query without returning feature data.
+    ///
+    /// This operation returns only the count of features matching the query criteria,
+    /// making it much more efficient than querying all features and counting them.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_id` - The layer to query
+    /// * `where_clause` - SQL WHERE clause to filter features (default: "1=1")
+    ///
+    /// # Returns
+    ///
+    /// The count of features matching the query.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = FeatureServiceClient::new("https://example.com/FeatureServer", &client);
+    ///
+    /// // Count all features
+    /// let total_count = service.query_feature_count(LayerId::new(0), "1=1").await?;
+    ///
+    /// // Count features matching criteria
+    /// let filtered_count = service
+    ///     .query_feature_count(LayerId::new(0), "STATE = 'CA' AND POPULATION > 100000")
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, where_clause), fields(layer_id = %layer_id))]
+    pub async fn query_feature_count(
+        &self,
+        layer_id: LayerId,
+        where_clause: impl Into<String>,
+    ) -> Result<u32> {
+        tracing::debug!("Querying feature count");
+
+        let params = FeatureQueryParams {
+            where_clause: where_clause.into(),
+            return_count_only: Some(true),
+            return_geometry: false,
+            out_fields: Some(vec![]), // No fields needed for count
+            ..Default::default()
+        };
+
+        let result = self.query_with_params(layer_id, params).await?;
+
+        let count = result.count.unwrap_or(0);
+        tracing::info!(count = count, "Feature count query completed");
+
+        Ok(count)
+    }
+
     /// Calculates field values for features using SQL expressions.
     ///
     /// This operation performs field calculations on existing features, similar

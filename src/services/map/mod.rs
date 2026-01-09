@@ -169,6 +169,7 @@ pub use types::{
     ExportResult, ExportTarget, FindParams, FindParamsBuilder, FindResponse, FindResult,
     GenerateKmlParams, GenerateKmlParamsBuilder, GenerateRendererParams,
     GenerateRendererParamsBuilder, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse,
-    IdentifyResult, LayerLegend, LegendResponse, LegendSymbol, LevelOfDetail, MapServiceMetadata,
-    RendererResponse, ServiceLayer, SpatialReference, TileCoordinate, TileInfo, UniqueValueInfo,
+    IdentifyResult, LayerDefinitions, LayerLegend, LegendResponse, LegendSymbol, LevelOfDetail,
+    MapServiceMetadata, RendererResponse, ServiceLayer, SpatialReference, TileCoordinate, TileInfo,
+    UniqueValueInfo,
 };

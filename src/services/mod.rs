@@ -25,9 +25,10 @@ pub use map::{
     ExportMapResponse, ExportResult, ExportTarget, FindParams, FindParamsBuilder, FindResponse,
     FindResult, GenerateKmlParams, GenerateKmlParamsBuilder, GenerateRendererParams,
     GenerateRendererParamsBuilder, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse,
-    IdentifyResult, ImageFormat, LayerLegend, LayerOperation, LayerSelection, LegendResponse,
-    LegendSymbol, LevelOfDetail, MapServiceClient, MapServiceMetadata, RendererResponse,
-    ServiceLayer, SpatialReference, TileCoordinate, TileInfo, TimeRelation, UniqueValueInfo,
+    IdentifyResult, ImageFormat, LayerDefinitions, LayerLegend, LayerOperation, LayerSelection,
+    LegendResponse, LegendSymbol, LevelOfDetail, MapServiceClient, MapServiceMetadata,
+    RendererResponse, ServiceLayer, SpatialReference, TileCoordinate, TileInfo, TimeRelation,
+    UniqueValueInfo,
 };
 pub use version_management::{
     AlterResponse, AlterVersionParams, ConflictDetection, ConflictEntry, ConflictFeature,

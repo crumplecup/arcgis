@@ -858,4 +858,83 @@ impl<'a> MapServiceClient<'a> {
 
         Ok(result)
     }
+
+    /// Queries field domains and subtype information for map service layers.
+    ///
+    /// This operation retrieves domain definitions (coded values, ranges) and subtype
+    /// information for one or more layers in the map service. Useful for understanding
+    /// valid values and field constraints.
+    ///
+    /// # Arguments
+    ///
+    /// * `layers` - Vector of layer IDs to query domains for (empty for all layers)
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ArcGISClient, ApiKeyAuth, MapServiceClient, LayerId};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let service = MapServiceClient::new("https://example.com/MapServer", &client);
+    ///
+    /// // Query domains for specific layers
+    /// let domains = service
+    ///     .query_domains(vec![LayerId::new(0), LayerId::new(1)])
+    ///     .await?;
+    ///
+    /// // Query domains for all layers
+    /// let all_domains = service.query_domains(vec![]).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self), fields(layer_count = layers.len()))]
+    pub async fn query_domains(
+        &self,
+        layers: Vec<crate::LayerId>,
+    ) -> Result<crate::QueryDomainsResponse> {
+        tracing::debug!("Querying map service domains");
+
+        let url = format!("{}/queryDomains", self.base_url);
+        let token = self.client.auth().get_token().await?;
+
+        let layers_str = layers
+            .iter()
+            .map(|id| id.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
+
+        tracing::debug!(url = %url, layers = %layers_str, "Sending queryDomains request");
+
+        let mut form = vec![("f", "json"), ("token", token.as_str())];
+
+        if !layers_str.is_empty() {
+            form.push(("layers", &layers_str));
+        }
+
+        let response = self.client.http().post(&url).form(&form).send().await?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
+            tracing::error!(status = %status, error = %error_text, "queryDomains request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        let result: crate::QueryDomainsResponse = response.json().await?;
+
+        tracing::info!(
+            layer_count = result.layers().len(),
+            "Map service queryDomains completed"
+        );
+
+        Ok(result)
+    }
 }

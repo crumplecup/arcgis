@@ -81,6 +81,77 @@ impl ExportResult {
     }
 }
 
+/// Builder for layer definition expressions.
+///
+/// Provides a type-safe way to construct layer definition expressions (SQL WHERE
+/// clauses) for filtering map layers. Each layer can have its own WHERE clause.
+///
+/// # Example
+///
+/// ```
+/// use arcgis::LayerDefinitions;
+///
+/// let defs = LayerDefinitions::new()
+///     .add_layer_def(0, "POPULATION > 100000")
+///     .add_layer_def(1, "STATE = 'CA'")
+///     .build();
+/// ```
+#[derive(Debug, Clone, Default)]
+pub struct LayerDefinitions {
+    definitions: HashMap<i32, String>,
+}
+
+impl LayerDefinitions {
+    /// Creates a new empty layer definitions builder.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Adds a definition expression for a specific layer.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_id` - The layer ID to apply the filter to
+    /// * `where_clause` - SQL WHERE clause (without the "WHERE" keyword)
+    pub fn add_layer_def(mut self, layer_id: i32, where_clause: impl Into<String>) -> Self {
+        self.definitions.insert(layer_id, where_clause.into());
+        self
+    }
+
+    /// Adds a definition expression for a specific layer (mutable version).
+    pub fn add_layer_def_mut(&mut self, layer_id: i32, where_clause: impl Into<String>) {
+        self.definitions.insert(layer_id, where_clause.into());
+    }
+
+    /// Builds the layer definitions into the JSON format expected by ArcGIS.
+    ///
+    /// Returns a JSON string in the format: `{"0": "expression1", "1": "expression2"}`
+    pub fn build(&self) -> String {
+        serde_json::to_string(&self.definitions).unwrap_or_else(|_| "{}".to_string())
+    }
+
+    /// Returns true if no layer definitions have been added.
+    pub fn is_empty(&self) -> bool {
+        self.definitions.is_empty()
+    }
+
+    /// Returns the number of layer definitions.
+    pub fn len(&self) -> usize {
+        self.definitions.len()
+    }
+
+    /// Gets the definition for a specific layer.
+    pub fn get(&self, layer_id: i32) -> Option<&String> {
+        self.definitions.get(&layer_id)
+    }
+}
+
+impl From<LayerDefinitions> for String {
+    fn from(defs: LayerDefinitions) -> Self {
+        defs.build()
+    }
+}
+
 /// Tile coordinate for tile requests.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Getters)]
 pub struct TileCoordinate {

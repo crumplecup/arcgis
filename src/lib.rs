@@ -85,7 +85,7 @@ pub use services::{
     GenerateRendererParams, GenerateRendererParamsBuilder, GeocodeAddress, GeocodeResponse,
     GeocodeServiceClient, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse, IdentifyResult,
     ImageFormat, InspectConflictFeature, InspectConflictLayer, InspectConflictsResponse,
-    LayerConflicts, LayerDomainInfo, LayerFeatureDifferences, LayerLegend,
+    LayerConflicts, LayerDefinitions, LayerDomainInfo, LayerFeatureDifferences, LayerLegend,
     LayerObjectIdDifferences, LayerOperation, LayerSelection, LegendResponse, LegendSymbol,
     LevelOfDetail, LocationType, MapServiceClient, MapServiceMetadata, PartialPostRow,
     PostResponse, QueryBuilder, QueryDomainsResponse, ReconcileResponse, RelatedRecordGroup,

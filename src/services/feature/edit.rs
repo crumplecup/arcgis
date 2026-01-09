@@ -121,6 +121,9 @@ pub struct EditResultItem {
 }
 
 /// Error details for a failed edit operation.
+///
+/// Includes field-level validation errors when available, making it easier
+/// to identify which fields caused the failure.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
 pub struct EditError {
     /// Error code
@@ -128,11 +131,38 @@ pub struct EditError {
 
     /// Human-readable error description
     description: String,
+
+    /// The field name that caused the error (if field-specific).
+    ///
+    /// Present when the error is related to a specific field validation failure.
+    #[serde(rename = "fieldName", skip_serializing_if = "Option::is_none")]
+    field_name: Option<String>,
+
+    /// The invalid value(s) that caused the error.
+    ///
+    /// Contains the actual values that failed validation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    values: Option<Vec<serde_json::Value>>,
+
+    /// Additional error details.
+    ///
+    /// May contain more specific information about the validation failure,
+    /// such as constraint violations or data type mismatches.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    details: Option<Vec<String>>,
 }
 
 impl std::fmt::Display for EditError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Edit error {}: {}", self.code, self.description)
+        if let Some(ref field_name) = self.field_name {
+            write!(
+                f,
+                "Edit error {} (field: {}): {}",
+                self.code, field_name, self.description
+            )
+        } else {
+            write!(f, "Edit error {}: {}", self.code, self.description)
+        }
     }
 }
 
