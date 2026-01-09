@@ -2,6 +2,7 @@
 
 mod feature;
 mod geocode;
+mod geometry;
 mod map;
 mod version_management;
 
@@ -19,6 +20,14 @@ pub use geocode::{
     AddressCandidate, BatchCandidateResult, BatchCandidatesResponse, BatchGeocodeResponse,
     BatchLocation, Category, Extent, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,
     LocationType, ReverseGeocodeResponse, SuggestResponse, Suggestion,
+};
+pub use geometry::{
+    AreaUnit, AreasAndLengthsParameters, AreasAndLengthsParametersBuilder, AreasAndLengthsResult,
+    BufferParameters, BufferParametersBuilder, BufferResult, CalculationType, DistanceParameters,
+    DistanceParametersBuilder, DistanceResult, GeometryServiceClient, LinearUnit,
+    ProjectParameters, ProjectParametersBuilder, ProjectResult, SimplifyParameters,
+    SimplifyParametersBuilder, SimplifyResult, Transformation, UnionParameters,
+    UnionParametersBuilder, UnionResult,
 };
 pub use map::{
     ClassBreakInfo, ExportExtent, ExportMapBuilder, ExportMapParams, ExportMapParamsBuilder,
