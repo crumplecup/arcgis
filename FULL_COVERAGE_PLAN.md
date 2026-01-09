@@ -4,7 +4,7 @@
 
 **Timeline**: 6-8 months focused development
 
-**Last Updated**: 2026-01-04
+**Last Updated**: 2026-01-08
 
 ---
 
@@ -37,9 +37,9 @@ This achieves **70-75% total coverage** while providing **95% use case coverage*
 
 | Service | Tier | Current | Target | Priority | Est. Effort |
 |---------|------|---------|--------|----------|-------------|
-| **Feature Service** | 1 | 95% | 100% | P0 | 1 week |
-| **Map Service** | 1 | 80% | 95% | P1 | 1 week |
-| **Geocoding Service** | 1 | 70% | 95% | P1 | 1 week |
+| **Feature Service** | 1 | 98% | 100% | P0 | 0.5 weeks |
+| **Map Service** | 1 | 90% | 95% | P1 | 0.5 weeks |
+| **Geocoding Service** | 1 | 85% | 95% | P1 | 0.5 weeks |
 | **Version Management** | 1 | 100% | 100% | ✅ | 0 weeks |
 | **Geometry Service** | 1 | 0% | 100% | P0 | 3 weeks |
 | **Routing/Network Service** | 2 | 0% | 90% | P1 | 3 weeks |
@@ -67,10 +67,10 @@ This achieves **70-75% total coverage** while providing **95% use case coverage*
 **Goal**: Fill critical gaps in Tier 1 services
 
 #### Feature Service - Remaining Operations
-- [ ] `calculateRecords` - Calculate field values
-- [ ] `applyEditsWithGlobalIds` - Edits using global IDs
-- [ ] `truncate` - Delete all features
-- [ ] `queryDomains` - Query coded value domains
+- [x] `calculateRecords` - Calculate field values ✅ `9d9c007`
+- [x] `applyEditsWithGlobalIds` - Edits using global IDs ✅ `9d9c007`
+- [x] `truncate` - Delete all features ✅ `9d9c007`
+- [x] `queryDomains` - Query coded value domains ✅ `9d9c007`
 - [ ] `queryFeatureCount` - Get feature count efficiently
 - [ ] Enhanced error responses with field-level validation errors
 
@@ -87,9 +87,9 @@ This achieves **70-75% total coverage** while providing **95% use case coverage*
 ---
 
 #### Map Service - Remaining Operations
-- [ ] `find` - Find features by text search
-- [ ] `generateKml` - Generate KML output
-- [ ] `generateRenderer` - Generate classification renderer
+- [x] `find` - Find features by text search ✅ `9d9c007`
+- [x] `generateKml` - Generate KML output ✅ `9d9c007`
+- [x] `generateRenderer` - Generate classification renderer ✅ `9d9c007`
 - [ ] `queryDomains` - Query map service domains
 - [ ] Enhanced layer definition support
 
@@ -106,8 +106,8 @@ This achieves **70-75% total coverage** while providing **95% use case coverage*
 ---
 
 #### Geocoding Service - Remaining Operations
-- [ ] `geocodeAddresses` - Batch geocoding
-- [ ] `findAddressCandidatesByBatch` - Batch address matching
+- [x] `geocodeAddresses` - Batch geocoding ✅ `9d9c007`
+- [x] `findAddressCandidatesByBatch` - Batch address matching ✅ `9d9c007`
 - [ ] `getSuggestionsWithCategory` - Category-filtered suggestions
 - [ ] Enhanced spatial reference support
 

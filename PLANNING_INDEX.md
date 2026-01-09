@@ -8,7 +8,7 @@ along with their last associated commit.
 | Document | Purpose | Last Commit | Date |
 |----------|---------|-------------|------|
 | [ARCGIS_REST_API_RESEARCH.md](ARCGIS_REST_API_RESEARCH.md) | ArcGIS REST API research and analysis | `f616763` - feat: initial SDK foundation with type-safe architecture | 2 days ago |
-| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | SDK implementation roadmap and milestones | Updated | Today |
+| [FULL_COVERAGE_PLAN.md](FULL_COVERAGE_PLAN.md) | Full coverage implementation plan (70-75% API surface) | `d4db53d` - docs: add comprehensive full coverage implementation plan | 4 days ago |
 | [AUTHENTICATION_STRATEGY.md](AUTHENTICATION_STRATEGY.md) | Automated authentication strategy (API Key + Client Credentials) | New document | Today |
 
 ## Project Standards
@@ -29,6 +29,7 @@ along with their last associated commit.
 The following documents have been archived (removed from the repository
 but accessible via git history):
 
+- IMPLEMENTATION_PLAN.md - Original SDK implementation roadmap (superseded by FULL_COVERAGE_PLAN.md)
 - ARCHITECTURE_DECISION.md - Architectural decisions and rationale
 - USER_EXPERIENCE_COMPARISON.md - UX comparison and design decisions
 - PROJECT_STATUS.md - Historical project status tracking
