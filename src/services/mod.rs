@@ -4,6 +4,7 @@ mod feature;
 mod geocode;
 mod geometry;
 mod map;
+mod routing;
 mod version_management;
 
 pub use feature::{
@@ -38,6 +39,11 @@ pub use map::{
     LegendResponse, LegendSymbol, LevelOfDetail, MapServiceClient, MapServiceMetadata,
     RendererResponse, ServiceLayer, SpatialReference, TileCoordinate, TileInfo, TimeRelation,
     UniqueValueInfo,
+};
+pub use routing::{
+    BarrierType, DirectionsLength, DirectionsStyle, DirectionsTimeAttribute, ImpedanceAttribute,
+    NALocation, OutputLine, RestrictionAttribute, RouteParameters, RouteParametersBuilder,
+    RouteResult, RoutingServiceClient, RouteShape, TravelDirection, TravelMode, UTurnPolicy,
 };
 pub use version_management::{
     AlterResponse, AlterVersionParams, ConflictDetection, ConflictEntry, ConflictFeature,
