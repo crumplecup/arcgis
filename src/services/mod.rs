@@ -3,6 +3,7 @@
 mod feature;
 mod geocode;
 mod geometry;
+mod geoprocessing;
 mod map;
 mod routing;
 mod version_management;
@@ -29,6 +30,11 @@ pub use geometry::{
     ProjectParameters, ProjectParametersBuilder, ProjectResult, SimplifyParameters,
     SimplifyParametersBuilder, SimplifyResult, Transformation, UnionParameters,
     UnionParametersBuilder, UnionResult,
+};
+pub use geoprocessing::{
+    GeoprocessingServiceClient, GPBoolean, GPDataFile, GPDate, GPDouble, GPExecuteResult,
+    GPFeatureRecordSetLayer, GPJobInfo, GPJobStatus, GPLinearUnit, GPLong, GPMessage,
+    GPMessageType, GPParameter, GPRasterDataLayer, GPResultParameter, GPString,
 };
 pub use map::{
     ClassBreakInfo, ExportExtent, ExportMapBuilder, ExportMapParams, ExportMapParamsBuilder,
