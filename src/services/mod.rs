@@ -4,6 +4,7 @@ mod feature;
 mod geocode;
 mod geometry;
 mod geoprocessing;
+mod image;
 mod map;
 mod routing;
 mod vector_tile;
@@ -36,6 +37,12 @@ pub use geoprocessing::{
     GeoprocessingServiceClient, GPBoolean, GPDataFile, GPDate, GPDouble, GPExecuteResult,
     GPFeatureRecordSetLayer, GPJobInfo, GPJobStatus, GPLinearUnit, GPLong, GPMessage,
     GPMessageType, GPParameter, GPRasterDataLayer, GPResultParameter, GPString,
+};
+pub use image::{
+    ExportImageParameters, ExportImageParametersBuilder, ExportImageResult, HistogramParameters,
+    HistogramParametersBuilder, HistogramResult, IdentifyParameters, IdentifyParametersBuilder,
+    ImageIdentifyResult, ImageServiceClient, InterpolationType, MosaicRule, PixelType, RasterInfo,
+    RenderingRule, SampleParameters, SampleParametersBuilder, SampleResult,
 };
 pub use map::{
     ClassBreakInfo, ExportExtent, ExportMapBuilder, ExportMapParams, ExportMapParamsBuilder,
