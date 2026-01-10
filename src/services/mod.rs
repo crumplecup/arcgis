@@ -6,6 +6,7 @@ mod geometry;
 mod geoprocessing;
 mod map;
 mod routing;
+mod vector_tile;
 mod version_management;
 
 pub use feature::{
@@ -55,6 +56,7 @@ pub use routing::{
     ServiceAreaParameters, ServiceAreaParametersBuilder, ServiceAreaResult, TravelDirection,
     TravelMode, UTurnPolicy,
 };
+pub use vector_tile::{FontStack, GlyphRange, VectorTileServiceClient, VectorTileStyle};
 pub use version_management::{
     AlterResponse, AlterVersionParams, ConflictDetection, ConflictEntry, ConflictFeature,
     ConflictsResponse, CreateVersionParams, CreateVersionResponse, DeleteForwardEditsResponse,

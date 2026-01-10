@@ -110,8 +110,8 @@ pub use services::{
     TileCoordinate, TileInfo, TimeRelation, TopFeaturesParams, TopFeaturesParamsBuilder, TopFilter,
     Transformation, TravelDirection, TravelMode, TruncateResult, UnionParameters,
     UnionParametersBuilder, UnionResult, UniqueValueInfo, UpdateAttachmentResult, UTurnPolicy,
-    VersionGuid, VersionInfo, VersionInfosResponse, VersionManagementClient, VersionPermission,
-    VersioningType,
+    VectorTileServiceClient, VectorTileStyle, VersionGuid, VersionInfo, VersionInfosResponse,
+    VersionManagementClient, VersionPermission, VersioningType, FontStack, GlyphRange,
 };
 pub use types::{AttachmentId, GeometryType, LayerId, ObjectId, SpatialRel};
 
