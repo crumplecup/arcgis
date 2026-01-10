@@ -1,5 +1,6 @@
 //! ArcGIS service modules.
 
+mod elevation;
 mod feature;
 mod geocode;
 mod geometry;
@@ -20,6 +21,11 @@ pub use feature::{
     RelatedRecordsParams, RelatedRecordsParamsBuilder, RelatedRecordsResponse, ResponseFormat,
     StatisticDefinition, StatisticType, Subtype, TopFeaturesParams, TopFeaturesParamsBuilder,
     TopFilter, TruncateResult, UpdateAttachmentResult,
+};
+pub use elevation::{
+    DemResolution, ElevationClient, ProfileParameters, ProfileParametersBuilder, ProfileResult,
+    SummarizeElevationParameters, SummarizeElevationParametersBuilder, SummarizeElevationResult,
+    ViewshedParameters, ViewshedParametersBuilder, ViewshedResult,
 };
 pub use geocode::{
     AddressCandidate, BatchCandidateResult, BatchCandidatesResponse, BatchGeocodeResponse,
