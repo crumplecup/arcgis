@@ -6,6 +6,7 @@ mod geometry;
 mod geoprocessing;
 mod image;
 mod map;
+mod places;
 mod routing;
 mod vector_tile;
 mod version_management;
@@ -53,6 +54,11 @@ pub use map::{
     LegendResponse, LegendSymbol, LevelOfDetail, MapServiceClient, MapServiceMetadata,
     RendererResponse, ServiceLayer, SpatialReference, TileCoordinate, TileInfo, TimeRelation,
     UniqueValueInfo,
+};
+pub use places::{
+    CategoriesResult, CategoryInfo, DayHours, PlaceAddress, PlaceCategory, PlaceContactInfo,
+    PlaceDetailsResult, PlaceHours, PlaceInfo, PlaceRating, PlaceSearchParameters,
+    PlaceSearchParametersBuilder, PlaceSearchResult, PlacesClient,
 };
 pub use routing::{
     BarrierType, ClosestFacilityParameters, ClosestFacilityParametersBuilder,
