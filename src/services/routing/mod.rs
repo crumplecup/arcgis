@@ -30,7 +30,10 @@ mod types;
 
 pub use client::RoutingServiceClient;
 pub use types::{
-    BarrierType, DirectionsLength, DirectionsStyle, DirectionsTimeAttribute, ImpedanceAttribute,
-    NALocation, OutputLine, RestrictionAttribute, RouteParameters, RouteParametersBuilder,
-    RouteResult, RouteShape, TravelDirection, TravelMode, UTurnPolicy,
+    BarrierType, ClosestFacilityParameters, ClosestFacilityParametersBuilder,
+    ClosestFacilityResult, CurbApproach, DirectionsLength, DirectionsStyle,
+    DirectionsTimeAttribute, ImpedanceAttribute, NALocation, ODCostMatrixParameters,
+    ODCostMatrixParametersBuilder, ODCostMatrixResult, OutputLine, RestrictionAttribute,
+    RouteParameters, RouteParametersBuilder, RouteResult, RouteShape, ServiceAreaParameters,
+    ServiceAreaParametersBuilder, ServiceAreaResult, TravelDirection, TravelMode, UTurnPolicy,
 };

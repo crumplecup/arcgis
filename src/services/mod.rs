@@ -41,9 +41,13 @@ pub use map::{
     UniqueValueInfo,
 };
 pub use routing::{
-    BarrierType, DirectionsLength, DirectionsStyle, DirectionsTimeAttribute, ImpedanceAttribute,
-    NALocation, OutputLine, RestrictionAttribute, RouteParameters, RouteParametersBuilder,
-    RouteResult, RoutingServiceClient, RouteShape, TravelDirection, TravelMode, UTurnPolicy,
+    BarrierType, ClosestFacilityParameters, ClosestFacilityParametersBuilder,
+    ClosestFacilityResult, CurbApproach, DirectionsLength, DirectionsStyle,
+    DirectionsTimeAttribute, ImpedanceAttribute, NALocation, ODCostMatrixParameters,
+    ODCostMatrixParametersBuilder, ODCostMatrixResult, OutputLine, RestrictionAttribute,
+    RouteParameters, RouteParametersBuilder, RouteResult, RouteShape, RoutingServiceClient,
+    ServiceAreaParameters, ServiceAreaParametersBuilder, ServiceAreaResult, TravelDirection,
+    TravelMode, UTurnPolicy,
 };
 pub use version_management::{
     AlterResponse, AlterVersionParams, ConflictDetection, ConflictEntry, ConflictFeature,

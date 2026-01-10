@@ -538,3 +538,393 @@ pub struct NAMessage {
     /// Message description.
     description: String,
 }
+
+/// Parameters for service area calculation.
+///
+/// Use [`ServiceAreaParameters::builder()`] to construct instances.
+#[derive(Debug, Clone, Serialize, derive_builder::Builder, Getters)]
+#[builder(setter(into, strip_option))]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceAreaParameters {
+    /// Facilities (starting points) for service areas (REQUIRED).
+    facilities: Vec<NALocation>,
+
+    /// Break values (time or distance) for service areas (REQUIRED).
+    /// For example: [5, 10, 15] for 5, 10, and 15 minute service areas.
+    default_breaks: Vec<f64>,
+
+    /// Point barriers to avoid.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    barriers: Option<Vec<NALocation>>,
+
+    /// Polyline barriers to avoid.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    polyline_barriers: Option<Vec<ArcGISGeometry>>,
+
+    /// Polygon barriers to avoid.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    polygon_barriers: Option<Vec<ArcGISGeometry>>,
+
+    /// Travel direction (from or to facilities).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    travel_direction: Option<TravelDirection>,
+
+    /// Output spatial reference WKID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    out_sr: Option<i32>,
+
+    /// Impedance attribute for cost.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    impedance_attribute: Option<ImpedanceAttribute>,
+
+    /// Whether to merge similar polygons.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    merge_similar_polygon_ranges: Option<bool>,
+
+    /// Whether to split polygons at breaks.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    split_polygons_at_breaks: Option<bool>,
+
+    /// Whether to trim outer polygon.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    trim_outer_polygon: Option<bool>,
+
+    /// Trim distance (in units matching impedance).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    trim_polygon_distance: Option<f64>,
+
+    /// Time of day for traffic-aware analysis (epoch milliseconds).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    time_of_day: Option<i64>,
+
+    /// Whether to use hierarchy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    use_hierarchy: Option<bool>,
+
+    /// U-turn policy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    uturn_policy: Option<UTurnPolicy>,
+
+    /// Restriction attributes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    restriction_attribute_names: Option<Vec<RestrictionAttribute>>,
+
+    /// Travel mode.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    travel_mode: Option<TravelMode>,
+
+    /// Whether to return facilities.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    return_facilities: Option<bool>,
+
+    /// Whether to return barriers.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    return_barriers: Option<bool>,
+}
+
+impl ServiceAreaParameters {
+    /// Creates a builder for ServiceAreaParameters.
+    pub fn builder() -> ServiceAreaParametersBuilder {
+        ServiceAreaParametersBuilder::default()
+    }
+}
+
+/// Result from service area calculation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceAreaResult {
+    /// Service area polygons.
+    #[serde(default)]
+    service_area_polygons: Vec<ServiceAreaPolygon>,
+
+    /// Service area polylines (network edges).
+    #[serde(default)]
+    service_area_polylines: Vec<ServiceAreaPolyline>,
+
+    /// Facilities that were used.
+    #[serde(default)]
+    facilities: Vec<NALocation>,
+
+    /// Messages from the solve operation.
+    #[serde(default)]
+    messages: Vec<NAMessage>,
+}
+
+/// A service area polygon.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceAreaPolygon {
+    /// Facility ID this area belongs to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    facility_id: Option<i32>,
+
+    /// Break value (time or distance).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    from_break: Option<f64>,
+
+    /// End break value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    to_break: Option<f64>,
+
+    /// Polygon geometry.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    geometry: Option<ArcGISGeometry>,
+}
+
+/// A service area polyline.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceAreaPolyline {
+    /// Facility ID this line belongs to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    facility_id: Option<i32>,
+
+    /// Break value (time or distance).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    from_break: Option<f64>,
+
+    /// End break value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    to_break: Option<f64>,
+
+    /// Polyline geometry.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    geometry: Option<ArcGISGeometry>,
+}
+
+/// Parameters for closest facility calculation.
+///
+/// Use [`ClosestFacilityParameters::builder()`] to construct instances.
+#[derive(Debug, Clone, Serialize, derive_builder::Builder, Getters)]
+#[builder(setter(into, strip_option))]
+#[serde(rename_all = "camelCase")]
+pub struct ClosestFacilityParameters {
+    /// Incidents (demand points) to analyze (REQUIRED).
+    incidents: Vec<NALocation>,
+
+    /// Facilities (supply points) to analyze (REQUIRED).
+    facilities: Vec<NALocation>,
+
+    /// Number of closest facilities to find per incident.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    default_target_facility_count: Option<i32>,
+
+    /// Point barriers to avoid.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    barriers: Option<Vec<NALocation>>,
+
+    /// Polyline barriers to avoid.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    polyline_barriers: Option<Vec<ArcGISGeometry>>,
+
+    /// Polygon barriers to avoid.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    polygon_barriers: Option<Vec<ArcGISGeometry>>,
+
+    /// Travel direction (from incidents or to facilities).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    travel_direction: Option<TravelDirection>,
+
+    /// Output spatial reference WKID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    out_sr: Option<i32>,
+
+    /// Impedance attribute for cost.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    impedance_attribute: Option<ImpedanceAttribute>,
+
+    /// Accumulate attributes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    accumulate_attribute_names: Option<Vec<String>>,
+
+    /// Whether to return directions.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    return_directions: Option<bool>,
+
+    /// Whether to return routes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    return_routes: Option<bool>,
+
+    /// Whether to return facilities.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    return_facilities: Option<bool>,
+
+    /// Whether to return incidents.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    return_incidents: Option<bool>,
+
+    /// Whether to return barriers.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    return_barriers: Option<bool>,
+
+    /// Output line type.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    output_lines: Option<OutputLine>,
+
+    /// Time of day for traffic-aware routing (epoch milliseconds).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    time_of_day: Option<i64>,
+
+    /// Whether to use hierarchy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    use_hierarchy: Option<bool>,
+
+    /// U-turn policy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    uturn_policy: Option<UTurnPolicy>,
+
+    /// Restriction attributes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    restriction_attribute_names: Option<Vec<RestrictionAttribute>>,
+
+    /// Travel mode.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    travel_mode: Option<TravelMode>,
+}
+
+impl ClosestFacilityParameters {
+    /// Creates a builder for ClosestFacilityParameters.
+    pub fn builder() -> ClosestFacilityParametersBuilder {
+        ClosestFacilityParametersBuilder::default()
+    }
+}
+
+/// Result from closest facility calculation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct ClosestFacilityResult {
+    /// Routes from incidents to facilities.
+    #[serde(default)]
+    routes: Vec<Route>,
+
+    /// Facilities that were analyzed.
+    #[serde(default)]
+    facilities: Vec<NALocation>,
+
+    /// Incidents that were analyzed.
+    #[serde(default)]
+    incidents: Vec<NALocation>,
+
+    /// Messages from the solve operation.
+    #[serde(default)]
+    messages: Vec<NAMessage>,
+}
+
+/// Parameters for origin-destination cost matrix calculation.
+///
+/// Use [`ODCostMatrixParameters::builder()`] to construct instances.
+#[derive(Debug, Clone, Serialize, derive_builder::Builder, Getters)]
+#[builder(setter(into, strip_option))]
+#[serde(rename_all = "camelCase")]
+pub struct ODCostMatrixParameters {
+    /// Origins for the matrix (REQUIRED).
+    origins: Vec<NALocation>,
+
+    /// Destinations for the matrix (REQUIRED).
+    destinations: Vec<NALocation>,
+
+    /// Point barriers to avoid.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    barriers: Option<Vec<NALocation>>,
+
+    /// Polyline barriers to avoid.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    polyline_barriers: Option<Vec<ArcGISGeometry>>,
+
+    /// Polygon barriers to avoid.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    polygon_barriers: Option<Vec<ArcGISGeometry>>,
+
+    /// Travel direction (origins to destinations or reverse).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    travel_direction: Option<TravelDirection>,
+
+    /// Output spatial reference WKID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    out_sr: Option<i32>,
+
+    /// Impedance attribute for cost.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    impedance_attribute: Option<ImpedanceAttribute>,
+
+    /// Accumulate attributes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    accumulate_attribute_names: Option<Vec<String>>,
+
+    /// Time of day for traffic-aware analysis (epoch milliseconds).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    time_of_day: Option<i64>,
+
+    /// Whether to use hierarchy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    use_hierarchy: Option<bool>,
+
+    /// U-turn policy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    uturn_policy: Option<UTurnPolicy>,
+
+    /// Restriction attributes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    restriction_attribute_names: Option<Vec<RestrictionAttribute>>,
+
+    /// Travel mode.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    travel_mode: Option<TravelMode>,
+}
+
+impl ODCostMatrixParameters {
+    /// Creates a builder for ODCostMatrixParameters.
+    pub fn builder() -> ODCostMatrixParametersBuilder {
+        ODCostMatrixParametersBuilder::default()
+    }
+}
+
+/// Result from origin-destination cost matrix calculation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct ODCostMatrixResult {
+    /// Origin-destination cost matrix lines.
+    #[serde(default, rename = "odLines")]
+    od_lines: Vec<ODLine>,
+
+    /// Origins that were analyzed.
+    #[serde(default)]
+    origins: Vec<NALocation>,
+
+    /// Destinations that were analyzed.
+    #[serde(default)]
+    destinations: Vec<NALocation>,
+
+    /// Messages from the solve operation.
+    #[serde(default)]
+    messages: Vec<NAMessage>,
+}
+
+/// An origin-destination cost matrix line.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct ODLine {
+    /// Origin ID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    origin_id: Option<i32>,
+
+    /// Destination ID.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    destination_id: Option<i32>,
+
+    /// Total travel time (minutes).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    total_time: Option<f64>,
+
+    /// Total distance.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    total_distance: Option<f64>,
+
+    /// Origin name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    origin_name: Option<String>,
+
+    /// Destination name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    destination_name: Option<String>,
+}
