@@ -2,7 +2,7 @@
 
 use super::feature_collection_p_buffer::*;
 use super::FeatureCollectionPBuffer;
-use crate::{ArcGISGeometry, Feature, FeatureSet, GeometryType, Result};
+use crate::{Feature, FeatureSet, GeometryType, Result};
 use prost::Message;
 use std::collections::HashMap;
 
@@ -64,7 +64,8 @@ fn decode_feature_result(feature_result: FeatureResult) -> Result<FeatureSet> {
     let geometry_type = convert_geometry_type(feature_result.geometry_type)?;
 
     // Build a lookup for reusable values (PBF uses indexed values to save space)
-    let values_lookup: Vec<serde_json::Value> = feature_result
+    // TODO: Use this lookup when attributes reference indexed values
+    let _values_lookup: Vec<serde_json::Value> = feature_result
         .values
         .iter()
         .map(convert_pbf_value)

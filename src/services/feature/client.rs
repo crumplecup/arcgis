@@ -164,12 +164,24 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        // Parse the response
-        let feature_set: FeatureSet = response.json().await?;
+        // Parse the response based on the requested format
+        let feature_set = match params.format() {
+            crate::ResponseFormat::Pbf => {
+                // PBF format - decode binary protocol buffer
+                let bytes = response.bytes().await?;
+                tracing::debug!(bytes_len = bytes.len(), "Received PBF response");
+                super::pbf::decode_feature_collection(&bytes)?
+            }
+            _ => {
+                // JSON or GeoJSON format - use standard JSON parsing
+                response.json().await?
+            }
+        };
 
         tracing::debug!(
             feature_count = feature_set.features().len(),
             exceeded_limit = feature_set.exceeded_transfer_limit(),
+            format = ?params.format(),
             "Query completed successfully"
         );
 
@@ -349,11 +361,25 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        // Parse the response
-        let result: crate::FeatureSet = response.json().await?;
+        // Parse the response based on the requested format
+        let result = if let Some(ref format_str) = params.f() {
+            if format_str == "pbf" {
+                // PBF format - decode binary protocol buffer
+                let bytes = response.bytes().await?;
+                tracing::debug!(bytes_len = bytes.len(), "Received PBF response");
+                super::pbf::decode_feature_collection(&bytes)?
+            } else {
+                // JSON or GeoJSON format - use standard JSON parsing
+                response.json().await?
+            }
+        } else {
+            // Default to JSON parsing
+            response.json().await?
+        };
 
         tracing::debug!(
             features_count = result.features().len(),
+            format = ?params.f(),
             "Query top features completed successfully"
         );
 
