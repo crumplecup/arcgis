@@ -115,6 +115,43 @@ impl<'a> QueryBuilder<'a> {
         self
     }
 
+    /// Requests Protocol Buffer (PBF) format for 3-5x performance improvement.
+    ///
+    /// PBF is a binary format that's more efficient than JSON for large datasets.
+    /// Supported by ArcGIS Enterprise 10.7+ and ArcGIS Online.
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId};
+    /// # async fn example(service: &FeatureServiceClient<'_>) -> arcgis::Result<()> {
+    /// // Get large dataset efficiently with PBF
+    /// let features = service
+    ///     .query(LayerId::new(0))
+    ///     .where_clause("1=1")
+    ///     .pbf()
+    ///     .execute()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn pbf(self) -> Self {
+        self.format(ResponseFormat::Pbf)
+    }
+
+    /// Requests JSON format (default).
+    ///
+    /// This is the standard Esri JSON format.
+    pub fn json(self) -> Self {
+        self.format(ResponseFormat::Json)
+    }
+
+    /// Requests GeoJSON format.
+    ///
+    /// GeoJSON is an open standard format for geographic data.
+    pub fn geojson(self) -> Self {
+        self.format(ResponseFormat::GeoJson)
+    }
+
     /// Sets a spatial filter for the query.
     ///
     /// # Example
