@@ -24,7 +24,9 @@ pub fn decode_geometry(
     // Extract transform parameters
     let (x_scale, y_scale, x_translate, y_translate) = if let Some(t) = transform {
         let scale = t.scale.as_ref().ok_or_else(|| {
-            crate::Error::from(crate::ErrorKind::Other("Missing scale in transform".to_string()))
+            crate::Error::from(crate::ErrorKind::Other(
+                "Missing scale in transform".to_string(),
+            ))
         })?;
         let translate = t.translate.as_ref().ok_or_else(|| {
             crate::Error::from(crate::ErrorKind::Other(
@@ -43,10 +45,20 @@ pub fn decode_geometry(
     };
 
     match geometry_type {
-        GeometryType::Point => decode_point(&pbf_geometry.coords, x_scale, y_scale, x_translate, y_translate),
-        GeometryType::Multipoint => {
-            decode_multipoint(&pbf_geometry.coords, x_scale, y_scale, x_translate, y_translate)
-        }
+        GeometryType::Point => decode_point(
+            &pbf_geometry.coords,
+            x_scale,
+            y_scale,
+            x_translate,
+            y_translate,
+        ),
+        GeometryType::Multipoint => decode_multipoint(
+            &pbf_geometry.coords,
+            x_scale,
+            y_scale,
+            x_translate,
+            y_translate,
+        ),
         GeometryType::Polyline => decode_polyline(
             &pbf_geometry.coords,
             &pbf_geometry.lengths,

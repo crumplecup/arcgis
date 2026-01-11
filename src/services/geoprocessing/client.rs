@@ -448,7 +448,7 @@ impl<'a> GeoprocessingServiceClient<'a> {
         max_delay_ms: u64,
         timeout_ms: Option<u64>,
     ) -> Result<GPJobInfo> {
-        use tokio::time::{sleep, Duration, Instant};
+        use tokio::time::{Duration, Instant, sleep};
 
         tracing::info!("Polling job until complete");
 

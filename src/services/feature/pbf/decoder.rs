@@ -1,7 +1,7 @@
 //! Decoder for converting ArcGIS Protocol Buffer responses to Rust types.
 
-use super::feature_collection_p_buffer::*;
 use super::FeatureCollectionPBuffer;
+use super::feature_collection_p_buffer::*;
 use crate::{Feature, FeatureSet, GeometryType, Result};
 use prost::Message;
 use std::collections::HashMap;
@@ -13,13 +13,16 @@ use std::collections::HashMap;
 /// attribute mapping.
 pub fn decode_feature_collection(bytes: &[u8]) -> Result<FeatureSet> {
     // Parse the protocol buffer message
-    let pbf = FeatureCollectionPBuffer::decode(bytes)
-        .map_err(|e| crate::Error::from(crate::ErrorKind::Other(format!("PBF decode error: {}", e))))?;
+    let pbf = FeatureCollectionPBuffer::decode(bytes).map_err(|e| {
+        crate::Error::from(crate::ErrorKind::Other(format!("PBF decode error: {}", e)))
+    })?;
 
     // Extract the query result
-    let query_result = pbf
-        .query_result
-        .ok_or_else(|| crate::Error::from(crate::ErrorKind::Other("Missing query result in PBF".to_string())))?;
+    let query_result = pbf.query_result.ok_or_else(|| {
+        crate::Error::from(crate::ErrorKind::Other(
+            "Missing query result in PBF".to_string(),
+        ))
+    })?;
 
     // Handle different result types
     match query_result.results {
@@ -83,18 +86,30 @@ fn decode_feature_result(feature_result: FeatureResult) -> Result<FeatureSet> {
                     // Attributes can be inline values or indices into the values array
                     let value = if let Some(value_type) = &attr.value_type {
                         match value_type {
-                            value::ValueType::StringValue(s) => serde_json::Value::String(s.clone()),
-                            value::ValueType::FloatValue(f) => {
-                                serde_json::Value::Number(serde_json::Number::from_f64(*f as f64).unwrap())
+                            value::ValueType::StringValue(s) => {
+                                serde_json::Value::String(s.clone())
                             }
+                            value::ValueType::FloatValue(f) => serde_json::Value::Number(
+                                serde_json::Number::from_f64(*f as f64).unwrap(),
+                            ),
                             value::ValueType::DoubleValue(d) => {
                                 serde_json::Value::Number(serde_json::Number::from_f64(*d).unwrap())
                             }
-                            value::ValueType::SintValue(i) => serde_json::Value::Number((*i).into()),
-                            value::ValueType::UintValue(u) => serde_json::Value::Number((*u).into()),
-                            value::ValueType::Int64Value(i) => serde_json::Value::Number((*i).into()),
-                            value::ValueType::Uint64Value(u) => serde_json::Value::Number((*u).into()),
-                            value::ValueType::Sint64Value(i) => serde_json::Value::Number((*i).into()),
+                            value::ValueType::SintValue(i) => {
+                                serde_json::Value::Number((*i).into())
+                            }
+                            value::ValueType::UintValue(u) => {
+                                serde_json::Value::Number((*u).into())
+                            }
+                            value::ValueType::Int64Value(i) => {
+                                serde_json::Value::Number((*i).into())
+                            }
+                            value::ValueType::Uint64Value(u) => {
+                                serde_json::Value::Number((*u).into())
+                            }
+                            value::ValueType::Sint64Value(i) => {
+                                serde_json::Value::Number((*i).into())
+                            }
                             value::ValueType::BoolValue(b) => serde_json::Value::Bool(*b),
                         }
                     } else {

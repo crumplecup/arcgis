@@ -73,7 +73,9 @@ pub enum ResponseFormat {
 }
 
 /// A single feature returned from a feature service.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters, derive_new::new)]
+#[derive(
+    Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters, derive_new::new,
+)]
 pub struct Feature {
     /// Feature attributes as key-value pairs.
     attributes: HashMap<String, serde_json::Value>,
