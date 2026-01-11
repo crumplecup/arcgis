@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -52,6 +52,27 @@ jobs:
 
       - name: Run tests (all features)
         run: cargo test --all-features --verbose
+
+  public-tests:
+    name: Public Integration Tests (Free Tier)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run public tests (no API key required)
+        run: cargo test --features test-public --test public_feature_query_test
+        env:
+          RUST_LOG: info
+          RUST_BACKTRACE: 1
 
   fmt:
     name: Formatting
