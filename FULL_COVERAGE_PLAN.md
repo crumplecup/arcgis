@@ -440,53 +440,63 @@ src/services/geoprocessing/
 
 ---
 
-### Phase 5: Protocol Buffer Support (v0.5.2) - 2 weeks
+### Phase 5: Protocol Buffer Support (v0.5.2) - ✅ COMPLETE (Core) / ⏳ PARTIAL (Enhancements)
 
 **Goal**: Add PBF format support for 3-5x performance improvement
 
 **Priority**: **P1 - HIGH** - Major performance optimization
 
-#### PBF Query Support (Week 1)
-- [ ] Update `ResponseFormat` enum to include `Pbf`
-- [ ] PBF deserialization for `FeatureSet`
-- [ ] PBF geometry parsing
-  - [ ] Points
-  - [ ] Multipoints
-  - [ ] Polylines
-  - [ ] Polygons
-- [ ] Field value parsing
-- [ ] Integration with existing query methods
-  - [ ] `query()` with PBF format
-  - [ ] `query_with_params()` with PBF format
-  - [ ] Auto-detection of PBF support
+#### PBF Query Support (Week 1) - ✅ COMPLETE
+- [x] Update `ResponseFormat` enum to include `Pbf` ✅ `1a60c5d`
+- [x] PBF deserialization for `FeatureSet` ✅ `1a60c5d`
+- [x] PBF geometry parsing ✅ `598c017`
+  - [x] Points ✅
+  - [x] Multipoints ✅
+  - [x] Polylines ✅
+  - [x] Polygons ✅
+- [x] Field value parsing ✅ `1a60c5d`
+- [x] Integration with existing query methods ✅ `5cb1083`
+  - [x] `query()` with PBF format ✅
+  - [x] `query_with_params()` with PBF format ✅
+  - [x] `query_top_features()` with PBF format ✅
+  - [ ] Auto-detection of PBF support (deferred)
 
 **Dependencies**:
 - Research `prost` vs `protobuf` crate
 - ArcGIS PBF schema definitions
 
-**Files to Modify/Create**:
-- `src/services/feature/types.rs` - Update ResponseFormat
-- `src/services/feature/pbf/mod.rs` - New module
-- `src/services/feature/pbf/decoder.rs` - PBF decoder
-- `src/services/feature/pbf/geometry.rs` - Geometry parsing
-- `tests/feature_pbf_test.rs` - PBF tests
+**Files Modified/Created**:
+- ✅ `Cargo.toml` - Added prost and bytes dependencies
+- ✅ `build.rs` - NEW: Proto code generation at build time
+- ✅ `proto/FeatureCollection.proto` - NEW: Esri PBF schema from arcpbf
+- ✅ `src/services/feature/types.rs` - Updated ResponseFormat enum
+- ✅ `src/services/feature/pbf/mod.rs` - NEW: PBF module
+- ✅ `src/services/feature/pbf/decoder.rs` - NEW: PBF to FeatureSet decoder
+- ✅ `src/services/feature/pbf/geometry.rs` - NEW: Delta-encoded geometry parser
+- ✅ `src/services/feature/pbf/esri_p_buffer.rs` - GENERATED: Proto types
+- ✅ `src/services/feature/client.rs` - Integrated PBF into query methods
+- ✅ `src/services/feature/query.rs` - Added .pbf(), .json(), .geojson() methods
+- ⏳ `tests/feature_pbf_test.rs` - PBF tests (deferred)
 
 **Success Criteria**:
-- Query with `f=pbf` returns valid FeatureSets
-- Geometry correctly parsed
-- Attributes correctly decoded
-- 3-5x performance improvement vs JSON
+- ✅ Query with `f=pbf` returns valid FeatureSets
+- ✅ Geometry correctly parsed (Point, Multipoint, Polyline, Polygon)
+- ✅ Attributes correctly decoded
+- ⏳ 3-5x performance improvement vs JSON (not yet benchmarked)
 
 ---
 
-#### Format Auto-Selection (Week 2)
-- [ ] Service capability detection
+#### Format Auto-Selection (Week 2) - ⏳ PARTIAL
+- [x] Builder methods for format selection ✅ `6c6b353`
+  - [x] `.pbf()` - Request PBF format ✅
+  - [x] `.json()` - Request JSON format ✅
+  - [x] `.geojson()` - Request GeoJSON format ✅
+  - [x] `.format(fmt)` - Explicit format (already existed) ✅
+- [ ] Service capability detection (deferred)
   - [ ] Check `supportsPbf` in service metadata
   - [ ] Fallback to JSON if unsupported
-- [ ] Builder methods for format selection
-  - [ ] `.prefer_pbf()` - Use PBF if available
-  - [ ] `.force_format(fmt)` - Explicit format
-- [ ] Benchmarking suite
+  - [ ] `.prefer_pbf()` - Use PBF if available (requires capability detection)
+- [ ] Benchmarking suite (deferred - requires API access)
   - [ ] Compare PBF vs JSON performance
   - [ ] Various feature counts (100, 1K, 10K, 100K)
   - [ ] Various geometry types
