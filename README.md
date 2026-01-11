@@ -7,7 +7,11 @@
 
 A type-safe Rust SDK for the [ArcGIS REST API](https://developers.arcgis.com/rest/) with compile-time guarantees.
 
+**Current Status**: 113 operations across 12 services (65% API coverage, 80% use case coverage)
+
 ## Features
+
+### Core Capabilities
 
 - 🔒 **Type-safe**: Strong typing with enums instead of strings - invalid states are unrepresentable
 - 🌍 **GeoRust integration**: Native support for `geo-types` and the GeoRust ecosystem
@@ -16,6 +20,72 @@ A type-safe Rust SDK for the [ArcGIS REST API](https://developers.arcgis.com/res
 - 🔄 **Auto-pagination**: Transparent handling of large result sets
 - 📦 **Zero unsafe code**: Memory-safe by default
 - 🧪 **Well-tested**: Comprehensive test coverage with integration tests
+
+### Supported Operations
+
+**Feature Management** (Feature Service):
+- Query with advanced parameters (spatial, attribute, statistics, grouping)
+- CRUD operations (add, update, delete, batch edits)
+- Attachment management (upload, download, delete)
+- Relationship queries, top features, field calculations
+- Domain queries, truncate operations
+
+**Mapping** (Map Service):
+- Export maps with custom extent, layers, format
+- Legend retrieval, identify operations
+- Text search (find), KML generation
+- Dynamic renderer generation
+
+**Geocoding** (Geocode Service):
+- Forward geocoding (single and batch)
+- Reverse geocoding with filtering
+- Autocomplete suggestions with categories
+- Spatial reference customization
+
+**Geometry Operations** (Geometry Service):
+- Coordinate projection and transformations
+- Buffer, union, simplify operations
+- Distance and area calculations
+- Datum transformation discovery
+
+**Network Analysis** (Routing Service):
+- Route solving (optimal paths between stops)
+- Service area generation (drive-time polygons)
+- Closest facility analysis
+- Origin-destination cost matrices
+
+**Geoprocessing**:
+- Synchronous and asynchronous execution
+- Job status polling with exponential backoff
+- Result retrieval and message handling
+
+**Portal & Content Management**:
+- User and item CRUD operations
+- Search with advanced queries
+- Sharing and group management
+- Service publishing and updates
+
+**Imagery** (Image Service):
+- Image export with rendering rules
+- Pixel value identification and sampling
+- Histogram computation
+- Raster metadata retrieval
+
+**3D & Tiles**:
+- Vector tile retrieval (MVT format)
+- Style and font management
+- Sprite sheet access
+
+**Versioned Workflows** (Version Management):
+- Edit and read sessions
+- Version creation and management
+- Reconciliation and posting
+- Conflict detection and resolution
+
+**Location Services**:
+- Elevation profiles and terrain analysis
+- Viewshed computation
+- POI search with categories
 
 ## Quick Start
 
@@ -262,32 +332,55 @@ cargo fmt --check
 cargo clippy --all-targets --all-features
 ```
 
-## Roadmap
+## Implemented Services
 
-See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the detailed roadmap.
+**12 Services, 113 Operations** (Baseline - 65% coverage):
 
-**Current Status**: End of Phase 2 (v0.2.0-ready)
+| Service | Operations | Status |
+|---------|-----------|--------|
+| **Elevation** | 3 | ✅ Complete |
+| **Feature** | 17 | ✅ Complete (queries, edits, attachments, admin) |
+| **Geocode** | 9 | ✅ Complete (forward, reverse, batch, suggest) |
+| **Geometry** | 8 | ✅ Core Complete (project, buffer, union, measure) |
+| **Geoprocessing** | 7 | ✅ Complete (sync/async execution, polling) |
+| **Image** | 6 | ✅ Core Complete (export, identify, samples, histograms) |
+| **Map** | 10 | ✅ Complete (export, legend, identify, KML, renderer) |
+| **Places** | 3 | ✅ Complete (search, details, categories) |
+| **Portal** | 24 | ✅ Core Complete (users, items, sharing, publishing, groups) |
+| **Routing** | 4 | ✅ Complete (route, service area, closest facility, OD matrix) |
+| **Vector Tile** | 6 | ✅ Core Complete (tiles, style, fonts, sprites) |
+| **Version Management** | 16 | ✅ Complete (sessions, CRUD, reconcile, conflicts) |
 
-- [x] **Phase 1**: OAuth 2.0 Client Credentials authentication
-- [x] **Phase 2**: Feature Service query API with auto-pagination
-- [ ] **Phase 3**: Feature Service editing (add, update, delete, batch operations)
-- [ ] **Phase 4**: Additional services (Map, Geocoding, Geometry, Routing)
-- [ ] **Phase 5**: Production hardening (retry logic, caching, circuit breaker)
+See [COVERAGE_ROADMAP.md](COVERAGE_ROADMAP.md) for the path to full coverage.
 
-**Version milestones:**
-- [x] v0.1.0-alpha: Authentication infrastructure
-- [ ] v0.2.0: Feature queries + OAuth (nearly complete)
-- [ ] v0.3.0: Feature editing (CRUD operations)
-- [ ] v0.4.0: Multi-service support
-- [ ] v1.0.0: Production-ready
+## Roadmap to Full Coverage
+
+**Bronze** (Phase 1 - 70% coverage):
+- Complete existing services (+20 ops)
+- Image/Portal/Feature extensions
+
+**Silver** (Phase 2 - 75% coverage):
+- Scene Service (3D visualization)
+- Stream Service (real-time WebSocket)
+- Utility Network Service
+- GeoEnrichment Service
+
+**Gold** (Phase 3 - 80% coverage):
+- Network Diagram
+- Parcel Fabric
+- Printing Service
+
+**Platinum** (Full Coverage - 80-85% coverage):
+- All Tier 1-3 services complete
+- 183-200 total operations
+- 95%+ use case coverage
 
 ## Documentation
 
 - [API Documentation](https://docs.rs/arcgis)
+- [Coverage Roadmap](COVERAGE_ROADMAP.md) - Path to full API coverage
 - [ArcGIS REST API Reference](https://developers.arcgis.com/rest/)
 - [Research Document](ARCGIS_REST_API_RESEARCH.md)
-- [Implementation Plan](IMPLEMENTATION_PLAN.md)
-- [Architecture Decision Record](ARCHITECTURE_DECISION.md)
 
 ## Related Projects
 
