@@ -72,11 +72,13 @@ derive_builder = "0.20"
 # UUID generation for session IDs
 uuid = { version = "1", features = ["v4", "serde"] }
 
+# Protocol Buffers (for PBF format support)
+prost = "0.13"
+bytes = "1.5"
+
 # Optional dependencies (enabled by features)
 geo = { version = "0.32", optional = true, features = ["use-serde"] }
 geozero = { version = "0.15", optional = true }
-# arcpbf = { version = "0.3", optional = true }  # TODO: Add when available
-prost = { version = "0.14", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -85,6 +87,9 @@ mockito = "1"
 tracing-subscriber = "0.3"
 anyhow = "1"
 dotenvy = "0.15"
+
+[build-dependencies]
+prost-build = "0.13"
 
 [package.metadata.docs.rs]
 all-features = true

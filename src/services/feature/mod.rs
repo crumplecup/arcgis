@@ -6,6 +6,7 @@
 mod attachment;
 mod client;
 mod edit;
+pub mod pbf;
 mod query;
 mod types;
 
