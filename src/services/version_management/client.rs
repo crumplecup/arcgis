@@ -628,7 +628,7 @@ impl<'a> VersionManagementClient<'a> {
             ("token", token.as_str()),
         ];
 
-        if let Some(ref description) = params.description() {
+        if let Some(description) = params.description() {
             form.push(("description", description.as_str()));
         }
 
@@ -730,19 +730,19 @@ impl<'a> VersionManagementClient<'a> {
         let mut form = vec![("f", "json"), ("token", token.as_str())];
 
         let version_name_str;
-        if let Some(ref version_name) = params.version_name() {
+        if let Some(version_name) = params.version_name() {
             version_name_str = version_name.clone();
             form.push(("versionName", version_name_str.as_str()));
         }
 
         let access_str;
-        if let Some(ref access) = params.access() {
+        if let Some(access) = params.access() {
             access_str = access.to_string();
             form.push(("access", access_str.as_str()));
         }
 
         let description_str;
-        if let Some(ref description) = params.description() {
+        if let Some(description) = params.description() {
             description_str = description.clone();
             form.push(("description", description_str.as_str()));
         }

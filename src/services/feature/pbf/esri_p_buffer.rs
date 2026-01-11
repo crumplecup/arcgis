@@ -12,7 +12,7 @@ pub struct FeatureCollectionPBuffer {
 }
 /// Nested message and enum types in `FeatureCollectionPBuffer`.
 pub mod feature_collection_p_buffer {
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct SpatialReference {
         #[prost(uint32, tag = "1")]
         pub wkid: u32,
@@ -25,7 +25,7 @@ pub mod feature_collection_p_buffer {
         #[prost(string, tag = "5")]
         pub wkt: ::prost::alloc::string::String,
     }
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct Field {
         #[prost(string, tag = "1")]
         pub name: ::prost::alloc::string::String,
@@ -70,7 +70,7 @@ pub mod feature_collection_p_buffer {
             BoolValue(bool),
         }
     }
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct Geometry {
         /// coordinate structure in lengths
         #[prost(uint32, repeated, tag = "2")]
@@ -79,7 +79,7 @@ pub mod feature_collection_p_buffer {
         #[prost(sint64, repeated, tag = "3")]
         pub coords: ::prost::alloc::vec::Vec<i64>,
     }
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct EsriShapeBuffer {
         #[prost(bytes = "vec", tag = "1")]
         pub bytes: ::prost::alloc::vec::Vec<u8>,
@@ -95,7 +95,7 @@ pub mod feature_collection_p_buffer {
     }
     /// Nested message and enum types in `Feature`.
     pub mod feature {
-        #[derive(Clone, PartialEq, ::prost::Oneof)]
+        #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
         pub enum CompressedGeometry {
             #[prost(message, tag = "2")]
             Geometry(super::Geometry),
@@ -103,14 +103,14 @@ pub mod feature_collection_p_buffer {
             ShapeBuffer(super::EsriShapeBuffer),
         }
     }
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct UniqueIdField {
         #[prost(string, tag = "1")]
         pub name: ::prost::alloc::string::String,
         #[prost(bool, tag = "2")]
         pub is_system_maintained: bool,
     }
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct GeometryProperties {
         #[prost(string, tag = "1")]
         pub shape_area_field_name: ::prost::alloc::string::String,
@@ -119,7 +119,7 @@ pub mod feature_collection_p_buffer {
         #[prost(string, tag = "3")]
         pub units: ::prost::alloc::string::String,
     }
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct ServerGens {
         #[prost(uint64, tag = "1")]
         pub min_server_gen: u64,
@@ -190,12 +190,12 @@ pub mod feature_collection_p_buffer {
         #[prost(message, repeated, tag = "15")]
         pub features: ::prost::alloc::vec::Vec<Feature>,
     }
-    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct CountResult {
         #[prost(uint64, tag = "1")]
         pub count: u64,
     }
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
     pub struct ObjectIdsResult {
         #[prost(string, tag = "1")]
         pub object_id_field_name: ::prost::alloc::string::String,

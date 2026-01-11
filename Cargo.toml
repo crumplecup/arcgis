@@ -1,8 +1,8 @@
 [package]
 name = "arcgis"
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.75"
+edition = "2024"
+rust-version = "1.85"
 authors = ["ArcGIS Rust Contributors"]
 license = "MIT OR Apache-2.0"
 description = "Type-safe Rust SDK for the ArcGIS REST API with compile-time guarantees"
@@ -21,11 +21,13 @@ api = [] # Empty marker for tests that hit live API endpoints
 
 [dependencies]
 # Core HTTP and async runtime
-reqwest = { version = "0.12", default-features = false, features = [
+reqwest = { version = "0.13", features = [
   "json",
-  "rustls-tls",
+  "rustls",
   "multipart",
   "stream",
+  "query",
+  "form",
 ] }
 tokio = { version = "1", features = ["rt", "macros", "fs", "io-util"] }
 futures = "0.3"
@@ -73,7 +75,7 @@ derive_builder = "0.20"
 uuid = { version = "1", features = ["v4", "serde"] }
 
 # Protocol Buffers (for PBF format support)
-prost = "0.13"
+prost = "0.14"
 bytes = "1.5"
 
 # Optional dependencies (enabled by features)
@@ -89,7 +91,7 @@ anyhow = "1"
 dotenvy = "0.15"
 
 [build-dependencies]
-prost-build = "0.13"
+prost-build = "0.14"
 
 [package.metadata.docs.rs]
 all-features = true

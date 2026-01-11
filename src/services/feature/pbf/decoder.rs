@@ -81,9 +81,9 @@ fn decode_feature_result(feature_result: FeatureResult) -> Result<FeatureSet> {
             for (idx, field) in feature_result.fields.iter().enumerate() {
                 if let Some(attr) = pbf_feature.attributes.get(idx) {
                     // Attributes can be inline values or indices into the values array
-                    let value = if let Some(ref value_type) = attr.value_type {
+                    let value = if let Some(value_type) = &attr.value_type {
                         match value_type {
-                            value::ValueType::StringValue(ref s) => serde_json::Value::String(s.clone()),
+                            value::ValueType::StringValue(s) => serde_json::Value::String(s.clone()),
                             value::ValueType::FloatValue(f) => {
                                 serde_json::Value::Number(serde_json::Number::from_f64(*f as f64).unwrap())
                             }
@@ -105,9 +105,9 @@ fn decode_feature_result(feature_result: FeatureResult) -> Result<FeatureSet> {
             }
 
             // Decode geometry if present
-            let geometry = if let Some(ref compressed_geom) = pbf_feature.compressed_geometry {
+            let geometry = if let Some(compressed_geom) = &pbf_feature.compressed_geometry {
                 match compressed_geom {
-                    feature::CompressedGeometry::Geometry(ref geom) => {
+                    feature::CompressedGeometry::Geometry(geom) => {
                         // Decode using the geometry decoder
                         match super::geometry::decode_geometry(
                             geom,
@@ -170,9 +170,9 @@ fn convert_geometry_type(pbf_type: i32) -> Result<GeometryType> {
 
 /// Convert a PBF Value to a serde_json::Value.
 fn convert_pbf_value(pbf_value: &Value) -> serde_json::Value {
-    if let Some(ref value_type) = pbf_value.value_type {
+    if let Some(value_type) = &pbf_value.value_type {
         match value_type {
-            value::ValueType::StringValue(ref s) => serde_json::Value::String(s.clone()),
+            value::ValueType::StringValue(s) => serde_json::Value::String(s.clone()),
             value::ValueType::FloatValue(f) => {
                 serde_json::Value::Number(serde_json::Number::from_f64(*f as f64).unwrap())
             }

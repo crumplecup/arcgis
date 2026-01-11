@@ -8,6 +8,7 @@ mod geoprocessing;
 mod image;
 mod map;
 mod places;
+mod portal;
 mod routing;
 mod vector_tile;
 mod version_management;
@@ -65,6 +66,10 @@ pub use places::{
     CategoriesResult, CategoryInfo, DayHours, PlaceAddress, PlaceCategory, PlaceContactInfo,
     PlaceDetailsResult, PlaceHours, PlaceInfo, PlaceRating, PlaceSearchParameters,
     PlaceSearchParametersBuilder, PlaceSearchResult, PlacesClient,
+};
+pub use portal::{
+    GroupMembership, GroupMembershipType, ItemInfo, PortalClient, SearchParameters,
+    SearchResult, SortOrder, UserInfo,
 };
 pub use routing::{
     BarrierType, ClosestFacilityParameters, ClosestFacilityParametersBuilder,

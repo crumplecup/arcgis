@@ -362,7 +362,7 @@ impl<'a> FeatureServiceClient<'a> {
         }
 
         // Parse the response based on the requested format
-        let result = if let Some(ref format_str) = params.f() {
+        let result = if let Some(format_str) = params.f() {
             if format_str == "pbf" {
                 // PBF format - decode binary protocol buffer
                 let bytes = response.bytes().await?;
