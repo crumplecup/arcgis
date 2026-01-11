@@ -104,9 +104,34 @@ fn decode_feature_result(feature_result: FeatureResult) -> Result<FeatureSet> {
                 }
             }
 
-            // TODO: Decode geometry from delta-encoded coordinates
-            // For now, we'll leave geometry as None and implement this next
-            let geometry = None;
+            // Decode geometry if present
+            let geometry = if let Some(ref compressed_geom) = pbf_feature.compressed_geometry {
+                match compressed_geom {
+                    feature::CompressedGeometry::Geometry(ref geom) => {
+                        // Decode using the geometry decoder
+                        match super::geometry::decode_geometry(
+                            geom,
+                            geometry_type,
+                            feature_result.transform.as_ref(),
+                            feature_result.has_z,
+                            feature_result.has_m,
+                        ) {
+                            Ok(g) => Some(g),
+                            Err(e) => {
+                                tracing::warn!(error = %e, "Failed to decode geometry, skipping");
+                                None
+                            }
+                        }
+                    }
+                    feature::CompressedGeometry::ShapeBuffer(_) => {
+                        // ShapeBuffer format not yet supported
+                        tracing::warn!("ShapeBuffer geometry format not yet supported");
+                        None
+                    }
+                }
+            } else {
+                None
+            };
 
             Feature::new(attributes, geometry)
         })

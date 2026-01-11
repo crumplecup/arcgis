@@ -15,5 +15,6 @@ mod esri_p_buffer {
 pub use esri_p_buffer::*;
 
 mod decoder;
+mod geometry;
 
 pub use decoder::decode_feature_collection;
