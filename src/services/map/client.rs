@@ -150,7 +150,7 @@ impl<'a> MapServiceClient<'a> {
     /// # Ok(())
     /// # }
     /// ```
-    #[instrument(skip(self, params, target), fields(bbox = %params.bbox, size = ?params.size))]
+    #[instrument(skip(self, params, target), fields(bbox = %params.bbox(), size = ?params.size()))]
     pub async fn export_map(
         &self,
         params: ExportMapParams,
@@ -159,7 +159,7 @@ impl<'a> MapServiceClient<'a> {
         tracing::debug!("Exporting map");
 
         // Validate required parameters
-        if params.bbox.is_empty() {
+        if params.bbox().is_empty() {
             tracing::error!("bbox parameter is required but empty");
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: 400,
@@ -173,7 +173,7 @@ impl<'a> MapServiceClient<'a> {
         tracing::debug!(url = %url, "Sending export request");
 
         // Handle different response formats
-        match params.format_response {
+        match params.format_response() {
             ResponseFormat::Image => {
                 // Direct binary response - stream immediately
                 self.stream_export(&url, &params, &token, target).await
@@ -183,10 +183,13 @@ impl<'a> MapServiceClient<'a> {
                 self.export_via_json(&url, &params, &token, target).await
             }
             _ => {
-                tracing::error!(format = ?params.format_response, "Unsupported response format");
+                tracing::error!(format = ?params.format_response(), "Unsupported response format");
                 Err(crate::Error::from(crate::ErrorKind::Api {
                     code: 400,
-                    message: format!("Unsupported response format: {:?}", params.format_response),
+                    message: format!(
+                        "Unsupported response format: {:?}",
+                        params.format_response()
+                    ),
                 }))
             }
         }
@@ -322,7 +325,7 @@ impl<'a> MapServiceClient<'a> {
 
         let legend: LegendResponse = response.json().await?;
 
-        tracing::info!(layer_count = legend.layers.len(), "Legend retrieved");
+        tracing::info!(layer_count = legend.layers().len(), "Legend retrieved");
 
         Ok(legend)
     }
@@ -427,7 +430,7 @@ impl<'a> MapServiceClient<'a> {
     /// # Ok(())
     /// # }
     /// ```
-    #[instrument(skip(self, params), fields(geometry_type = ?params.geometry_type))]
+    #[instrument(skip(self, params), fields(geometry_type = ?params.geometry_type()))]
     pub async fn identify(&self, params: IdentifyParams) -> Result<IdentifyResponse> {
         tracing::debug!("Identifying features");
 

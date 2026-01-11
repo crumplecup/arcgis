@@ -1,6 +1,7 @@
 //! Types for Feature Service operations.
 
 use crate::{ArcGISGeometry, GeometryType, ObjectId, SpatialRel};
+use derive_setters::Setters;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -72,35 +73,62 @@ pub enum ResponseFormat {
 }
 
 /// A single feature returned from a feature service.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
 pub struct Feature {
     /// Feature attributes as key-value pairs.
-    pub attributes: HashMap<String, serde_json::Value>,
+    attributes: HashMap<String, serde_json::Value>,
 
     /// Optional geometry.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub geometry: Option<ArcGISGeometry>,
+    geometry: Option<ArcGISGeometry>,
 }
 
 /// A set of features returned from a query.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
 pub struct FeatureSet {
     /// Geometry type of features in this set.
     #[serde(rename = "geometryType", skip_serializing_if = "Option::is_none")]
-    pub geometry_type: Option<GeometryType>,
+    geometry_type: Option<GeometryType>,
 
     /// Array of features.
     /// This field is optional because count-only queries don't return features.
     #[serde(default)]
-    pub features: Vec<Feature>,
+    features: Vec<Feature>,
 
     /// Count of features (present when returnCountOnly=true).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub count: Option<u32>,
+    count: Option<u32>,
 
     /// Whether the result set exceeded the transfer limit.
     #[serde(rename = "exceededTransferLimit", default)]
-    pub exceeded_transfer_limit: bool,
+    exceeded_transfer_limit: bool,
+}
+
+impl FeatureSet {
+    /// Creates a new FeatureSet.
+    pub(crate) fn new(
+        geometry_type: Option<GeometryType>,
+        features: Vec<Feature>,
+        count: Option<u32>,
+        exceeded_transfer_limit: bool,
+    ) -> Self {
+        Self {
+            geometry_type,
+            features,
+            count,
+            exceeded_transfer_limit,
+        }
+    }
+
+    /// Extracts features from the set, consuming it.
+    pub fn into_features(self) -> Vec<Feature> {
+        self.features
+    }
+
+    /// Returns a mutable reference to the features vector (for internal use).
+    pub(crate) fn features_mut(&mut self) -> &mut Vec<Feature> {
+        &mut self.features
+    }
 }
 
 /// Parameters for querying features from a feature service.
@@ -117,13 +145,14 @@ pub struct FeatureSet {
 ///     .return_geometry(true)
 ///     .build();
 /// ```
-#[derive(Debug, Clone, Serialize, derive_builder::Builder)]
+#[derive(Debug, Clone, Serialize, derive_builder::Builder, derive_getters::Getters, Setters)]
 #[builder(setter(into, strip_option), default)]
+#[setters(prefix = "set_", borrow_self)]
 pub struct FeatureQueryParams {
     /// WHERE clause for the query.
     #[serde(rename = "where")]
     #[builder(default = "String::from(\"1=1\")")]
-    pub where_clause: String,
+    where_clause: String,
 
     /// Fields to include in the response.
     /// If None, all fields are returned.
@@ -132,40 +161,40 @@ pub struct FeatureQueryParams {
         skip_serializing_if = "Option::is_none",
         serialize_with = "serde_helpers::serialize_string_vec"
     )]
-    pub out_fields: Option<Vec<String>>,
+    out_fields: Option<Vec<String>>,
 
     /// Whether to return geometry with features.
     #[serde(rename = "returnGeometry")]
     #[builder(default = "true")]
-    pub return_geometry: bool,
+    return_geometry: bool,
 
     /// Response format.
     #[serde(rename = "f")]
     #[builder(default)]
-    pub format: ResponseFormat,
+    format: ResponseFormat,
 
     /// Geometry to use for spatial filter.
     #[serde(
         skip_serializing_if = "Option::is_none",
         serialize_with = "serde_helpers::serialize_geometry"
     )]
-    pub geometry: Option<ArcGISGeometry>,
+    geometry: Option<ArcGISGeometry>,
 
     /// Geometry type of the geometry parameter.
     #[serde(rename = "geometryType", skip_serializing_if = "Option::is_none")]
-    pub geometry_type: Option<GeometryType>,
+    geometry_type: Option<GeometryType>,
 
     /// Spatial relationship to use for spatial filter.
     #[serde(rename = "spatialRel", skip_serializing_if = "Option::is_none")]
-    pub spatial_rel: Option<SpatialRel>,
+    spatial_rel: Option<SpatialRel>,
 
     /// Maximum number of features to return.
     #[serde(rename = "resultRecordCount", skip_serializing_if = "Option::is_none")]
-    pub result_record_count: Option<u32>,
+    result_record_count: Option<u32>,
 
     /// Offset for pagination.
     #[serde(rename = "resultOffset", skip_serializing_if = "Option::is_none")]
-    pub result_offset: Option<u32>,
+    result_offset: Option<u32>,
 
     /// Object IDs to query.
     #[serde(
@@ -173,22 +202,22 @@ pub struct FeatureQueryParams {
         skip_serializing_if = "Option::is_none",
         serialize_with = "serde_helpers::serialize_object_ids"
     )]
-    pub object_ids: Option<Vec<ObjectId>>,
+    object_ids: Option<Vec<ObjectId>>,
 
     /// Whether to return distinct values only.
     #[serde(
         rename = "returnDistinctValues",
         skip_serializing_if = "Option::is_none"
     )]
-    pub return_distinct_values: Option<bool>,
+    return_distinct_values: Option<bool>,
 
     /// Whether to return object IDs only.
     #[serde(rename = "returnIdsOnly", skip_serializing_if = "Option::is_none")]
-    pub return_ids_only: Option<bool>,
+    return_ids_only: Option<bool>,
 
     /// Whether to return count only.
     #[serde(rename = "returnCountOnly", skip_serializing_if = "Option::is_none")]
-    pub return_count_only: Option<bool>,
+    return_count_only: Option<bool>,
 
     /// ORDER BY clause.
     #[serde(
@@ -196,7 +225,7 @@ pub struct FeatureQueryParams {
         skip_serializing_if = "Option::is_none",
         serialize_with = "serde_helpers::serialize_string_vec"
     )]
-    pub order_by_fields: Option<Vec<String>>,
+    order_by_fields: Option<Vec<String>>,
 
     /// GROUP BY clause.
     #[serde(
@@ -204,25 +233,25 @@ pub struct FeatureQueryParams {
         skip_serializing_if = "Option::is_none",
         serialize_with = "serde_helpers::serialize_string_vec"
     )]
-    pub group_by_fields: Option<Vec<String>>,
+    group_by_fields: Option<Vec<String>>,
 
     /// Statistics to calculate (aggregate queries).
     ///
     /// When specified, only these query parameters can be used:
     /// groupByFieldsForStatistics, orderByFields, time, returnDistinctValues, where.
     #[serde(rename = "outStatistics", skip_serializing_if = "Option::is_none")]
-    pub out_statistics: Option<Vec<StatisticDefinition>>,
+    out_statistics: Option<Vec<StatisticDefinition>>,
 
     /// HAVING clause for filtering aggregated results.
     ///
     /// Only valid when `out_statistics` is specified.
     /// Example: `"COUNT(*) > 1000"` or `"SUM(AREA) > 5000"`
     #[serde(rename = "having", skip_serializing_if = "Option::is_none")]
-    pub having: Option<String>,
+    having: Option<String>,
 
     /// Output spatial reference WKID.
     #[serde(rename = "outSR", skip_serializing_if = "Option::is_none")]
-    pub out_sr: Option<i32>,
+    out_sr: Option<i32>,
 }
 
 impl Default for FeatureQueryParams {
@@ -298,17 +327,27 @@ pub enum StatisticType {
 ///     "avg_population".to_string()
 /// );
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, derive_new::new)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    derive_getters::Getters,
+    derive_new::new,
+)]
 #[serde(rename_all = "camelCase")]
 pub struct StatisticDefinition {
     /// The type of statistic to calculate.
-    pub statistic_type: StatisticType,
+    statistic_type: StatisticType,
 
     /// The field name to calculate statistics on.
-    pub on_statistic_field: String,
+    on_statistic_field: String,
 
     /// The output field name for the result.
-    pub out_statistic_field_name: String,
+    out_statistic_field_name: String,
 }
 
 /// Response from a feature statistics query.
@@ -341,7 +380,7 @@ pub struct FeatureStatisticsResponse {
 ///     .build()
 ///     .expect("Valid params");
 /// ```
-#[derive(Debug, Clone, Serialize, derive_builder::Builder)]
+#[derive(Debug, Clone, Serialize, derive_builder::Builder, derive_getters::Getters)]
 #[builder(setter(into, strip_option), default)]
 pub struct RelatedRecordsParams {
     /// Object IDs of features to query related records for (REQUIRED).
@@ -349,11 +388,11 @@ pub struct RelatedRecordsParams {
         rename = "objectIds",
         serialize_with = "serde_helpers::serialize_object_ids"
     )]
-    pub object_ids: Option<Vec<ObjectId>>,
+    object_ids: Option<Vec<ObjectId>>,
 
     /// ID of the relationship to query (REQUIRED).
     #[serde(rename = "relationshipId")]
-    pub relationship_id: Option<u32>,
+    relationship_id: Option<u32>,
 
     /// Fields to include in the response.
     #[serde(
@@ -361,50 +400,50 @@ pub struct RelatedRecordsParams {
         skip_serializing_if = "Option::is_none",
         serialize_with = "serde_helpers::serialize_string_vec"
     )]
-    pub out_fields: Option<Vec<String>>,
+    out_fields: Option<Vec<String>>,
 
     /// WHERE clause to filter related records.
     #[serde(
         rename = "definitionExpression",
         skip_serializing_if = "Option::is_none"
     )]
-    pub definition_expression: Option<String>,
+    definition_expression: Option<String>,
 
     /// Whether to return geometry with features.
     #[serde(rename = "returnGeometry", skip_serializing_if = "Option::is_none")]
-    pub return_geometry: Option<bool>,
+    return_geometry: Option<bool>,
 
     /// Output spatial reference WKID.
     #[serde(rename = "outSR", skip_serializing_if = "Option::is_none")]
-    pub out_sr: Option<i32>,
+    out_sr: Option<i32>,
 
     /// Maximum offset for geometry generalization.
     #[serde(rename = "maxAllowableOffset", skip_serializing_if = "Option::is_none")]
-    pub max_allowable_offset: Option<f64>,
+    max_allowable_offset: Option<f64>,
 
     /// Decimal places for geometry coordinates.
     #[serde(rename = "geometryPrecision", skip_serializing_if = "Option::is_none")]
-    pub geometry_precision: Option<i32>,
+    geometry_precision: Option<i32>,
 
     /// Return z-values.
     #[serde(rename = "returnZ", skip_serializing_if = "Option::is_none")]
-    pub return_z: Option<bool>,
+    return_z: Option<bool>,
 
     /// Return m-values.
     #[serde(rename = "returnM", skip_serializing_if = "Option::is_none")]
-    pub return_m: Option<bool>,
+    return_m: Option<bool>,
 
     /// Geodatabase version.
     #[serde(rename = "gdbVersion", skip_serializing_if = "Option::is_none")]
-    pub gdb_version: Option<String>,
+    gdb_version: Option<String>,
 
     /// Historic moment (epoch milliseconds).
     #[serde(rename = "historicMoment", skip_serializing_if = "Option::is_none")]
-    pub historic_moment: Option<i64>,
+    historic_moment: Option<i64>,
 
     /// Return only counts per object ID.
     #[serde(rename = "returnCountOnly", skip_serializing_if = "Option::is_none")]
-    pub return_count_only: Option<bool>,
+    return_count_only: Option<bool>,
 
     /// ORDER BY clause.
     #[serde(
@@ -412,20 +451,20 @@ pub struct RelatedRecordsParams {
         skip_serializing_if = "Option::is_none",
         serialize_with = "serde_helpers::serialize_string_vec"
     )]
-    pub order_by_fields: Option<Vec<String>>,
+    order_by_fields: Option<Vec<String>>,
 
     /// Offset for pagination.
     #[serde(rename = "resultOffset", skip_serializing_if = "Option::is_none")]
-    pub result_offset: Option<u32>,
+    result_offset: Option<u32>,
 
     /// Maximum number of features to return per object ID.
     #[serde(rename = "resultRecordCount", skip_serializing_if = "Option::is_none")]
-    pub result_record_count: Option<u32>,
+    result_record_count: Option<u32>,
 
     /// Response format.
     #[serde(rename = "f")]
     #[builder(default = "ResponseFormat::Json")]
-    pub format: ResponseFormat,
+    format: ResponseFormat,
 }
 
 impl Default for RelatedRecordsParams {
@@ -509,17 +548,27 @@ pub struct RelatedRecordsResponse {
 ///     vec!["Population DESC".to_string()],
 /// );
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, derive_new::new)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    derive_getters::Getters,
+    derive_new::new,
+)]
 #[serde(rename_all = "camelCase")]
 pub struct TopFilter {
     /// Fields to group results by.
-    pub group_by_fields: Vec<String>,
+    group_by_fields: Vec<String>,
 
     /// Number of top features to return from each group.
-    pub top_count: u32,
+    top_count: u32,
 
     /// Fields to order results by (format: "FieldName ASC" or "FieldName DESC").
-    pub order_by_fields: Vec<String>,
+    order_by_fields: Vec<String>,
 }
 
 /// Parameters for querying top features from a feature service layer.
@@ -545,16 +594,16 @@ pub struct TopFilter {
 ///     .build()
 ///     .expect("Valid params");
 /// ```
-#[derive(Debug, Clone, Serialize, derive_builder::Builder)]
+#[derive(Debug, Clone, Serialize, derive_builder::Builder, derive_getters::Getters)]
 #[builder(setter(into, strip_option), default)]
 pub struct TopFeaturesParams {
     /// Required: Top filter specification (group by, count, order by).
     #[serde(rename = "topFilter")]
-    pub top_filter: Option<TopFilter>,
+    top_filter: Option<TopFilter>,
 
     /// WHERE clause for the query filter.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub where_: Option<String>,
+    where_: Option<String>,
 
     /// Object IDs to query.
     #[serde(
@@ -562,38 +611,38 @@ pub struct TopFeaturesParams {
         skip_serializing_if = "Option::is_none",
         serialize_with = "serde_helpers::serialize_object_ids"
     )]
-    pub object_ids: Option<Vec<ObjectId>>,
+    object_ids: Option<Vec<ObjectId>>,
 
     /// Time instant or extent to query.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time: Option<String>,
+    time: Option<String>,
 
     /// Geometry to apply as spatial filter.
     #[serde(
         skip_serializing_if = "Option::is_none",
         serialize_with = "serde_helpers::serialize_geometry"
     )]
-    pub geometry: Option<ArcGISGeometry>,
+    geometry: Option<ArcGISGeometry>,
 
     /// Type of geometry being used as spatial filter.
     #[serde(rename = "geometryType", skip_serializing_if = "Option::is_none")]
-    pub geometry_type: Option<GeometryType>,
+    geometry_type: Option<GeometryType>,
 
     /// Spatial reference of input geometry.
     #[serde(rename = "inSR", skip_serializing_if = "Option::is_none")]
-    pub in_sr: Option<i32>,
+    in_sr: Option<i32>,
 
     /// Spatial relationship for the query.
     #[serde(rename = "spatialRel", skip_serializing_if = "Option::is_none")]
-    pub spatial_rel: Option<SpatialRel>,
+    spatial_rel: Option<SpatialRel>,
 
     /// Buffer distance for input geometries.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub distance: Option<f64>,
+    distance: Option<f64>,
 
     /// Units for distance parameter.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub units: Option<String>,
+    units: Option<String>,
 
     /// Fields to include in the response.
     #[serde(
@@ -601,51 +650,51 @@ pub struct TopFeaturesParams {
         skip_serializing_if = "Option::is_none",
         serialize_with = "serde_helpers::serialize_string_vec"
     )]
-    pub out_fields: Option<Vec<String>>,
+    out_fields: Option<Vec<String>>,
 
     /// Whether to return geometry with the results (default: true).
     #[serde(rename = "returnGeometry", skip_serializing_if = "Option::is_none")]
-    pub return_geometry: Option<bool>,
+    return_geometry: Option<bool>,
 
     /// Maximum offset for geometry generalization.
     #[serde(rename = "maxAllowableOffset", skip_serializing_if = "Option::is_none")]
-    pub max_allowable_offset: Option<f64>,
+    max_allowable_offset: Option<f64>,
 
     /// Number of decimal places for returned geometries.
     #[serde(rename = "geometryPrecision", skip_serializing_if = "Option::is_none")]
-    pub geometry_precision: Option<i32>,
+    geometry_precision: Option<i32>,
 
     /// Spatial reference for returned geometry.
     #[serde(rename = "outSR", skip_serializing_if = "Option::is_none")]
-    pub out_sr: Option<i32>,
+    out_sr: Option<i32>,
 
     /// Whether to return only object IDs.
     #[serde(rename = "returnIdsOnly", skip_serializing_if = "Option::is_none")]
-    pub return_ids_only: Option<bool>,
+    return_ids_only: Option<bool>,
 
     /// Whether to return only the feature count.
     #[serde(rename = "returnCountOnly", skip_serializing_if = "Option::is_none")]
-    pub return_count_only: Option<bool>,
+    return_count_only: Option<bool>,
 
     /// Whether to return only the extent.
     #[serde(rename = "returnExtentOnly", skip_serializing_if = "Option::is_none")]
-    pub return_extent_only: Option<bool>,
+    return_extent_only: Option<bool>,
 
     /// Whether to include z-values if available.
     #[serde(rename = "returnZ", skip_serializing_if = "Option::is_none")]
-    pub return_z: Option<bool>,
+    return_z: Option<bool>,
 
     /// Whether to include m-values if available.
     #[serde(rename = "returnM", skip_serializing_if = "Option::is_none")]
-    pub return_m: Option<bool>,
+    return_m: Option<bool>,
 
     /// Control on the number of features returned.
     #[serde(rename = "resultType", skip_serializing_if = "Option::is_none")]
-    pub result_type: Option<String>,
+    result_type: Option<String>,
 
     /// Output format (json, geojson, pbf).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub f: Option<String>,
+    f: Option<String>,
 }
 
 impl Default for TopFeaturesParams {

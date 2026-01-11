@@ -109,10 +109,7 @@ impl<'a> GeoprocessingServiceClient<'a> {
     /// # }
     /// ```
     #[instrument(skip(self, parameters), fields(param_count = parameters.len()))]
-    pub async fn execute(
-        &self,
-        parameters: HashMap<String, Value>,
-    ) -> Result<GPExecuteResult> {
+    pub async fn execute(&self, parameters: HashMap<String, Value>) -> Result<GPExecuteResult> {
         tracing::debug!("Executing synchronous geoprocessing task");
 
         let execute_url = format!("{}/execute", self.url);

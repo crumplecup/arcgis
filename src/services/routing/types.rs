@@ -7,31 +7,31 @@ use serde::{Deserialize, Serialize};
 /// A location for network analysis operations.
 ///
 /// Can represent a stop, facility, incident, or barrier.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct NALocation {
     /// Geometry of the location (typically a point).
-    pub geometry: ArcGISGeometry,
+    geometry: ArcGISGeometry,
 
     /// Optional name for the location.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    name: Option<String>,
 
     /// Optional curb approach.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub curb_approach: Option<CurbApproach>,
+    curb_approach: Option<CurbApproach>,
 
     /// Optional bearing angle (0-360 degrees).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub bearing: Option<f64>,
+    bearing: Option<f64>,
 
     /// Optional bearing tolerance (0-180 degrees).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub bearing_tolerance: Option<f64>,
+    bearing_tolerance: Option<f64>,
 
     /// Optional navigation latency (seconds).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub nav_latency: Option<f64>,
+    nav_latency: Option<f64>,
 }
 
 impl NALocation {

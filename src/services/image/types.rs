@@ -122,39 +122,39 @@ pub enum InterpolationType {
 }
 
 /// Mosaic rule for combining multiple rasters.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters, derive_new::new)]
 #[serde(rename_all = "camelCase")]
 pub struct MosaicRule {
     /// Mosaic method.
-    pub mosaic_method: String,
+    mosaic_method: String,
 
     /// Mosaic operation.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mosaic_operation: Option<String>,
+    mosaic_operation: Option<String>,
 
     /// Lock raster IDs.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub lock_raster_ids: Option<Vec<i64>>,
+    lock_raster_ids: Option<Vec<i64>>,
 
     /// Order by field.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub order_by_field: Option<String>,
+    order_by_field: Option<String>,
 
     /// Ascending order.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub ascending: Option<bool>,
+    ascending: Option<bool>,
 }
 
 /// Rendering rule for dynamic visualization.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters, derive_new::new)]
 #[serde(rename_all = "camelCase")]
 pub struct RenderingRule {
     /// Raster function name.
-    pub raster_function: String,
+    raster_function: String,
 
     /// Raster function arguments.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub raster_function_arguments: Option<Value>,
+    raster_function_arguments: Option<Value>,
 }
 
 /// Parameters for identify operation.

@@ -123,9 +123,9 @@ impl<'a> RoutingServiceClient<'a> {
         let stops_json = serde_json::to_string(&serde_json::json!({
             "features": params.stops().iter().map(|stop| {
                 serde_json::json!({
-                    "geometry": stop.geometry,
+                    "geometry": stop.geometry(),
                     "attributes": {
-                        "Name": stop.name.as_ref().unwrap_or(&String::new()),
+                        "Name": stop.name().as_ref().unwrap_or(&String::new()),
                     }
                 })
             }).collect::<Vec<_>>()
@@ -142,10 +142,16 @@ impl<'a> RoutingServiceClient<'a> {
 
         // Add optional parameters
         if let Some(return_directions) = params.return_directions() {
-            form.push(("returnDirections", if *return_directions { "true" } else { "false" }));
+            form.push((
+                "returnDirections",
+                if *return_directions { "true" } else { "false" },
+            ));
         }
         if let Some(return_routes) = params.return_routes() {
-            form.push(("returnRoutes", if *return_routes { "true" } else { "false" }));
+            form.push((
+                "returnRoutes",
+                if *return_routes { "true" } else { "false" },
+            ));
         }
         if let Some(return_stops) = params.return_stops() {
             form.push(("returnStops", if *return_stops { "true" } else { "false" }));
@@ -171,10 +177,7 @@ impl<'a> RoutingServiceClient<'a> {
 
         let result: RouteResult = response.json().await?;
 
-        tracing::info!(
-            route_count = result.routes().len(),
-            "solve route completed"
-        );
+        tracing::info!(route_count = result.routes().len(), "solve route completed");
 
         Ok(result)
     }
@@ -236,9 +239,9 @@ impl<'a> RoutingServiceClient<'a> {
         let facilities_json = serde_json::to_string(&serde_json::json!({
             "features": params.facilities().iter().map(|fac| {
                 serde_json::json!({
-                    "geometry": fac.geometry,
+                    "geometry": fac.geometry(),
                     "attributes": {
-                        "Name": fac.name.as_ref().unwrap_or(&String::new()),
+                        "Name": fac.name().as_ref().unwrap_or(&String::new()),
                     }
                 })
             }).collect::<Vec<_>>()
@@ -352,9 +355,9 @@ impl<'a> RoutingServiceClient<'a> {
         let incidents_json = serde_json::to_string(&serde_json::json!({
             "features": params.incidents().iter().map(|inc| {
                 serde_json::json!({
-                    "geometry": inc.geometry,
+                    "geometry": inc.geometry(),
                     "attributes": {
-                        "Name": inc.name.as_ref().unwrap_or(&String::new()),
+                        "Name": inc.name().as_ref().unwrap_or(&String::new()),
                     }
                 })
             }).collect::<Vec<_>>()
@@ -363,9 +366,9 @@ impl<'a> RoutingServiceClient<'a> {
         let facilities_json = serde_json::to_string(&serde_json::json!({
             "features": params.facilities().iter().map(|fac| {
                 serde_json::json!({
-                    "geometry": fac.geometry,
+                    "geometry": fac.geometry(),
                     "attributes": {
-                        "Name": fac.name.as_ref().unwrap_or(&String::new()),
+                        "Name": fac.name().as_ref().unwrap_or(&String::new()),
                     }
                 })
             }).collect::<Vec<_>>()
@@ -486,9 +489,9 @@ impl<'a> RoutingServiceClient<'a> {
         let origins_json = serde_json::to_string(&serde_json::json!({
             "features": params.origins().iter().map(|org| {
                 serde_json::json!({
-                    "geometry": org.geometry,
+                    "geometry": org.geometry(),
                     "attributes": {
-                        "Name": org.name.as_ref().unwrap_or(&String::new()),
+                        "Name": org.name().as_ref().unwrap_or(&String::new()),
                     }
                 })
             }).collect::<Vec<_>>()
@@ -497,9 +500,9 @@ impl<'a> RoutingServiceClient<'a> {
         let destinations_json = serde_json::to_string(&serde_json::json!({
             "features": params.destinations().iter().map(|dest| {
                 serde_json::json!({
-                    "geometry": dest.geometry,
+                    "geometry": dest.geometry(),
                     "attributes": {
-                        "Name": dest.name.as_ref().unwrap_or(&String::new()),
+                        "Name": dest.name().as_ref().unwrap_or(&String::new()),
                     }
                 })
             }).collect::<Vec<_>>()

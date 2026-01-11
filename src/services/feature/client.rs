@@ -168,8 +168,8 @@ impl<'a> FeatureServiceClient<'a> {
         let feature_set: FeatureSet = response.json().await?;
 
         tracing::debug!(
-            feature_count = feature_set.features.len(),
-            exceeded_limit = feature_set.exceeded_transfer_limit,
+            feature_count = feature_set.features().len(),
+            exceeded_limit = feature_set.exceeded_transfer_limit(),
             "Query completed successfully"
         );
 
@@ -353,7 +353,7 @@ impl<'a> FeatureServiceClient<'a> {
         let result: crate::FeatureSet = response.json().await?;
 
         tracing::debug!(
-            features_count = result.features.len(),
+            features_count = result.features().len(),
             "Query top features completed successfully"
         );
 
@@ -1685,17 +1685,17 @@ impl<'a> FeatureServiceClient<'a> {
     ) -> Result<u32> {
         tracing::debug!("Querying feature count");
 
-        let params = FeatureQueryParams {
-            where_clause: where_clause.into(),
-            return_count_only: Some(true),
-            return_geometry: false,
-            out_fields: Some(vec![]), // No fields needed for count
-            ..Default::default()
-        };
+        let params = FeatureQueryParams::builder()
+            .where_clause(where_clause)
+            .return_count_only(true)
+            .return_geometry(false)
+            .out_fields(vec![]) // No fields needed for count
+            .build()
+            .expect("Valid query params");
 
         let result = self.query_with_params(layer_id, params).await?;
 
-        let count = result.count.unwrap_or(0);
+        let count = (*result.count()).unwrap_or(0);
         tracing::info!(count = count, "Feature count query completed");
 
         Ok(count)

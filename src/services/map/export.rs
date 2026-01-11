@@ -70,7 +70,7 @@ impl<'a> ExportMapBuilder<'a> {
     /// # }
     /// ```
     pub fn bbox(mut self, bbox: impl Into<String>) -> Self {
-        self.params.bbox = bbox.into();
+        self.params.set_bbox(bbox.into());
         self
     }
 
@@ -78,7 +78,7 @@ impl<'a> ExportMapBuilder<'a> {
     ///
     /// If not specified, defaults to the map's spatial reference.
     pub fn bbox_sr(mut self, wkid: i32) -> Self {
-        self.params.bbox_sr = Some(wkid);
+        self.params.set_bbox_sr(Some(wkid));
         self
     }
 
@@ -101,7 +101,7 @@ impl<'a> ExportMapBuilder<'a> {
     /// # }
     /// ```
     pub fn layers(mut self, layers: impl Into<String>) -> Self {
-        self.params.layers = Some(layers.into());
+        self.params.set_layers(Some(layers.into()));
         self
     }
 
@@ -128,7 +128,8 @@ impl<'a> ExportMapBuilder<'a> {
             .map(|id| id.to_string())
             .collect::<Vec<_>>()
             .join(",");
-        self.params.layers = Some(format!("{}:{}", operation.as_str(), ids));
+        self.params
+            .set_layers(Some(format!("{}:{}", operation.as_str(), ids)));
         self
     }
 
@@ -137,7 +138,7 @@ impl<'a> ExportMapBuilder<'a> {
     /// Format: JSON array or semicolon-separated expressions.
     /// Example: `"0:POPULATION > 100000;1:STATE = 'CA'"`
     pub fn layer_defs(mut self, defs: impl Into<String>) -> Self {
-        self.params.layer_defs = Some(defs.into());
+        self.params.set_layer_defs(Some(defs.into()));
         self
     }
 
@@ -157,7 +158,7 @@ impl<'a> ExportMapBuilder<'a> {
     /// # }
     /// ```
     pub fn size(mut self, width: u32, height: u32) -> Self {
-        self.params.size = Some(format!("{},{}", width, height));
+        self.params.set_size(Some(format!("{},{}", width, height)));
         self
     }
 
@@ -165,7 +166,7 @@ impl<'a> ExportMapBuilder<'a> {
     ///
     /// Common values: 96 (screen), 300 (print).
     pub fn dpi(mut self, dpi: i32) -> Self {
-        self.params.dpi = Some(dpi);
+        self.params.set_dpi(Some(dpi));
         self
     }
 
@@ -173,7 +174,7 @@ impl<'a> ExportMapBuilder<'a> {
     ///
     /// If not specified, uses the map's spatial reference.
     pub fn image_sr(mut self, wkid: i32) -> Self {
-        self.params.image_sr = Some(wkid);
+        self.params.set_image_sr(Some(wkid));
         self
     }
 
@@ -193,7 +194,7 @@ impl<'a> ExportMapBuilder<'a> {
     /// # }
     /// ```
     pub fn format(mut self, format: ImageFormat) -> Self {
-        self.params.format = Some(format);
+        self.params.set_format(Some(format));
         self
     }
 
@@ -216,7 +217,7 @@ impl<'a> ExportMapBuilder<'a> {
     /// # }
     /// ```
     pub fn transparent(mut self, transparent: bool) -> Self {
-        self.params.transparent = Some(transparent);
+        self.params.set_transparent(Some(transparent));
         self
     }
 
@@ -225,13 +226,13 @@ impl<'a> ExportMapBuilder<'a> {
     /// Format: "startTime,endTime" or single instant "time"
     /// Times are Unix timestamps in milliseconds.
     pub fn time(mut self, time: impl Into<String>) -> Self {
-        self.params.time = Some(time.into());
+        self.params.set_time(Some(time.into()));
         self
     }
 
     /// Sets the time relationship for temporal queries.
     pub fn time_relation(mut self, relation: TimeRelation) -> Self {
-        self.params.time_relation = Some(relation);
+        self.params.set_time_relation(Some(relation));
         self
     }
 
@@ -239,7 +240,7 @@ impl<'a> ExportMapBuilder<'a> {
     ///
     /// JSON format specifying time extent per layer.
     pub fn layer_time_options(mut self, options: impl Into<String>) -> Self {
-        self.params.layer_time_options = Some(options.into());
+        self.params.set_layer_time_options(Some(options.into()));
         self
     }
 
@@ -247,13 +248,13 @@ impl<'a> ExportMapBuilder<'a> {
     ///
     /// JSON format for defining dynamic layers at request time.
     pub fn dynamic_layers(mut self, layers: impl Into<String>) -> Self {
-        self.params.dynamic_layers = Some(layers.into());
+        self.params.set_dynamic_layers(Some(layers.into()));
         self
     }
 
     /// Sets the GDB version to query.
     pub fn gdb_version(mut self, version: impl Into<String>) -> Self {
-        self.params.gdb_version = Some(version.into());
+        self.params.set_gdb_version(Some(version.into()));
         self
     }
 
@@ -261,7 +262,7 @@ impl<'a> ExportMapBuilder<'a> {
     ///
     /// When specified, overrides size-based scale calculation.
     pub fn map_scale(mut self, scale: f64) -> Self {
-        self.params.map_scale = Some(scale);
+        self.params.set_map_scale(Some(scale));
         self
     }
 
@@ -269,7 +270,7 @@ impl<'a> ExportMapBuilder<'a> {
     ///
     /// Positive values rotate clockwise.
     pub fn rotation(mut self, degrees: f64) -> Self {
-        self.params.rotation = Some(degrees);
+        self.params.set_rotation(Some(degrees));
         self
     }
 
@@ -277,29 +278,31 @@ impl<'a> ExportMapBuilder<'a> {
     ///
     /// JSON array specifying transformations between spatial references.
     pub fn datum_transformations(mut self, transformations: impl Into<String>) -> Self {
-        self.params.datum_transformations = Some(transformations.into());
+        self.params
+            .set_datum_transformations(Some(transformations.into()));
         self
     }
 
     /// Sets the map range values.
     pub fn map_range_values(mut self, values: impl Into<String>) -> Self {
-        self.params.map_range_values = Some(values.into());
+        self.params.set_map_range_values(Some(values.into()));
         self
     }
 
     /// Sets layer parameterized expressions.
     pub fn layer_parameter_values(mut self, values: impl Into<String>) -> Self {
-        self.params.layer_parameter_values = Some(values.into());
+        self.params.set_layer_parameter_values(Some(values.into()));
         self
     }
 
     /// Sets whether to format the response as pretty JSON.
     pub fn pretty_json(mut self, pretty: bool) -> Self {
-        self.params.format_response = if pretty {
+        let format = if pretty {
             ResponseFormat::PJson
         } else {
             ResponseFormat::Json
         };
+        self.params.set_format_response(format);
         self
     }
 
@@ -311,7 +314,7 @@ impl<'a> ExportMapBuilder<'a> {
     ///
     /// Default is `Json`.
     pub fn response_format(mut self, format: ResponseFormat) -> Self {
-        self.params.format_response = format;
+        self.params.set_format_response(format);
         self
     }
 
@@ -354,7 +357,7 @@ impl<'a> ExportMapBuilder<'a> {
     /// # Ok(())
     /// # }
     /// ```
-    #[instrument(skip(self, target), fields(bbox = %self.params.bbox, size = ?self.params.size))]
+    #[instrument(skip(self, target), fields(bbox = %self.params.bbox(), size = ?self.params.size()))]
     pub async fn execute(self, target: ExportTarget) -> Result<ExportResult> {
         tracing::debug!("Executing export");
         self.client.export_map(self.params, target).await

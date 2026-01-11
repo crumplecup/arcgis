@@ -609,26 +609,26 @@ impl<'a> VersionManagementClient<'a> {
     /// # Ok(())
     /// # }
     /// ```
-    #[instrument(skip(self, params), fields(base_url = %self.base_url, version_name = %params.version_name))]
+    #[instrument(skip(self, params), fields(base_url = %self.base_url, version_name = %params.version_name()))]
     pub async fn create(&self, params: CreateVersionParams) -> Result<CreateVersionResponse> {
         tracing::debug!(
-            version_name = %params.version_name,
-            access = %params.access,
+            version_name = %params.version_name(),
+            access = %params.access(),
             "Creating new version"
         );
 
         let url = format!("{}/create", self.base_url);
         let token = self.client.auth().get_token().await?;
 
-        let access_str = params.access.to_string();
+        let access_str = params.access().to_string();
         let mut form = vec![
-            ("versionName", params.version_name.as_str()),
+            ("versionName", params.version_name().as_str()),
             ("access", access_str.as_str()),
             ("f", "json"),
             ("token", token.as_str()),
         ];
 
-        if let Some(ref description) = params.description {
+        if let Some(ref description) = params.description() {
             form.push(("description", description.as_str()));
         }
 
@@ -653,12 +653,12 @@ impl<'a> VersionManagementClient<'a> {
 
         if *create_response.success() {
             tracing::info!(
-                version_name = %params.version_name,
+                version_name = %params.version_name(),
                 "Version created successfully"
             );
         } else {
             tracing::warn!(
-                version_name = %params.version_name,
+                version_name = %params.version_name(),
                 error = ?create_response.error(),
                 "create reported failure"
             );
@@ -730,19 +730,19 @@ impl<'a> VersionManagementClient<'a> {
         let mut form = vec![("f", "json"), ("token", token.as_str())];
 
         let version_name_str;
-        if let Some(ref version_name) = params.version_name {
+        if let Some(ref version_name) = params.version_name() {
             version_name_str = version_name.clone();
             form.push(("versionName", version_name_str.as_str()));
         }
 
         let access_str;
-        if let Some(ref access) = params.access {
+        if let Some(ref access) = params.access() {
             access_str = access.to_string();
             form.push(("access", access_str.as_str()));
         }
 
         let description_str;
-        if let Some(ref description) = params.description {
+        if let Some(ref description) = params.description() {
             description_str = description.clone();
             form.push(("description", description_str.as_str()));
         }

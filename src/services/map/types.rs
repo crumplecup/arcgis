@@ -2,6 +2,7 @@
 
 use crate::{ArcGISGeometry, GeometryType};
 use derive_getters::Getters;
+use derive_setters::Setters;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -198,120 +199,121 @@ pub struct SpatialReference {
 ///     .build()
 ///     .expect("Valid params");
 /// ```
-#[derive(Debug, Clone, Serialize, derive_builder::Builder)]
+#[derive(Debug, Clone, Serialize, derive_builder::Builder, derive_getters::Getters, Setters)]
 #[builder(setter(into, strip_option), default)]
+#[setters(prefix = "set_", borrow_self)]
 pub struct ExportMapParams {
     /// Bounding box of the exported image (xmin,ymin,xmax,ymax).
     /// REQUIRED parameter.
-    pub bbox: String,
+    bbox: String,
 
     /// Spatial reference of the bbox coordinates.
     #[serde(rename = "bboxSR", skip_serializing_if = "Option::is_none")]
-    pub bbox_sr: Option<i32>,
+    bbox_sr: Option<i32>,
 
     /// Layer visibility control.
     /// Format: "show:0,2,4" or "hide:1,3" or "include:0,2" or "exclude:1"
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub layers: Option<String>,
+    layers: Option<String>,
 
     /// Layer definition expressions (filters).
     #[serde(rename = "layerDefs", skip_serializing_if = "Option::is_none")]
-    pub layer_defs: Option<String>,
+    layer_defs: Option<String>,
 
     /// Image size in pixels (width,height).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub size: Option<String>,
+    size: Option<String>,
 
     /// Spatial reference of the output image.
     #[serde(rename = "imageSR", skip_serializing_if = "Option::is_none")]
-    pub image_sr: Option<i32>,
+    image_sr: Option<i32>,
 
     /// Historic moment (epoch milliseconds) for archive-enabled layers.
     #[serde(rename = "historicMoment", skip_serializing_if = "Option::is_none")]
-    pub historic_moment: Option<i64>,
+    historic_moment: Option<i64>,
 
     /// Image format.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub format: Option<ImageFormat>,
+    format: Option<ImageFormat>,
 
     /// Whether to use transparency.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub transparent: Option<bool>,
+    transparent: Option<bool>,
 
     /// Dots per inch (device resolution).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub dpi: Option<i32>,
+    dpi: Option<i32>,
 
     /// Time instant or range (epoch milliseconds).
     /// Format: "timestamp" or "start,end"
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time: Option<String>,
+    time: Option<String>,
 
     /// Time relationship for temporal queries.
     #[serde(rename = "timeRelation", skip_serializing_if = "Option::is_none")]
-    pub time_relation: Option<TimeRelation>,
+    time_relation: Option<TimeRelation>,
 
     /// Per-layer time options (JSON).
     #[serde(rename = "layerTimeOptions", skip_serializing_if = "Option::is_none")]
-    pub layer_time_options: Option<String>,
+    layer_time_options: Option<String>,
 
     /// Dynamic layer definitions (JSON).
     #[serde(rename = "dynamicLayers", skip_serializing_if = "Option::is_none")]
-    pub dynamic_layers: Option<String>,
+    dynamic_layers: Option<String>,
 
     /// Geodatabase version name.
     #[serde(rename = "gdbVersion", skip_serializing_if = "Option::is_none")]
-    pub gdb_version: Option<String>,
+    gdb_version: Option<String>,
 
     /// Map scale (1:x ratio).
     #[serde(rename = "mapScale", skip_serializing_if = "Option::is_none")]
-    pub map_scale: Option<f64>,
+    map_scale: Option<f64>,
 
     /// Rotation angle in degrees.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rotation: Option<f64>,
+    rotation: Option<f64>,
 
     /// Datum transformations (JSON array).
     #[serde(
         rename = "datumTransformations",
         skip_serializing_if = "Option::is_none"
     )]
-    pub datum_transformations: Option<String>,
+    datum_transformations: Option<String>,
 
     /// Layer parameter values for parameterized filters (JSON).
     #[serde(
         rename = "layerParameterValues",
         skip_serializing_if = "Option::is_none"
     )]
-    pub layer_parameter_values: Option<String>,
+    layer_parameter_values: Option<String>,
 
     /// Map-wide range values (JSON).
     #[serde(rename = "mapRangeValues", skip_serializing_if = "Option::is_none")]
-    pub map_range_values: Option<String>,
+    map_range_values: Option<String>,
 
     /// Per-layer range values (JSON).
     #[serde(rename = "layerRangeValues", skip_serializing_if = "Option::is_none")]
-    pub layer_range_values: Option<String>,
+    layer_range_values: Option<String>,
 
     /// Clipping geometry (JSON).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub clipping: Option<String>,
+    clipping: Option<String>,
 
     /// Spatial filter (JSON).
     #[serde(rename = "spatialFilter", skip_serializing_if = "Option::is_none")]
-    pub spatial_filter: Option<String>,
+    spatial_filter: Option<String>,
 
     /// Selection definitions for highlighting features (JSON, v11.4+).
     #[serde(
         rename = "selectionDefinitions",
         skip_serializing_if = "Option::is_none"
     )]
-    pub selection_definitions: Option<String>,
+    selection_definitions: Option<String>,
 
     /// Response format.
     #[serde(rename = "f")]
     #[builder(default = "ResponseFormat::Json")]
-    pub format_response: ResponseFormat,
+    format_response: ResponseFormat,
 }
 
 impl Default for ExportMapParams {
@@ -393,128 +395,128 @@ pub struct ExportMapResponse {
 /// Parameters for identifying features on a map.
 ///
 /// Use [`IdentifyParams::builder()`] to construct instances.
-#[derive(Debug, Clone, Serialize, derive_builder::Builder)]
+#[derive(Debug, Clone, Serialize, derive_builder::Builder, derive_getters::Getters)]
 #[builder(setter(into, strip_option), default)]
 pub struct IdentifyParams {
     /// Geometry to identify on (JSON string or simple format).
-    pub geometry: String,
+    geometry: String,
 
     /// Type of geometry.
     #[serde(rename = "geometryType")]
-    pub geometry_type: GeometryType,
+    geometry_type: GeometryType,
 
     /// Tolerance in screen pixels.
-    pub tolerance: i32,
+    tolerance: i32,
 
     /// Map extent being viewed (xmin,ymin,xmax,ymax).
     #[serde(rename = "mapExtent")]
-    pub map_extent: String,
+    map_extent: String,
 
     /// Image display parameters (width,height,dpi).
     #[serde(rename = "imageDisplay")]
-    pub image_display: String,
+    image_display: String,
 
     /// Spatial reference WKID.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sr: Option<i32>,
+    sr: Option<i32>,
 
     /// Layer definition expressions (JSON).
     #[serde(rename = "layerDefs", skip_serializing_if = "Option::is_none")]
-    pub layer_defs: Option<String>,
+    layer_defs: Option<String>,
 
     /// Time instant or range.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time: Option<String>,
+    time: Option<String>,
 
     /// Time relationship.
     #[serde(rename = "timeRelation", skip_serializing_if = "Option::is_none")]
-    pub time_relation: Option<TimeRelation>,
+    time_relation: Option<TimeRelation>,
 
     /// Which layers to identify.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub layers: Option<LayerSelection>,
+    layers: Option<LayerSelection>,
 
     /// Return geometries in results.
     #[serde(rename = "returnGeometry", skip_serializing_if = "Option::is_none")]
-    pub return_geometry: Option<bool>,
+    return_geometry: Option<bool>,
 
     /// Maximum offset for geometry generalization.
     #[serde(rename = "maxAllowableOffset", skip_serializing_if = "Option::is_none")]
-    pub max_allowable_offset: Option<f64>,
+    max_allowable_offset: Option<f64>,
 
     /// Decimal places for geometry coordinates.
     #[serde(rename = "geometryPrecision", skip_serializing_if = "Option::is_none")]
-    pub geometry_precision: Option<i32>,
+    geometry_precision: Option<i32>,
 
     /// Return z-values.
     #[serde(rename = "returnZ", skip_serializing_if = "Option::is_none")]
-    pub return_z: Option<bool>,
+    return_z: Option<bool>,
 
     /// Return m-values.
     #[serde(rename = "returnM", skip_serializing_if = "Option::is_none")]
-    pub return_m: Option<bool>,
+    return_m: Option<bool>,
 
     /// Geodatabase version.
     #[serde(rename = "gdbVersion", skip_serializing_if = "Option::is_none")]
-    pub gdb_version: Option<String>,
+    gdb_version: Option<String>,
 
     /// Return unformatted values.
     #[serde(
         rename = "returnUnformattedValues",
         skip_serializing_if = "Option::is_none"
     )]
-    pub return_unformatted_values: Option<bool>,
+    return_unformatted_values: Option<bool>,
 
     /// Return field names instead of aliases.
     #[serde(rename = "returnFieldName", skip_serializing_if = "Option::is_none")]
-    pub return_field_name: Option<bool>,
+    return_field_name: Option<bool>,
 
     /// Response format.
     #[serde(rename = "f")]
     #[builder(default = "ResponseFormat::Json")]
-    pub format: ResponseFormat,
+    format: ResponseFormat,
 
     /// Dynamic layers (JSON).
     #[serde(rename = "dynamicLayers", skip_serializing_if = "Option::is_none")]
-    pub dynamic_layers: Option<String>,
+    dynamic_layers: Option<String>,
 
     /// Layer time options (JSON).
     #[serde(rename = "layerTimeOptions", skip_serializing_if = "Option::is_none")]
-    pub layer_time_options: Option<String>,
+    layer_time_options: Option<String>,
 
     /// Datum transformations (JSON).
     #[serde(
         rename = "datumTransformations",
         skip_serializing_if = "Option::is_none"
     )]
-    pub datum_transformations: Option<String>,
+    datum_transformations: Option<String>,
 
     /// Map range values (JSON).
     #[serde(rename = "mapRangeValues", skip_serializing_if = "Option::is_none")]
-    pub map_range_values: Option<String>,
+    map_range_values: Option<String>,
 
     /// Layer range values (JSON).
     #[serde(rename = "layerRangeValues", skip_serializing_if = "Option::is_none")]
-    pub layer_range_values: Option<String>,
+    layer_range_values: Option<String>,
 
     /// Layer parameter values (JSON).
     #[serde(
         rename = "layerParameterValues",
         skip_serializing_if = "Option::is_none"
     )]
-    pub layer_parameter_values: Option<String>,
+    layer_parameter_values: Option<String>,
 
     /// Historic moment (epoch milliseconds).
     #[serde(rename = "historicMoment", skip_serializing_if = "Option::is_none")]
-    pub historic_moment: Option<i64>,
+    historic_moment: Option<i64>,
 
     /// Clipping geometry (JSON).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub clipping: Option<String>,
+    clipping: Option<String>,
 
     /// Spatial filter (JSON).
     #[serde(rename = "spatialFilter", skip_serializing_if = "Option::is_none")]
-    pub spatial_filter: Option<String>,
+    spatial_filter: Option<String>,
 }
 
 impl Default for IdentifyParams {
@@ -651,7 +653,7 @@ pub struct LayerLegend {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
 pub struct LegendResponse {
     /// Layers with legend information.
-    pub layers: Vec<LayerLegend>,
+    layers: Vec<LayerLegend>,
 }
 
 /// A level of detail in a tile cache.

@@ -78,12 +78,12 @@ impl From<&str> for FontStack {
 }
 
 /// A glyph range for font characters (e.g., 0-255).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, derive_getters::Getters)]
 pub struct GlyphRange {
     /// Starting character code.
-    pub start: u32,
+    start: u32,
     /// Ending character code.
-    pub end: u32,
+    end: u32,
 }
 
 impl GlyphRange {

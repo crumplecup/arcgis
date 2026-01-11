@@ -73,7 +73,7 @@ impl<'a> QueryBuilder<'a> {
     /// # }
     /// ```
     pub fn where_clause(mut self, clause: impl Into<String>) -> Self {
-        self.params.where_clause = clause.into();
+        self.params.set_where_clause(clause.into());
         self
     }
 
@@ -94,7 +94,8 @@ impl<'a> QueryBuilder<'a> {
     /// # }
     /// ```
     pub fn out_fields(mut self, fields: &[&str]) -> Self {
-        self.params.out_fields = Some(fields.iter().map(|s| s.to_string()).collect());
+        self.params
+            .set_out_fields(Some(fields.iter().map(|s| s.to_string()).collect()));
         self
     }
 
@@ -102,7 +103,7 @@ impl<'a> QueryBuilder<'a> {
     ///
     /// Default is `true`.
     pub fn return_geometry(mut self, return_geom: bool) -> Self {
-        self.params.return_geometry = return_geom;
+        self.params.set_return_geometry(return_geom);
         self
     }
 
@@ -110,7 +111,7 @@ impl<'a> QueryBuilder<'a> {
     ///
     /// Default is [`ResponseFormat::Json`].
     pub fn format(mut self, format: ResponseFormat) -> Self {
-        self.params.format = format;
+        self.params.set_format(format);
         self
     }
 
@@ -135,9 +136,9 @@ impl<'a> QueryBuilder<'a> {
         geometry_type: GeometryType,
         spatial_rel: SpatialRel,
     ) -> Self {
-        self.params.geometry = Some(geometry);
-        self.params.geometry_type = Some(geometry_type);
-        self.params.spatial_rel = Some(spatial_rel);
+        self.params.set_geometry(Some(geometry));
+        self.params.set_geometry_type(Some(geometry_type));
+        self.params.set_spatial_rel(Some(spatial_rel));
         self
     }
 
@@ -145,7 +146,7 @@ impl<'a> QueryBuilder<'a> {
     ///
     /// Used for pagination. If not set, the service default is used.
     pub fn limit(mut self, count: u32) -> Self {
-        self.params.result_record_count = Some(count);
+        self.params.set_result_record_count(Some(count));
         self
     }
 
@@ -153,7 +154,7 @@ impl<'a> QueryBuilder<'a> {
     ///
     /// Skips the first `offset` features in the result set.
     pub fn offset(mut self, offset: u32) -> Self {
-        self.params.result_offset = Some(offset);
+        self.params.set_result_offset(Some(offset));
         self
     }
 
@@ -172,25 +173,25 @@ impl<'a> QueryBuilder<'a> {
     /// # }
     /// ```
     pub fn object_ids(mut self, ids: &[ObjectId]) -> Self {
-        self.params.object_ids = Some(ids.to_vec());
+        self.params.set_object_ids(Some(ids.to_vec()));
         self
     }
 
     /// Returns only distinct values.
     pub fn distinct(mut self, distinct: bool) -> Self {
-        self.params.return_distinct_values = Some(distinct);
+        self.params.set_return_distinct_values(Some(distinct));
         self
     }
 
     /// Returns only object IDs (no attributes or geometry).
     pub fn ids_only(mut self, ids_only: bool) -> Self {
-        self.params.return_ids_only = Some(ids_only);
+        self.params.set_return_ids_only(Some(ids_only));
         self
     }
 
     /// Returns only a count of features (no features).
     pub fn count_only(mut self, count_only: bool) -> Self {
-        self.params.return_count_only = Some(count_only);
+        self.params.set_return_count_only(Some(count_only));
         self
     }
 
@@ -209,7 +210,8 @@ impl<'a> QueryBuilder<'a> {
     /// # }
     /// ```
     pub fn order_by(mut self, fields: &[&str]) -> Self {
-        self.params.order_by_fields = Some(fields.iter().map(|s| s.to_string()).collect());
+        self.params
+            .set_order_by_fields(Some(fields.iter().map(|s| s.to_string()).collect()));
         self
     }
 
@@ -231,7 +233,8 @@ impl<'a> QueryBuilder<'a> {
     /// # }
     /// ```
     pub fn group_by(mut self, fields: &[&str]) -> Self {
-        self.params.group_by_fields = Some(fields.iter().map(|s| s.to_string()).collect());
+        self.params
+            .set_group_by_fields(Some(fields.iter().map(|s| s.to_string()).collect()));
         self
     }
 
@@ -258,7 +261,7 @@ impl<'a> QueryBuilder<'a> {
     /// # }
     /// ```
     pub fn statistics(mut self, stats: Vec<crate::StatisticDefinition>) -> Self {
-        self.params.out_statistics = Some(stats);
+        self.params.set_out_statistics(Some(stats));
         self
     }
 
@@ -284,7 +287,7 @@ impl<'a> QueryBuilder<'a> {
     /// # }
     /// ```
     pub fn having(mut self, clause: impl Into<String>) -> Self {
-        self.params.having = Some(clause.into());
+        self.params.set_having(Some(clause.into()));
         self
     }
 
@@ -303,7 +306,7 @@ impl<'a> QueryBuilder<'a> {
     /// # }
     /// ```
     pub fn out_sr(mut self, wkid: i32) -> Self {
-        self.params.out_sr = Some(wkid);
+        self.params.set_out_sr(Some(wkid));
         self
     }
 
@@ -368,15 +371,15 @@ impl<'a> QueryBuilder<'a> {
 
         let mut all_features = Vec::new();
         let mut offset = 0u32;
-        let page_size = self.params.result_record_count.unwrap_or(1000);
+        let page_size = (*self.params.result_record_count()).unwrap_or(1000);
 
         // Store geometry type from first response
         let mut geometry_type = None;
 
         loop {
             // Set pagination parameters
-            self.params.result_offset = Some(offset);
-            self.params.result_record_count = Some(page_size);
+            self.params.set_result_offset(Some(offset));
+            self.params.set_result_record_count(Some(page_size));
 
             tracing::debug!(
                 offset = offset,
@@ -392,21 +395,21 @@ impl<'a> QueryBuilder<'a> {
 
             // Capture geometry type from first response
             if geometry_type.is_none() {
-                geometry_type = page.geometry_type;
+                geometry_type = *page.geometry_type();
             }
 
-            let feature_count = page.features.len();
+            let feature_count = page.features().len();
             tracing::debug!(
                 feature_count = feature_count,
-                exceeded_limit = page.exceeded_transfer_limit,
+                exceeded_limit = page.exceeded_transfer_limit(),
                 "Page retrieved"
             );
 
             // Add features to our collection
-            all_features.append(&mut page.features);
+            all_features.append(page.features_mut());
 
             // Check if we're done
-            if feature_count == 0 || !page.exceeded_transfer_limit {
+            if feature_count == 0 || !*page.exceeded_transfer_limit() {
                 tracing::debug!(
                     total_features = all_features.len(),
                     "Auto-pagination complete"
@@ -418,11 +421,6 @@ impl<'a> QueryBuilder<'a> {
             offset += page_size;
         }
 
-        Ok(FeatureSet {
-            geometry_type,
-            features: all_features,
-            count: None,
-            exceeded_transfer_limit: false,
-        })
+        Ok(FeatureSet::new(geometry_type, all_features, None, false))
     }
 }

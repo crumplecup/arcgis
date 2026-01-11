@@ -38,4 +38,4 @@ mod client;
 mod types;
 
 pub use client::VectorTileServiceClient;
-pub use types::{VectorTileStyle, FontStack, GlyphRange};
+pub use types::{FontStack, GlyphRange, VectorTileStyle};

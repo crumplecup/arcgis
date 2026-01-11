@@ -234,18 +234,18 @@ impl fmt::Display for VersionPermission {
 }
 
 /// Parameters for creating a new version.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateVersionParams {
     /// Name of the version (without owner prefix)
-    pub version_name: String,
+    version_name: String,
 
     /// Access permission level
-    pub access: VersionPermission,
+    access: VersionPermission,
 
     /// Description of the version
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+    description: Option<String>,
 }
 
 impl CreateVersionParams {
@@ -280,20 +280,20 @@ impl CreateVersionParams {
 }
 
 /// Parameters for altering an existing version's properties.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct AlterVersionParams {
     /// New version name (if renaming)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub version_name: Option<String>,
+    version_name: Option<String>,
 
     /// New access permission level
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub access: Option<VersionPermission>,
+    access: Option<VersionPermission>,
 
     /// New description
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+    description: Option<String>,
 }
 
 impl AlterVersionParams {
@@ -459,14 +459,14 @@ pub struct PostResponse {
 ///
 /// Each row identifies a layer and the specific object IDs within that layer
 /// to post to the parent version.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct PartialPostRow {
     /// The layer ID containing the objects to post
-    pub layer_id: i32,
+    layer_id: i32,
 
     /// The object IDs to post from this layer
-    pub object_ids: Vec<i64>,
+    object_ids: Vec<i64>,
 }
 
 impl PartialPostRow {
@@ -483,8 +483,8 @@ impl PartialPostRow {
     /// use arcgis::PartialPostRow;
     ///
     /// let row = PartialPostRow::new(0, vec![1, 2, 3]);
-    /// assert_eq!(row.layer_id, 0);
-    /// assert_eq!(row.object_ids, vec![1, 2, 3]);
+    /// assert_eq!(*row.layer_id(), 0);
+    /// assert_eq!(row.object_ids(), &vec![1, 2, 3]);
     /// ```
     pub fn new(layer_id: i32, object_ids: Vec<i64>) -> Self {
         Self {
@@ -578,15 +578,15 @@ pub struct ConflictsResponse {
 }
 
 /// Specification for inspecting a specific feature conflict.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct InspectConflictFeature {
     /// Object ID of the feature
-    pub object_id: i64,
+    object_id: i64,
 
     /// Optional note about the conflict resolution
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub note: Option<String>,
+    note: Option<String>,
 }
 
 impl InspectConflictFeature {
@@ -603,7 +603,7 @@ impl InspectConflictFeature {
     ///
     /// let feature = InspectConflictFeature::new(123)
     ///     .with_note("Resolved by accepting default version");
-    /// assert_eq!(feature.object_id, 123);
+    /// assert_eq!(*feature.object_id(), 123);
     /// ```
     pub fn new(object_id: i64) -> Self {
         Self {
@@ -620,14 +620,14 @@ impl InspectConflictFeature {
 }
 
 /// Specification for inspecting conflicts in a specific layer.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct InspectConflictLayer {
     /// Layer ID
-    pub layer_id: i64,
+    layer_id: i64,
 
     /// Features to inspect
-    pub features: Vec<InspectConflictFeature>,
+    features: Vec<InspectConflictFeature>,
 }
 
 impl InspectConflictLayer {
@@ -782,14 +782,14 @@ pub struct DifferencesResponse {
 /// Specification for restoring rows in a specific layer.
 ///
 /// Identifies which features to restore from the common ancestor version.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct RestoreRowsLayer {
     /// Layer ID
-    pub layer_id: i64,
+    layer_id: i64,
 
     /// Object IDs of features to restore
-    pub object_ids: Vec<i64>,
+    object_ids: Vec<i64>,
 }
 
 impl RestoreRowsLayer {
@@ -806,8 +806,8 @@ impl RestoreRowsLayer {
     /// use arcgis::RestoreRowsLayer;
     ///
     /// let layer = RestoreRowsLayer::new(3, vec![1, 4, 5, 8]);
-    /// assert_eq!(layer.layer_id, 3);
-    /// assert_eq!(layer.object_ids.len(), 4);
+    /// assert_eq!(*layer.layer_id(), 3);
+    /// assert_eq!(layer.object_ids().len(), 4);
     /// ```
     pub fn new(layer_id: i64, object_ids: Vec<i64>) -> Self {
         Self {

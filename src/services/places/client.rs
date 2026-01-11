@@ -64,8 +64,7 @@ impl<'a> PlacesClient<'a> {
     /// ```
     pub fn new(client: &'a ArcGISClient) -> Self {
         PlacesClient {
-            url: "https://places-api.arcgis.com/arcgis/rest/services/places-service/v1"
-                .to_string(),
+            url: "https://places-api.arcgis.com/arcgis/rest/services/places-service/v1".to_string(),
             client,
         }
     }

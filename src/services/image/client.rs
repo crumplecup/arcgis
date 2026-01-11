@@ -363,10 +363,7 @@ impl<'a> ImageServiceClient<'a> {
     /// # }
     /// ```
     #[instrument(skip(self, params))]
-    pub async fn compute_histograms(
-        &self,
-        params: HistogramParameters,
-    ) -> Result<HistogramResult> {
+    pub async fn compute_histograms(&self, params: HistogramParameters) -> Result<HistogramResult> {
         tracing::debug!("Computing histograms");
 
         let histogram_url = format!("{}/computeHistograms", self.url);

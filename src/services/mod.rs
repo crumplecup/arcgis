@@ -12,6 +12,11 @@ mod routing;
 mod vector_tile;
 mod version_management;
 
+pub use elevation::{
+    DemResolution, ElevationClient, ProfileParameters, ProfileParametersBuilder, ProfileResult,
+    SummarizeElevationParameters, SummarizeElevationParametersBuilder, SummarizeElevationResult,
+    ViewshedParameters, ViewshedParametersBuilder, ViewshedResult,
+};
 pub use feature::{
     AddAttachmentResult, AttachmentInfo, AttachmentInfosResponse, AttachmentSource, CodedValue,
     DeleteAttachmentResult, DeleteAttachmentsResponse, Domain, DownloadResult, DownloadTarget,
@@ -21,11 +26,6 @@ pub use feature::{
     RelatedRecordsParams, RelatedRecordsParamsBuilder, RelatedRecordsResponse, ResponseFormat,
     StatisticDefinition, StatisticType, Subtype, TopFeaturesParams, TopFeaturesParamsBuilder,
     TopFilter, TruncateResult, UpdateAttachmentResult,
-};
-pub use elevation::{
-    DemResolution, ElevationClient, ProfileParameters, ProfileParametersBuilder, ProfileResult,
-    SummarizeElevationParameters, SummarizeElevationParametersBuilder, SummarizeElevationResult,
-    ViewshedParameters, ViewshedParametersBuilder, ViewshedResult,
 };
 pub use geocode::{
     AddressCandidate, BatchCandidateResult, BatchCandidatesResponse, BatchGeocodeResponse,
@@ -41,9 +41,9 @@ pub use geometry::{
     UnionParametersBuilder, UnionResult,
 };
 pub use geoprocessing::{
-    GeoprocessingServiceClient, GPBoolean, GPDataFile, GPDate, GPDouble, GPExecuteResult,
-    GPFeatureRecordSetLayer, GPJobInfo, GPJobStatus, GPLinearUnit, GPLong, GPMessage,
-    GPMessageType, GPParameter, GPRasterDataLayer, GPResultParameter, GPString,
+    GPBoolean, GPDataFile, GPDate, GPDouble, GPExecuteResult, GPFeatureRecordSetLayer, GPJobInfo,
+    GPJobStatus, GPLinearUnit, GPLong, GPMessage, GPMessageType, GPParameter, GPRasterDataLayer,
+    GPResultParameter, GPString, GeoprocessingServiceClient,
 };
 pub use image::{
     ExportImageParameters, ExportImageParametersBuilder, ExportImageResult, HistogramParameters,
