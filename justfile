@@ -112,9 +112,20 @@ clean:
 pre-commit: check-all
     @echo "✓ All pre-commit checks passed"
 
-# Run all pre-merge checks
+# Run all pre-merge checks (comprehensive validation before merging to main)
 pre-merge: check-all check-features audit
+    @echo "Running public tests..."
+    cargo test --features test-public
     @echo "✓ All pre-merge checks passed"
+
+# Run all pre-publish checks (comprehensive validation before releasing)
+pre-publish: pre-merge security dist-check publish-dry-run
+    @echo "✓ All pre-publish checks passed"
+    @echo ""
+    @echo "Ready for release! Next steps:"
+    @echo "  1. Review: just dist-plan"
+    @echo "  2. Test build: just dist-build"
+    @echo "  3. Publish: cargo publish"
 
 # Watch for changes and run tests
 watch:
@@ -132,26 +143,49 @@ bench:
 publish-dry-run:
     cargo publish --dry-run
 
-# Generate release artifacts (placeholder for cargo-dist)
-dist-build:
-    @echo "cargo-dist not configured yet"
+# Check if cargo-dist is installed
+_check-dist:
+    #!/usr/bin/env bash
+    if ! command -v cargo-dist &> /dev/null; then
+        echo "❌ cargo-dist not found"
+        echo "Install with: cargo install cargo-dist"
+        exit 1
+    fi
+
+# Check if omnibor is installed
+_check-omnibor:
+    #!/usr/bin/env bash
+    if ! command -v omnibor &> /dev/null; then
+        echo "❌ omnibor not found"
+        echo "Install with: cargo install omnibor-cli"
+        exit 1
+    fi
+
+# Initialize cargo-dist (first-time setup)
+dist-init: _check-dist
+    cargo dist init
+
+# Generate release artifacts
+dist-build: _check-dist
+    cargo dist build
 
 # Check release configuration
-dist-check:
-    @echo "cargo-dist not configured yet"
+dist-check: _check-dist
+    cargo dist plan --output-format=json
 
-# Plan release
-dist-plan:
-    @echo "cargo-dist not configured yet"
+# Plan release (show what would be released)
+dist-plan: _check-dist
+    cargo dist plan
 
 # Generate CI workflow for releases
-dist-generate:
-    @echo "cargo-dist not configured yet"
+dist-generate: _check-dist
+    cargo dist generate-ci
+
+# Generate omnibor artifact tree (software bill of materials)
+omnibor: _check-omnibor
+    @echo "Generating OmniBOR artifact identifiers..."
+    omnibor id create target/release/ 2>/dev/null || omnibor id create target/debug/ 2>/dev/null || echo "⚠️  No build artifacts found. Run 'just build' or 'just build-release' first."
 
 # Run all security checks
-security: audit
+security: audit omnibor
     @echo "✓ Security checks passed"
-
-# Generate omnibor artifact tree (placeholder)
-omnibor:
-    @echo "omnibor not configured yet"
