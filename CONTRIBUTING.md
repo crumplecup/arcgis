@@ -1,85 +1,225 @@
-# Contributing to arcgis-rust
+# Contributing to ArcGIS Rust SDK
 
-Thank you for your interest in contributing to the ArcGIS Rust SDK! This document provides guidelines and instructions for contributing.
+Welcome! Thank you for your interest in the ArcGIS Rust SDK. This library is in active early development, and **we'd love your feedback**.
 
-## Code of Conduct
+## Why Publish Early?
 
-This project follows the [Rust Code of Conduct](https://www.rust-lang.org/policies/code-of-conduct). Please be respectful and constructive in all interactions.
+We're publishing during early development specifically to get the library into your hands and hear what you think. Your experience using the SDK—what works, what doesn't, what's missing—directly shapes how we build it.
+
+## We Want to Hear From You
+
+**Have you tried the library?** We want to know:
+
+- ✅ What worked well for you
+- ❌ What didn't work or was confusing
+- 💡 What features you need that we don't have yet
+- 📖 What documentation would help
+- 🐛 Any bugs you've encountered
+- 🎯 What you're building with it
+
+**[Share your feedback on GitHub Discussions →](https://github.com/crumplecup/arcgis/discussions)**
+
+No issue is too small, no question is too basic. We genuinely want to hear from you.
+
+## Quick Start
+
+Get up and running in 60 seconds:
+
+### 1. Add to your project
+
+```bash
+cargo add arcgis
+```
+
+### 2. Try a public query (no API key needed)
+
+```rust
+use arcgis::{ArcGISClient, FeatureServiceClient, LayerId, NoAuth};
+
+#[tokio::main]
+async fn main() -> Result<(), arcgis::Error> {
+    // Use NoAuth for public ArcGIS services
+    let client = ArcGISClient::new(NoAuth);
+
+    // Query ESRI's public World Cities dataset
+    let service = FeatureServiceClient::new(
+        "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer",
+        &client
+    );
+
+    // Find cities with population > 5 million
+    let result = service
+        .query(LayerId::new(0))
+        .where_clause("POP > 5000000")
+        .out_fields(&["CITY_NAME", "POP", "CNTRY_NAME"])
+        .limit(10)
+        .execute()
+        .await?;
+
+    println!("Found {} major cities", result.features().len());
+
+    for feature in result.features() {
+        let city = feature.attributes().get("CITY_NAME").unwrap();
+        let pop = feature.attributes().get("POP").unwrap();
+        let country = feature.attributes().get("CNTRY_NAME").unwrap();
+        println!("  {} ({}) - population: {}", city, country, pop);
+    }
+
+    Ok(())
+}
+```
+
+### 3. With an API key (for authenticated services)
+
+```rust
+use arcgis::{ArcGISClient, ApiKeyAuth};
+
+#[tokio::main]
+async fn main() -> Result<(), arcgis::Error> {
+    let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    let client = ArcGISClient::new(auth);
+
+    // Now you can access authenticated services:
+    // - Geocoding (forward, reverse, batch)
+    // - Routing (routes, service areas, closest facility)
+    // - Places (search, categories, details)
+    // - Feature services (query, edit, attachments)
+    // - Map services (export, identify, find)
+    // - And more...
+
+    Ok(())
+}
+```
+
+Get your free API key at [developers.arcgis.com](https://developers.arcgis.com).
+
+## What's Working Now
+
+Check out the [README](README.md) for the current feature list. We have 113 operations across 12 services implemented (65% API coverage).
+
+**Popular features already working:**
+
+- ✅ Geocoding (forward, reverse, batch, suggestions)
+- ✅ Routing (routes, service areas, closest facility, OD cost matrix)
+- ✅ Places (search, categories, details)
+- ✅ Feature queries (spatial, attribute, related records)
+- ✅ Feature editing (add, update, delete, attachments)
+- ✅ Map tile services (vector tiles, raster tiles)
+- ✅ Elevation services (profile, viewshed, summarize)
+- ✅ Geometry operations (buffer, project, union, intersect)
+
+## Development Roadmap
+
+See [COVERAGE_ROADMAP.md](COVERAGE_ROADMAP.md) for our path to 100% API coverage. We're tracking progress through Bronze/Silver/Gold/Platinum milestones.
+
+## Found a Bug?
+
+**[Open an issue →](https://github.com/crumplecup/arcgis/issues/new)**
+
+Please include:
+- What you were trying to do
+- What you expected to happen
+- What actually happened
+- Minimal code example (if possible)
+- Rust version: `rustc --version`
+- Crate version: `cargo tree | grep arcgis`
+
+## Questions?
+
+**[Ask on GitHub Discussions →](https://github.com/crumplecup/arcgis/discussions)**
+
+We're here to help:
+- ❓ Questions about using the library
+- 💬 General discussion about ArcGIS and Rust
+- 🎓 Learning how to contribute
+- 🚀 Sharing what you're building
+
+---
+
+# Developer Contributions
+
+Want to contribute code? Awesome! Here's everything you need to know.
 
 ## Getting Started
 
-1. **Fork the repository** on GitHub
-2. **Clone your fork** locally:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/arcgis-rust.git
-   cd arcgis-rust
-   ```
-3. **Create a branch** for your changes:
-   ```bash
-   git checkout -b feature/my-new-feature
-   ```
+### 1. Set up your development environment
+
+```bash
+# Fork and clone the repo
+git clone https://github.com/YOUR_USERNAME/arcgis.git
+cd arcgis
+
+# Install development tools
+just setup
+
+# Build and test
+just build
+just test
+```
+
+### 2. Read the project guidelines
+
+See [CLAUDE.md](CLAUDE.md) for comprehensive guidelines on:
+- Code style and patterns
+- Testing requirements (tests go in `tests/`, not inline)
+- Module organization (crate-level imports only)
+- Error handling (use `derive_more` for all errors)
+- Type construction (always use builders, never literals)
+- Documentation standards
+
+**Key rules:**
+- All public functions must have `#[instrument]` for tracing
+- Use `derive_more::Display` and `derive_more::Error` for errors
+- Import as `use crate::{Type}`, never `use crate::module::Type`
+- Tests go in `tests/` directory, never `#[cfg(test)]` inline
+- Never use `#[allow]` - fix the root cause instead
 
 ## Development Workflow
 
-### Building
+### Create a feature branch
 
 ```bash
-# Build with default features
-cargo build
-
-# Build with all features
-cargo build --all-features
-
-# Build specific feature
-cargo build --features geocoding
+git checkout -b feature/your-feature-name
 ```
 
-### Testing
+### Make your changes
+
+Follow the patterns in [CLAUDE.md](CLAUDE.md) and existing code.
+
+### Run all checks before committing
 
 ```bash
-# Run unit tests
-cargo test
+# Run comprehensive checks
+just check-all
 
-# Run all tests with all features
-cargo test --all-features
-
-# Run integration tests
-cargo test --test integration
-
-# Run a specific test
-cargo test test_feature_query
+# Or individually:
+just check           # Compilation
+just clippy          # Linting
+just fmt             # Format code
+just test            # Unit tests
+just test-package    # Package-specific tests
 ```
 
-### Code Quality
-
-Before submitting a PR, ensure:
+### Commit and push
 
 ```bash
-# Format code
-cargo fmt
-
-# Check formatting (CI will verify this)
-cargo fmt --check
-
-# Run clippy (no warnings allowed)
-cargo clippy --all-targets --all-features -- -D warnings
-
-# Check for common issues
-cargo check --all-features
+git add .
+git commit -m "feat(scope): description"
+git push origin feature/your-feature-name
 ```
 
-### Documentation
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation
+- `test`: Tests
+- `refactor`: Refactoring
+- `perf`: Performance
+- `chore`: Maintenance
 
-```bash
-# Build documentation
-cargo doc --no-deps --all-features
+### Open a pull request
 
-# Build and open documentation
-cargo doc --no-deps --all-features --open
-
-# Check for broken links
-cargo doc --no-deps --all-features 2>&1 | grep warning
-```
+**[Create a pull request →](https://github.com/crumplecup/arcgis/compare)**
 
 ## Type Safety Requirements
 
@@ -93,6 +233,7 @@ This project enforces strict type safety:
 - Use `geo-types` for spatial primitives
 - Implement `serde::Serialize`/`Deserialize` with proper field renames
 - Add comprehensive documentation to all public APIs
+- Always use builders for struct construction
 
 ### ❌ DON'T
 
@@ -100,154 +241,116 @@ This project enforces strict type safety:
 - Use `String` for temporal values
 - Use bare integers for ID types
 - Use tuples for compound values
-- Add `unsafe` code without explicit justification and review
-
-See [Type Safety as a Design Requirement](ARCGIS_REST_API_RESEARCH.md#why-rust-type-safety-as-a-design-requirement) for details.
+- Add `unsafe` code (forbidden via `#![deny(unsafe_code)]`)
+- Use struct literals (always use builders)
+- Use `#[allow]` directives (fix root cause instead)
 
 ## Adding a New Service
 
-When adding a new ArcGIS service (e.g., Geocoding Service):
+When adding a new ArcGIS service:
 
 1. **Read the ArcGIS REST API documentation** thoroughly
-2. **Extract all enumerated values** and create enums in `src/types/` or `src/services/{service}/enums.rs`
-3. **Identify all ID types** and create newtypes in `src/types/ids.rs`
+2. **Extract all enumerated values** and create enums in `src/services/{service}/types.rs`
+3. **Identify all ID types** and create newtypes in `src/types/`
 4. **Create request/response types** in `src/services/{service}/types.rs`
-5. **Implement the client** in `src/services/{service}/client.rs`
-6. **Write unit tests** for all serde serialization/deserialization
-7. **Write integration tests** against live ArcGIS services (read-only)
-8. **Add examples** in `examples/{service}_example.rs`
-9. **Add Cargo feature** in `Cargo.toml`
-10. **Update README.md** with the new service
+5. **Implement the client** in `src/services/{service}/client/mod.rs`
+   - Split large clients into submodules (see portal, feature, version_management)
+   - Keep files under 500-1000 lines
+6. **Write integration tests** in `tests/{service}_test.rs`
+7. **Update exports** in `src/lib.rs`
+8. **Update README.md** with the new service
+9. **Update COVERAGE_ROADMAP.md** with progress
 
-Example structure:
+Example structure for large services:
 ```
-src/services/geocode/
-├── mod.rs         # Public exports
-├── enums.rs       # Service-specific enums
-├── types.rs       # Request/response types
-├── client.rs      # GeocodeServiceClient
-└── README.md      # Service-specific docs (optional)
+src/services/myservice/
+├── mod.rs           # Module declarations + re-exports
+├── types.rs         # Type definitions
+└── client/
+    ├── mod.rs       # Client struct + constructor
+    ├── queries.rs   # Query methods
+    ├── editing.rs   # Edit methods
+    └── admin.rs     # Admin methods
 ```
-
-## Commit Message Guidelines
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
-```
-
-Types:
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `test`: Adding or updating tests
-- `refactor`: Code refactoring
-- `perf`: Performance improvements
-- `chore`: Maintenance tasks
-- `ci`: CI/CD changes
-
-Examples:
-```
-feat(feature): add spatial query support
-
-Implement spatial relationship queries with all esriSpatialRel types.
-Includes integration tests against public feature services.
-
-Closes #42
-
-fix(auth): correct OAuth token refresh timing
-
-Token was being refreshed too early, causing unnecessary requests.
-Now refreshes when 90% of expiry time has elapsed.
-
-docs(readme): add geocoding service example
-
-test(geometry): add round-trip conversion tests for all geometry types
-```
-
-## Pull Request Process
-
-1. **Update documentation** for any changed functionality
-2. **Add/update tests** to maintain or improve coverage
-3. **Update CHANGELOG.md** under "Unreleased" section
-4. **Ensure CI passes**:
-   - All tests pass
-   - Code is formatted (`cargo fmt`)
-   - No clippy warnings
-   - Documentation builds
-5. **Fill out the PR template** completely
-6. **Request review** from maintainers
-
-### PR Title Format
-
-```
-<type>(<scope>): <description>
-```
-
-Example: `feat(geocoding): implement reverse geocoding`
 
 ## Testing Guidelines
 
-### Unit Tests
-
-- Test all serialization/deserialization paths
-- Test enum string conversions
-- Test builder patterns
-- Test validation logic
+### Tier 1: Public Tests (Free, runs in CI)
 
 ```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_geometry_type_serialization() {
-        let geom_type = GeometryType::Point;
-        let json = serde_json::to_string(&geom_type).unwrap();
-        assert_eq!(json, r#""esriGeometryPoint""#);
-    }
-
-    #[test]
-    fn test_geometry_type_deserialization() {
-        let json = r#""esriGeometryPolyline""#;
-        let geom_type: GeometryType = serde_json::from_str(json).unwrap();
-        assert_eq!(geom_type, GeometryType::Polyline);
-    }
+#[tokio::test]
+#[cfg(feature = "test-public")]
+async fn test_public_service() {
+    let client = ArcGISClient::new(NoAuth);
+    // Test using public ESRI services
 }
 ```
 
-### Integration Tests
+Run with: `cargo test --features test-public`
 
-- Use public ArcGIS services for read-only tests
-- Use test organization for write operations (requires setup)
-- Mark expensive tests with `#[ignore]` - run with `cargo test -- --ignored`
+### Tier 2: Location Services (Manual)
+
+Requires API key with location privileges:
 
 ```rust
 #[tokio::test]
-async fn test_query_public_service() {
-    let auth = ApiKeyAuth::new(env::var("ARCGIS_API_KEY").unwrap());
+#[cfg(feature = "test-location")]
+async fn test_geocoding() {
+    let auth = ApiKeyAuth::new(env::var("ARCGIS_LOCATION_KEY").unwrap());
     let client = ArcGISClient::new(auth);
-
-    // Test against a stable public service
-    let result = client.query_features(/* ... */).await;
-    assert!(result.is_ok());
+    // Test location services
 }
+```
 
-#[tokio::test]
-#[ignore] // Expensive test, run with --ignored
-async fn test_large_dataset_pagination() {
-    // ...
-}
+Run with: `cargo test --features test-location`
+
+### Tier 3: Portal/Publishing (Manual)
+
+Requires API key with portal/publishing privileges. See [API_KEY_TESTING_STRATEGY.md](API_KEY_TESTING_STRATEGY.md) for complete details.
+
+## Pre-Commit Checklist
+
+Before committing, ensure:
+
+```bash
+# Format code
+just fmt
+
+# Run all checks
+just check-all
+
+# Run clippy (zero warnings)
+just clippy
+
+# Check all feature combinations
+just check-features
+```
+
+## Pre-Merge Checklist
+
+Before merging to main:
+
+```bash
+# Run comprehensive validation
+just pre-merge
+
+# This runs:
+# - check-all (clippy, fmt, tests)
+# - check-features (all feature combinations)
+# - audit (security vulnerabilities)
+# - test-public (public integration tests)
 ```
 
 ## Documentation Standards
 
-All public APIs must be documented:
+All public APIs must be documented with:
+
+- **What** it does (concise first line)
+- **Why** it's useful (when non-obvious)
+- **Parameters** (when not obvious from types)
+- **Returns** (what you get back)
+- **Errors** (what can go wrong)
+- **Example** (for complex APIs)
 
 ```rust
 /// Queries features from a feature layer.
@@ -255,7 +358,6 @@ All public APIs must be documented:
 /// # Arguments
 ///
 /// * `layer_id` - The ID of the layer to query
-/// * `params` - Query parameters including WHERE clause, fields, etc.
 ///
 /// # Returns
 ///
@@ -263,55 +365,66 @@ All public APIs must be documented:
 ///
 /// # Errors
 ///
-/// Returns an error if:
-/// - The layer doesn't exist
-/// - The WHERE clause is invalid SQL
-/// - Network request fails
+/// Returns an error if the layer doesn't exist or the query is invalid.
 ///
 /// # Example
 ///
 /// ```no_run
-/// use arcgis::{ArcGISClient, feature::FeatureServiceClient};
-/// use arcgis::types::LayerId;
+/// use arcgis::{FeatureServiceClient, LayerId};
 ///
-/// # async fn example() -> Result<(), arcgis::Error> {
-/// let client = FeatureServiceClient::new("https://...", &arcgis_client);
+/// # async fn example(client: &FeatureServiceClient) -> Result<(), arcgis::Error> {
 /// let features = client
-///     .query()
-///     .layer(LayerId(0))
+///     .query(LayerId::new(0))
 ///     .where_clause("POPULATION > 100000")
 ///     .execute()
 ///     .await?;
 /// # Ok(())
 /// # }
 /// ```
-pub async fn query(&self, layer_id: LayerId, params: QueryParams) -> Result<FeatureSet> {
+#[instrument(skip(self))]
+pub async fn query(&self, layer_id: LayerId) -> QueryBuilder {
     // ...
 }
 ```
 
-## Performance Considerations
+## Development Commands
 
-- Use `&str` instead of `String` where possible
-- Avoid unnecessary clones
-- Use iterators instead of collecting when possible
-- Profile before optimizing
-- Benchmark performance-critical paths
+```bash
+just setup           # Install development tools (cargo-dist, omnibor, etc.)
+just build           # Build the project
+just build-release   # Build with optimizations
+just test            # Run unit tests
+just test-package    # Run tests for specific package
+just test-all        # Run all tests including doc tests
+just check           # Basic compilation check
+just check-all       # Clippy + fmt + tests
+just check-features  # Check all feature combinations
+just clippy          # Run clippy linter
+just fmt             # Format code
+just fmt-check       # Check formatting
+just doc             # Build documentation
+just doc-open        # Build and open documentation
+just audit           # Security vulnerability scan
+just omnibor         # Generate SBOM
+just security        # Run all security checks (audit + omnibor)
+just pre-commit      # Pre-commit validation
+just pre-merge       # Pre-merge validation
+just pre-publish     # Pre-publish validation (full checks)
+just watch           # Watch for changes and run tests
+```
 
-## Security
+See `just --list` for all available commands.
 
-- Never commit API keys or secrets
-- Use `secrecy` crate for sensitive data
-- Validate all user input
-- Be aware of SQL injection in WHERE clauses
-- Use `reqwest` redirect policy to prevent SSRF
+## Code of Conduct
 
-## Questions?
+Be respectful, be kind, be constructive. We're all here to build something useful together.
 
-- Open an issue for bugs or feature requests
-- Start a discussion for questions
-- Join the GeoRust community for general Rust GIS discussion
+This project follows the [Rust Code of Conduct](https://www.rust-lang.org/policies/code-of-conduct).
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under both the MIT and Apache-2.0 licenses.
+By contributing, you agree that your contributions will be licensed under the MIT License.
+
+---
+
+**Thank you for being part of this project!** Every bit of feedback, every question, every contribution makes this library better. We're excited to see what you build with it.
