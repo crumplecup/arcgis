@@ -146,7 +146,7 @@ Want to contribute code? Awesome! Here's everything you need to know.
 
 ```bash
 # Fork and clone the repo
-git clone https://github.com/YOUR_USERNAME/arcgis.git
+git clone https://github.com/crumplecup/arcgis.git
 cd arcgis
 
 # Install development tools
