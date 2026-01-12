@@ -5,6 +5,51 @@
 default:
     @just --list
 
+# Install development tools (cargo-dist, omnibor, cargo-audit, cargo-watch)
+setup:
+    #!/usr/bin/env bash
+    echo "Installing development tools..."
+
+    # Check and install cargo-dist
+    if command -v cargo-dist &> /dev/null; then
+        echo "✓ cargo-dist already installed"
+    else
+        echo "Installing cargo-dist..."
+        cargo install cargo-dist
+    fi
+
+    # Check and install omnibor
+    if command -v omnibor &> /dev/null; then
+        echo "✓ omnibor already installed"
+    else
+        echo "Installing omnibor-cli..."
+        cargo install omnibor-cli
+    fi
+
+    # Check and install cargo-audit
+    if command -v cargo-audit &> /dev/null; then
+        echo "✓ cargo-audit already installed"
+    else
+        echo "Installing cargo-audit..."
+        cargo install cargo-audit
+    fi
+
+    # Check and install cargo-watch
+    if command -v cargo-watch &> /dev/null; then
+        echo "✓ cargo-watch already installed"
+    else
+        echo "Installing cargo-watch..."
+        cargo install cargo-watch
+    fi
+
+    echo ""
+    echo "✓ All development tools installed"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Run 'just build' to build the project"
+    echo "  2. Run 'just test' to run tests"
+    echo "  3. Run 'just check-all' to run all checks"
+
 # Run basic compilation check
 check package="":
     #!/usr/bin/env bash
