@@ -71,19 +71,69 @@ test-package package="":
 # Run all checks: clippy, fmt, and test
 check-all package="":
     #!/usr/bin/env bash
-    echo "Running clippy..."
+    set -o pipefail
+
+    # Generate timestamped log file in /tmp
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    LOGFILE="/tmp/arcgis-check-all_${TIMESTAMP}.log"
+
+    # Track overall status
+    HAD_ERRORS=0
+
+    echo "Logging to: $LOGFILE"
+    echo "========================================" | tee "$LOGFILE"
+    echo "check-all run started at $(date)" | tee -a "$LOGFILE"
+    echo "========================================" | tee -a "$LOGFILE"
+    echo "" | tee -a "$LOGFILE"
+
+    # Run clippy
+    echo "Running clippy..." | tee -a "$LOGFILE"
     if [ -z "{{package}}" ]; then
-        cargo clippy --all-targets --all-features -- -D warnings
+        if ! cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee -a "$LOGFILE"; then
+            HAD_ERRORS=1
+        fi
     else
-        cargo clippy -p {{package}} --all-targets --all-features -- -D warnings
+        if ! cargo clippy -p {{package}} --all-targets --all-features -- -D warnings 2>&1 | tee -a "$LOGFILE"; then
+            HAD_ERRORS=1
+        fi
     fi
-    echo "Checking formatting..."
-    cargo fmt --all -- --check
-    echo "Running tests..."
+    echo "" | tee -a "$LOGFILE"
+
+    # Check formatting
+    echo "Checking formatting..." | tee -a "$LOGFILE"
+    if ! cargo fmt --all -- --check 2>&1 | tee -a "$LOGFILE"; then
+        HAD_ERRORS=1
+    fi
+    echo "" | tee -a "$LOGFILE"
+
+    # Run tests
+    echo "Running tests..." | tee -a "$LOGFILE"
     if [ -z "{{package}}" ]; then
-        cargo test
+        if ! cargo test 2>&1 | tee -a "$LOGFILE"; then
+            HAD_ERRORS=1
+        fi
     else
-        cargo test -p {{package}}
+        if ! cargo test -p {{package}} 2>&1 | tee -a "$LOGFILE"; then
+            HAD_ERRORS=1
+        fi
+    fi
+    echo "" | tee -a "$LOGFILE"
+
+    # Final status
+    echo "========================================" | tee -a "$LOGFILE"
+    echo "check-all run completed at $(date)" | tee -a "$LOGFILE"
+    echo "========================================" | tee -a "$LOGFILE"
+
+    if [ $HAD_ERRORS -eq 1 ]; then
+        echo ""
+        echo "❌ Checks failed. Full output logged to:"
+        echo "   $LOGFILE"
+        echo ""
+        exit 1
+    else
+        echo ""
+        echo "✓ All checks passed"
+        echo ""
     fi
 
 # Run clippy
