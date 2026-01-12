@@ -259,8 +259,5 @@ async fn test_feature_count_method() {
         .await
         .expect("Count method failed");
 
-    assert!(
-        count > 0,
-        "Should find cities with population > 100,000"
-    );
+    assert!(count > 0, "Should find cities with population > 100,000");
 }

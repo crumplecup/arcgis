@@ -647,8 +647,8 @@ impl InspectConflictLayer {
     ///     InspectConflictFeature::new(1),
     ///     InspectConflictFeature::new(2),
     /// ]);
-    /// assert_eq!(layer.layer_id, 0);
-    /// assert_eq!(layer.features.len(), 2);
+    /// assert_eq!(*layer.layer_id(), 0);
+    /// assert_eq!(layer.features().len(), 2);
     /// ```
     pub fn new(layer_id: i64, features: Vec<InspectConflictFeature>) -> Self {
         Self { layer_id, features }

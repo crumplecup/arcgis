@@ -30,7 +30,7 @@ impl<'a> FeatureServiceClient<'a> {
     ///     .unwrap();
     ///
     /// let features = feature_service.query_with_params(LayerId::new(0), params).await?;
-    /// println!("Retrieved {} features", features.features.len());
+    /// println!("Retrieved {} features", features.features().len());
     /// # Ok(())
     /// # }
     /// ```
@@ -225,8 +225,8 @@ impl<'a> FeatureServiceClient<'a> {
     ///     .expect("Valid params");
     ///
     /// let feature_set = service.query_top_features(LayerId::new(0), params).await?;
-    /// for feature in feature_set.features {
-    ///     println!("City: {:?}", feature.attributes.get("Name"));
+    /// for feature in feature_set.features() {
+    ///     println!("City: {:?}", feature.attributes().get("Name"));
     /// }
     /// # Ok(())
     /// # }

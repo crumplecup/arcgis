@@ -95,10 +95,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     attributes.insert("DESCRIPTION".to_string(), json!("Created via edit session"));
     attributes.insert("VALUE".to_string(), json!(42));
 
-    let new_feature = Feature {
-        attributes,
-        geometry: None,
-    };
+    let new_feature = Feature::new(attributes, None);
 
     // Add feature with session ID
     let edit_options = EditOptions::new()
@@ -148,10 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Perform some edits...
     let mut attributes2 = HashMap::new();
     attributes2.insert("NAME".to_string(), json!("Temporary Feature"));
-    let temp_feature = Feature {
-        attributes: attributes2,
-        geometry: None,
-    };
+    let temp_feature = Feature::new(attributes2, None);
 
     let edit_options_2 = EditOptions::new().with_session_id(session_id_2);
 

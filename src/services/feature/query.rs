@@ -398,7 +398,7 @@ impl<'a> QueryBuilder<'a> {
     ///     .execute_all()
     ///     .await?;
     ///
-    /// println!("Retrieved {} total features", all_features.features.len());
+    /// println!("Retrieved {} total features", all_features.features().len());
     /// # Ok(())
     /// # }
     /// ```

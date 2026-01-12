@@ -12,9 +12,12 @@ fn test_top_filter_creation() {
         vec!["Population DESC".to_string()],
     );
 
-    assert_eq!(filter.group_by_fields, vec!["State".to_string()]);
-    assert_eq!(filter.top_count, 3);
-    assert_eq!(filter.order_by_fields, vec!["Population DESC".to_string()]);
+    assert_eq!(*filter.group_by_fields(), vec!["State".to_string()]);
+    assert_eq!(*filter.top_count(), 3);
+    assert_eq!(
+        *filter.order_by_fields(),
+        vec!["Population DESC".to_string()]
+    );
 }
 
 #[test]
@@ -25,8 +28,8 @@ fn test_top_filter_multiple_group_by_fields() {
         vec!["Revenue DESC".to_string()],
     );
 
-    assert_eq!(filter.group_by_fields.len(), 2);
-    assert_eq!(filter.top_count, 5);
+    assert_eq!(filter.group_by_fields().len(), 2);
+    assert_eq!(*filter.top_count(), 5);
 }
 
 #[test]
@@ -37,9 +40,9 @@ fn test_top_filter_multiple_order_by_fields() {
         vec!["Score DESC".to_string(), "Name ASC".to_string()],
     );
 
-    assert_eq!(filter.order_by_fields.len(), 2);
-    assert_eq!(filter.order_by_fields[0], "Score DESC");
-    assert_eq!(filter.order_by_fields[1], "Name ASC");
+    assert_eq!(filter.order_by_fields().len(), 2);
+    assert_eq!(filter.order_by_fields()[0], "Score DESC");
+    assert_eq!(filter.order_by_fields()[1], "Name ASC");
 }
 
 #[test]
@@ -58,11 +61,19 @@ fn test_top_features_params_builder() -> Result<()> {
         .build()
         .expect("Valid params");
 
-    assert!(params.top_filter.is_some());
-    assert_eq!(params.top_filter.unwrap().group_by_fields, vec!["State"]);
-    assert_eq!(params.where_, Some("Population > 100000".to_string()));
-    assert_eq!(params.out_fields.as_ref().map(|f| f.len()), Some(2));
-    assert_eq!(params.return_geometry, Some(false));
+    assert!(params.top_filter().is_some());
+    assert_eq!(
+        params
+            .top_filter()
+            .as_ref()
+            .unwrap()
+            .group_by_fields()
+            .as_slice(),
+        vec!["State".to_string()]
+    );
+    assert_eq!(*params.where_(), Some("Population > 100000".to_string()));
+    assert_eq!(params.out_fields().as_ref().map(|f| f.len()), Some(2));
+    assert_eq!(*params.return_geometry(), Some(false));
 
     Ok(())
 }
@@ -71,10 +82,10 @@ fn test_top_features_params_builder() -> Result<()> {
 fn test_top_features_params_default() {
     let params = TopFeaturesParams::default();
 
-    assert!(params.top_filter.is_none());
-    assert!(params.where_.is_none());
-    assert_eq!(params.return_geometry, Some(true));
-    assert_eq!(params.f, Some("json".to_string()));
+    assert!(params.top_filter().is_none());
+    assert!(params.where_().is_none());
+    assert_eq!(*params.return_geometry(), Some(true));
+    assert_eq!(*params.f(), Some("json".to_string()));
 }
 
 #[test]
@@ -93,9 +104,9 @@ fn test_top_features_params_with_spatial_filter() -> Result<()> {
         .build()
         .expect("Valid params");
 
-    assert_eq!(params.spatial_rel, Some(arcgis::SpatialRel::Intersects));
-    assert_eq!(params.distance, Some(1000.0));
-    assert_eq!(params.units, Some("esriSRUnit_Meter".to_string()));
+    assert_eq!(*params.spatial_rel(), Some(arcgis::SpatialRel::Intersects));
+    assert_eq!(*params.distance(), Some(1000.0));
+    assert_eq!(*params.units(), Some("esriSRUnit_Meter".to_string()));
 
     Ok(())
 }
@@ -118,11 +129,11 @@ fn test_top_features_params_with_geometry_options() -> Result<()> {
         .build()
         .expect("Valid params");
 
-    assert_eq!(params.return_geometry, Some(true));
-    assert_eq!(params.out_sr, Some(4326));
-    assert_eq!(params.geometry_precision, Some(6));
-    assert_eq!(params.return_z, Some(true));
-    assert_eq!(params.return_m, Some(false));
+    assert_eq!(*params.return_geometry(), Some(true));
+    assert_eq!(*params.out_sr(), Some(4326));
+    assert_eq!(*params.geometry_precision(), Some(6));
+    assert_eq!(*params.return_z(), Some(true));
+    assert_eq!(*params.return_m(), Some(false));
 
     Ok(())
 }
@@ -141,7 +152,7 @@ fn test_top_features_params_return_options() -> Result<()> {
         .build()
         .expect("Valid params");
 
-    assert_eq!(params.return_ids_only, Some(true));
+    assert_eq!(*params.return_ids_only(), Some(true));
 
     Ok(())
 }
@@ -217,7 +228,10 @@ fn test_top_features_params_with_time_filter() -> Result<()> {
         .build()
         .expect("Valid params");
 
-    assert_eq!(params.time, Some("1609459200000,1640995200000".to_string()));
+    assert_eq!(
+        *params.time(),
+        Some("1609459200000,1640995200000".to_string())
+    );
 
     Ok(())
 }

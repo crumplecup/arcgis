@@ -14,7 +14,7 @@ impl<'a> PortalClient<'a> {
     /// # Example
     ///
     /// ```no_run
-    /// # use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient, SearchParameters};
+    /// # use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient, SearchParameters, SortOrder};
     /// # async fn example(portal: &PortalClient<'_>) -> arcgis::Result<()> {
     /// // Search for feature services
     /// let results = portal

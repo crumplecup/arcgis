@@ -14,10 +14,10 @@ fn test_related_records_params_builder() -> Result<()> {
         .build()
         .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
-    assert_eq!(params.object_ids.as_ref().map(|ids| ids.len()), Some(3));
-    assert_eq!(params.relationship_id, Some(5));
-    assert_eq!(params.out_fields.as_ref().map(|f| f.len()), Some(2));
-    assert_eq!(params.return_geometry, Some(false));
+    assert_eq!(params.object_ids().as_ref().map(|ids| ids.len()), Some(3));
+    assert_eq!(*params.relationship_id(), Some(5));
+    assert_eq!(params.out_fields().as_ref().map(|f| f.len()), Some(2));
+    assert_eq!(*params.return_geometry(), Some(false));
 
     Ok(())
 }
@@ -26,11 +26,11 @@ fn test_related_records_params_builder() -> Result<()> {
 fn test_related_records_params_default() {
     let params = RelatedRecordsParams::default();
 
-    assert!(params.object_ids.is_none());
-    assert!(params.relationship_id.is_none());
-    assert!(params.out_fields.is_none());
-    assert_eq!(params.return_geometry, Some(true));
-    assert!(params.definition_expression.is_none());
+    assert!(params.object_ids().is_none());
+    assert!(params.relationship_id().is_none());
+    assert!(params.out_fields().is_none());
+    assert_eq!(*params.return_geometry(), Some(true));
+    assert!(params.definition_expression().is_none());
 }
 
 #[test]
@@ -43,7 +43,7 @@ fn test_related_records_params_with_definition_expression() -> Result<()> {
         .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
     assert_eq!(
-        params.definition_expression,
+        *params.definition_expression(),
         Some("STATUS = 'ACTIVE'".to_string())
     );
 
@@ -60,8 +60,8 @@ fn test_related_records_params_with_pagination() -> Result<()> {
         .build()
         .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
-    assert_eq!(params.result_offset, Some(10));
-    assert_eq!(params.result_record_count, Some(50));
+    assert_eq!(*params.result_offset(), Some(10));
+    assert_eq!(*params.result_record_count(), Some(50));
 
     Ok(())
 }
@@ -75,7 +75,7 @@ fn test_related_records_params_with_ordering() -> Result<()> {
         .build()
         .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
-    assert_eq!(params.order_by_fields.as_ref().map(|f| f.len()), Some(2));
+    assert_eq!(params.order_by_fields().as_ref().map(|f| f.len()), Some(2));
 
     Ok(())
 }
@@ -93,11 +93,11 @@ fn test_related_records_params_with_geometry_options() -> Result<()> {
         .build()
         .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
-    assert_eq!(params.return_geometry, Some(true));
-    assert_eq!(params.out_sr, Some(4326));
-    assert_eq!(params.geometry_precision, Some(6));
-    assert_eq!(params.return_z, Some(true));
-    assert_eq!(params.return_m, Some(false));
+    assert_eq!(*params.return_geometry(), Some(true));
+    assert_eq!(*params.out_sr(), Some(4326));
+    assert_eq!(*params.geometry_precision(), Some(6));
+    assert_eq!(*params.return_z(), Some(true));
+    assert_eq!(*params.return_m(), Some(false));
 
     Ok(())
 }
@@ -143,7 +143,7 @@ fn test_related_records_params_count_only() -> Result<()> {
         .build()
         .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
-    assert_eq!(params.return_count_only, Some(true));
+    assert_eq!(*params.return_count_only(), Some(true));
 
     Ok(())
 }
@@ -157,7 +157,7 @@ fn test_related_records_params_with_gdb_version() -> Result<()> {
         .build()
         .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
-    assert_eq!(params.gdb_version, Some("sde.DEFAULT".to_string()));
+    assert_eq!(*params.gdb_version(), Some("sde.DEFAULT".to_string()));
 
     Ok(())
 }

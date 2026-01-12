@@ -18,7 +18,7 @@ use tracing::instrument;
 /// # Example
 ///
 /// ```no_run
-/// use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient};
+/// use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient, SearchParameters};
 ///
 /// # async fn example() -> arcgis::Result<()> {
 /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
@@ -56,7 +56,7 @@ impl<'a> PortalClient<'a> {
     /// # Example
     ///
     /// ```no_run
-    /// use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient};
+    /// use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient, SearchParameters};
     ///
     /// # fn example() {
     /// let auth = ApiKeyAuth::new("YOUR_API_KEY");

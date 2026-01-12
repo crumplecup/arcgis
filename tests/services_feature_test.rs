@@ -32,18 +32,18 @@ fn test_feature_query_params_builder() -> Result<()> {
         .build()
         .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
-    assert_eq!(params.where_clause, "POPULATION > 100000");
-    assert_eq!(params.out_fields.as_ref().map(|f| f.len()), Some(2));
-    assert!(params.return_geometry);
+    assert_eq!(params.where_clause(), "POPULATION > 100000");
+    assert_eq!(params.out_fields().as_ref().map(|f| f.len()), Some(2));
+    assert!(params.return_geometry());
     Ok(())
 }
 
 #[test]
 fn test_feature_query_params_default() {
     let params = FeatureQueryParams::default();
-    assert_eq!(params.where_clause, "1=1");
-    assert!(params.return_geometry);
-    assert_eq!(params.format, ResponseFormat::Json);
+    assert_eq!(params.where_clause(), "1=1");
+    assert!(params.return_geometry());
+    assert_eq!(*params.format(), ResponseFormat::Json);
 }
 
 #[test]
@@ -52,10 +52,7 @@ fn test_feature_serialization() -> Result<()> {
     attributes.insert("NAME".to_string(), serde_json::json!("Test City"));
     attributes.insert("POPULATION".to_string(), serde_json::json!(100000));
 
-    let feature = Feature {
-        attributes,
-        geometry: None,
-    };
+    let feature = Feature::new(attributes, None);
 
     let json = serde_json::to_string(&feature)?;
     assert!(json.contains("NAME"));
@@ -79,9 +76,9 @@ fn test_feature_set_deserialization() -> Result<()> {
     }"#;
 
     let feature_set: FeatureSet = serde_json::from_str(json)?;
-    assert_eq!(feature_set.geometry_type, Some(GeometryType::Point));
-    assert_eq!(feature_set.features.len(), 1);
-    assert!(!feature_set.exceeded_transfer_limit);
+    assert_eq!(*feature_set.geometry_type(), Some(GeometryType::Point));
+    assert_eq!(feature_set.features().len(), 1);
+    assert!(!feature_set.exceeded_transfer_limit());
     Ok(())
 }
 

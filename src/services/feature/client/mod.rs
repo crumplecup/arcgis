@@ -84,7 +84,7 @@ impl<'a> FeatureServiceClient<'a> {
     ///     .execute()
     ///     .await?;
     ///
-    /// println!("Retrieved {} features", features.features.len());
+    /// println!("Retrieved {} features", features.features().len());
     /// # Ok(())
     /// # }
     /// ```

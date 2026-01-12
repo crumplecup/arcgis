@@ -30,10 +30,7 @@ impl<'a> FeatureServiceClient<'a> {
     /// attributes.insert("NAME".to_string(), json!("New City"));
     /// attributes.insert("POPULATION".to_string(), json!(50000));
     ///
-    /// let new_feature = Feature {
-    ///     attributes,
-    ///     geometry: None,
-    /// };
+    /// let new_feature = Feature::new(attributes, None);
     ///
     /// let result = service
     ///     .add_features(LayerId::new(0), vec![new_feature], EditOptions::default())
@@ -140,10 +137,7 @@ impl<'a> FeatureServiceClient<'a> {
     /// attributes.insert("OBJECTID".to_string(), json!(123));
     /// attributes.insert("POPULATION".to_string(), json!(55000));
     ///
-    /// let updated_feature = Feature {
-    ///     attributes,
-    ///     geometry: None,
-    /// };
+    /// let updated_feature = Feature::new(attributes, None);
     ///
     /// let result = service
     ///     .update_features(LayerId::new(0), vec![updated_feature], EditOptions::default())
@@ -347,19 +341,13 @@ impl<'a> FeatureServiceClient<'a> {
     /// let mut new_attrs = HashMap::new();
     /// new_attrs.insert("NAME".to_string(), json!("New City"));
     /// new_attrs.insert("POPULATION".to_string(), json!(50000));
-    /// let new_feature = Feature {
-    ///     attributes: new_attrs,
-    ///     geometry: None,
-    /// };
+    /// let new_feature = Feature::new(new_attrs, None);
     ///
     /// // Prepare features to update
     /// let mut update_attrs = HashMap::new();
     /// update_attrs.insert("OBJECTID".to_string(), json!(123));
     /// update_attrs.insert("POPULATION".to_string(), json!(55000));
-    /// let updated_feature = Feature {
-    ///     attributes: update_attrs,
-    ///     geometry: None,
-    /// };
+    /// let updated_feature = Feature::new(update_attrs, None);
     ///
     /// // Prepare IDs to delete
     /// let ids_to_delete = vec![ObjectId::new(456)];
@@ -614,10 +602,7 @@ impl<'a> FeatureServiceClient<'a> {
     /// let mut update_attrs = HashMap::new();
     /// update_attrs.insert("globalId".to_string(), json!("{12345678-1234-1234-1234-123456789012}"));
     /// update_attrs.insert("STATUS".to_string(), json!("Updated"));
-    /// let updated_feature = Feature {
-    ///     attributes: update_attrs,
-    ///     geometry: None,
-    /// };
+    /// let updated_feature = Feature::new(update_attrs, None);
     ///
     /// // Delete by global IDs
     /// let global_ids_to_delete = vec![

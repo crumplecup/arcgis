@@ -54,9 +54,9 @@ fn test_statistic_definition_creation() {
         "avg_population".to_string(),
     );
 
-    assert_eq!(stat.statistic_type, StatisticType::Avg);
-    assert_eq!(stat.on_statistic_field, "POPULATION");
-    assert_eq!(stat.out_statistic_field_name, "avg_population");
+    assert_eq!(*stat.statistic_type(), StatisticType::Avg);
+    assert_eq!(*stat.on_statistic_field(), "POPULATION");
+    assert_eq!(*stat.out_statistic_field_name(), "avg_population");
 }
 
 #[test]
@@ -84,9 +84,9 @@ fn test_statistic_definition_deserialization() -> Result<()> {
     }"#;
 
     let stat: StatisticDefinition = serde_json::from_str(json)?;
-    assert_eq!(stat.statistic_type, StatisticType::Count);
-    assert_eq!(stat.on_statistic_field, "OBJECTID");
-    assert_eq!(stat.out_statistic_field_name, "total_count");
+    assert_eq!(*stat.statistic_type(), StatisticType::Count);
+    assert_eq!(*stat.on_statistic_field(), "OBJECTID");
+    assert_eq!(*stat.out_statistic_field_name(), "total_count");
 
     Ok(())
 }
@@ -174,12 +174,12 @@ fn test_multiple_statistics_types() {
     ];
 
     assert_eq!(stats.len(), 6);
-    assert_eq!(stats[0].statistic_type, StatisticType::Count);
-    assert_eq!(stats[1].statistic_type, StatisticType::Sum);
-    assert_eq!(stats[2].statistic_type, StatisticType::Avg);
-    assert_eq!(stats[3].statistic_type, StatisticType::Min);
-    assert_eq!(stats[4].statistic_type, StatisticType::Max);
-    assert_eq!(stats[5].statistic_type, StatisticType::Stddev);
+    assert_eq!(*stats[0].statistic_type(), StatisticType::Count);
+    assert_eq!(*stats[1].statistic_type(), StatisticType::Sum);
+    assert_eq!(*stats[2].statistic_type(), StatisticType::Avg);
+    assert_eq!(*stats[3].statistic_type(), StatisticType::Min);
+    assert_eq!(*stats[4].statistic_type(), StatisticType::Max);
+    assert_eq!(*stats[5].statistic_type(), StatisticType::Stddev);
 }
 
 #[test]

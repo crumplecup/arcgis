@@ -27,10 +27,7 @@
 //! attributes.insert("NAME".to_string(), json!("New City"));
 //! attributes.insert("POPULATION".to_string(), json!(50000));
 //!
-//! let new_feature = Feature {
-//!     attributes,
-//!     geometry: None,
-//! };
+//! let new_feature = Feature::new(attributes, None);
 //!
 //! let result = service
 //!     .add_features(LayerId::new(0), vec![new_feature], EditOptions::default())

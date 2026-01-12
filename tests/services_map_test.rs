@@ -98,11 +98,11 @@ fn test_export_map_params_builder() -> Result<()> {
         .build()
         .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
-    assert_eq!(params.bbox, "-118.0,34.0,-117.0,35.0");
-    assert_eq!(params.size, Some("800,600".to_string()));
-    assert_eq!(params.dpi, Some(96));
-    assert_eq!(params.format, Some(ImageFormat::Png32));
-    assert_eq!(params.transparent, Some(true));
+    assert_eq!(*params.bbox(), "-118.0,34.0,-117.0,35.0");
+    assert_eq!(*params.size(), Some("800,600".to_string()));
+    assert_eq!(*params.dpi(), Some(96));
+    assert_eq!(*params.format(), Some(ImageFormat::Png32));
+    assert_eq!(*params.transparent(), Some(true));
 
     Ok(())
 }
@@ -110,11 +110,11 @@ fn test_export_map_params_builder() -> Result<()> {
 #[test]
 fn test_export_map_params_default() {
     let params = ExportMapParams::default();
-    assert_eq!(params.bbox, "");
-    assert_eq!(params.size, Some("400,400".to_string()));
-    assert_eq!(params.dpi, Some(96));
-    assert_eq!(params.format, Some(ImageFormat::Png));
-    assert_eq!(params.transparent, Some(false));
+    assert_eq!(*params.bbox(), "");
+    assert_eq!(*params.size(), Some("400,400".to_string()));
+    assert_eq!(*params.dpi(), Some(96));
+    assert_eq!(*params.format(), Some(ImageFormat::Png));
+    assert_eq!(*params.transparent(), Some(false));
 }
 
 #[test]
@@ -129,12 +129,12 @@ fn test_identify_params_builder() -> Result<()> {
         .build()
         .map_err(|e| arcgis::BuilderError::from(e.to_string()))?;
 
-    assert_eq!(params.geometry, "{\"x\":-118.0,\"y\":34.0}");
-    assert_eq!(params.geometry_type, GeometryType::Point);
-    assert_eq!(params.tolerance, 5);
-    assert_eq!(params.map_extent, "-120,32,-116,36");
-    assert_eq!(params.image_display, "800,600,96");
-    assert_eq!(params.layers, Some(LayerSelection::Visible));
+    assert_eq!(params.geometry(), "{\"x\":-118.0,\"y\":34.0}");
+    assert_eq!(*params.geometry_type(), GeometryType::Point);
+    assert_eq!(*params.tolerance(), 5);
+    assert_eq!(params.map_extent(), "-120,32,-116,36");
+    assert_eq!(params.image_display(), "800,600,96");
+    assert_eq!(*params.layers(), Some(LayerSelection::Visible));
 
     Ok(())
 }

@@ -42,7 +42,7 @@
 //!
 //! // Get legend
 //! let legend = map_service.get_legend().await?;
-//! for layer in &legend.layers {
+//! for layer in legend.layers() {
 //!     println!("Layer {}: {}", layer.layer_id(), layer.layer_name());
 //! }
 //! # Ok(())

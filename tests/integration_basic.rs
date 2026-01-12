@@ -82,24 +82,24 @@ async fn test_feature_query_with_where_clause() -> Result<()> {
 
     // Verify we got results
     assert!(
-        !result.features.is_empty(),
+        !result.features().is_empty(),
         "Should have found cities with population > 5 million"
     );
 
     // Verify features have attributes
-    let first_feature = &result.features[0];
+    let first_feature = &result.features()[0];
     assert!(
-        first_feature.attributes.contains_key("CITY_NAME"),
+        first_feature.attributes().contains_key("CITY_NAME"),
         "Feature should have CITY_NAME attribute"
     );
     assert!(
-        first_feature.attributes.contains_key("POP"),
+        first_feature.attributes().contains_key("POP"),
         "Feature should have POP attribute"
     );
 
     // Verify geometry is present
     assert!(
-        first_feature.geometry.is_some(),
+        first_feature.geometry().is_some(),
         "Feature should have geometry"
     );
     Ok(())
@@ -125,17 +125,17 @@ async fn test_feature_query_count_only() -> Result<()> {
 
     // When count_only is true, the response should include a count
     assert!(
-        result.count.is_some(),
+        result.count().is_some(),
         "Count-only query should return a count"
     );
     assert!(
-        result.count.unwrap() > 0,
+        result.count().unwrap() > 0,
         "Should have at least some features in the dataset"
     );
 
     // Features array should be empty for count-only queries
     assert!(
-        result.features.is_empty(),
+        result.features().is_empty(),
         "Count-only query should not return features"
     );
     Ok(())
@@ -163,7 +163,7 @@ async fn test_feature_query_with_object_ids() -> Result<()> {
     // May or may not return features depending on if those IDs exist
     // Just verify the query succeeded without error
     assert!(
-        result.features.len() <= 2,
+        result.features().len() <= 2,
         "Should return at most 2 features"
     );
     Ok(())
@@ -193,13 +193,13 @@ async fn test_feature_query_autopagination() -> Result<()> {
     // Should have retrieved multiple pages of results
     // The actual count depends on the data, but should be > 5
     assert!(
-        result.features.len() >= 5,
+        result.features().len() >= 5,
         "Auto-pagination should retrieve more than one page"
     );
 
     // exceeded_transfer_limit should be false after pagination completes
     assert!(
-        !result.exceeded_transfer_limit,
+        !result.exceeded_transfer_limit(),
         "Auto-pagination should retrieve all results"
     );
     Ok(())

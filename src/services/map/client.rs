@@ -284,7 +284,7 @@ impl<'a> MapServiceClient<'a> {
     ///
     /// let legend = service.get_legend().await?;
     ///
-    /// for layer in &legend.layers {
+    /// for layer in legend.layers() {
     ///     println!("Layer {}: {}", layer.layer_id(), layer.layer_name());
     ///     for symbol in layer.legend() {
     ///         println!("  - {}", symbol.label());
