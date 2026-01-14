@@ -99,6 +99,11 @@ dotenvy = "0.15"
 [build-dependencies]
 prost-build = "0.14"
 
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
