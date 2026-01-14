@@ -5,7 +5,7 @@
 default:
     @just --list
 
-# Install development tools (cargo-dist, omnibor, cargo-audit, cargo-watch)
+# Install development tools (cargo-dist, omnibor, cargo-audit, cargo-watch, cargo-release)
 setup:
     #!/usr/bin/env bash
     echo "Installing development tools..."
@@ -40,6 +40,14 @@ setup:
     else
         echo "Installing cargo-watch..."
         cargo install cargo-watch
+    fi
+
+    # Check and install cargo-release
+    if command -v cargo-release &> /dev/null; then
+        echo "✓ cargo-release already installed"
+    else
+        echo "Installing cargo-release..."
+        cargo install cargo-release
     fi
 
     echo ""
@@ -173,23 +181,14 @@ test-api:
     @echo "⚠️  API tests hit live ArcGIS services - use sparingly!"
     cargo test --features api
 
-# Build documentation
-doc:
-    cargo doc --no-deps --all-features
-
 # Build and open documentation
-doc-open:
+doc:
     cargo doc --no-deps --all-features --open
 
 # Check all feature combinations
 check-features:
     #!/usr/bin/env bash
-    echo "Checking with no features..."
-    cargo check --no-default-features
-    echo "Checking with all features..."
-    cargo check --all-features
-    echo "Checking with api feature..."
-    cargo check --features api
+    cargo hack check
 
 # Run security audit
 audit:
@@ -220,7 +219,7 @@ pre-publish: pre-merge security dist-check publish-dry-run
     @echo "Ready for release! Next steps:"
     @echo "  1. Review: just dist-plan"
     @echo "  2. Test build: just dist-build"
-    @echo "  3. Publish: cargo publish"
+    @echo "  3. Publish: cargo release"
 
 # Watch for changes and run tests
 watch:
@@ -228,7 +227,7 @@ watch:
 
 # Check MSRV (Minimum Supported Rust Version)
 msrv:
-    cargo +1.75 check
+    cargo +1.85 check
 
 # Run benchmarks (when they exist)
 bench:
