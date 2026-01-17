@@ -4,6 +4,8 @@
 //! - Loading API keys from environment variables (secure pattern)
 //! - Creating an API Key authentication provider
 //! - Creating an ArcGIS client
+//! - Proper error handling with anyhow
+//! - Structured logging with tracing
 //!
 //! # Setup
 //!
@@ -24,26 +26,41 @@
 
 use arcgis::{ApiKeyAuth, ArcGISClient};
 
-fn main() {
-    // Set up tracing subscriber for logging
-    tracing_subscriber::fmt::init();
+fn main() -> anyhow::Result<()> {
+    // Initialize tracing subscriber for structured logging
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+        )
+        .init();
+
+    tracing::info!("Starting basic_client example");
 
     // Load API key from environment
     // The .env file is automatically loaded by ArcGISClient::new()
-    let api_key = std::env::var("ARCGIS_API_KEY").expect(
-        "ARCGIS_API_KEY must be set in .env file or environment.\n\
-         Create a .env file with: ARCGIS_API_KEY=your_api_key_here"
-    );
+    tracing::debug!("Loading API key from environment");
+    let api_key = std::env::var("ARCGIS_API_KEY").map_err(|_| {
+        anyhow::anyhow!(
+            "ARCGIS_API_KEY must be set in .env file or environment.\n\
+             Create a .env file with: ARCGIS_API_KEY=your_api_key_here"
+        )
+    })?;
 
     // Create an API Key authentication provider
+    tracing::info!("Creating API key authentication provider");
     let auth = ApiKeyAuth::new(api_key);
 
     // Create the ArcGIS client (automatically loads .env on first use)
+    tracing::info!("Creating ArcGIS client");
     let client = ArcGISClient::new(auth);
 
-    println!("✅ ArcGIS client created successfully!");
-    println!("📡 HTTP client ready: {:?}", client.http());
-    println!("\n💡 Next steps:");
-    println!("   - Check out examples/client_credentials_flow.rs for OAuth");
-    println!("   - See examples/edit_session.rs for feature editing");
+    tracing::info!("ArcGIS client created successfully");
+    tracing::debug!(http_client = ?client.http(), "HTTP client ready");
+
+    tracing::info!("Next steps:");
+    tracing::info!("  - Check out examples/client_credentials_flow.rs for OAuth");
+    tracing::info!("  - See examples/edit_session.rs for feature editing");
+
+    Ok(())
 }

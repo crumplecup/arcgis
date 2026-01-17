@@ -37,55 +37,64 @@
 use arcgis::{AuthProvider, ClientCredentialsAuth};
 
 #[tokio::main]
-async fn main() -> arcgis::Result<()> {
-    // Initialize tracing for observability
+async fn main() -> anyhow::Result<()> {
+    // Initialize tracing for structured logging
     tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+        )
         .init();
 
-    // Load environment variables from .env file
-    dotenvy::dotenv().ok();
+    tracing::info!("🔐 ArcGIS OAuth 2.0 Client Credentials Flow Example");
+    tracing::info!("✨ Fully automated - no browser interaction required!");
 
-    let client_id =
-        std::env::var("CLIENT_ID").expect("CLIENT_ID must be set in .env or environment");
-    let client_secret =
-        std::env::var("CLIENT_SECRET").expect("CLIENT_SECRET must be set in .env or environment");
-
-    println!("🔐 ArcGIS OAuth 2.0 Client Credentials Flow Example\n");
-    println!("✨ Fully automated - no browser interaction required!\n");
+    // Load environment variables (.env is automatically loaded by library)
+    tracing::debug!("Loading credentials from environment");
+    let client_id = std::env::var("CLIENT_ID")
+        .map_err(|_| anyhow::anyhow!("CLIENT_ID must be set in .env or environment"))?;
+    let client_secret = std::env::var("CLIENT_SECRET")
+        .map_err(|_| anyhow::anyhow!("CLIENT_SECRET must be set in .env or environment"))?;
 
     // 1. Create OAuth Client Credentials authenticator
-    println!("📋 Creating OAuth Client Credentials authenticator...");
+    tracing::info!("📋 Creating OAuth Client Credentials authenticator");
     let auth = ClientCredentialsAuth::new(client_id, client_secret)?;
-    println!("✅ Authenticator created\n");
+    tracing::info!("✅ Authenticator created");
 
     // 2. Get access token (fetched automatically on first use)
-    println!("🔑 Fetching access token...");
+    tracing::info!("🔑 Fetching access token");
     let token = auth.get_token().await?;
-    println!("✅ Access token obtained");
-    println!("   Token (first 20 chars): {}...\n", &token[..20]);
+    tracing::info!(
+        token_preview = %&token[..20.min(token.len())],
+        "✅ Access token obtained"
+    );
 
     // 3. Get token again (should return cached token)
-    println!("🔄 Getting token again (should use cache)...");
+    tracing::info!("🔄 Getting token again (should use cache)");
     let token2 = auth.get_token().await?;
-    println!("✅ Token retrieved from cache");
-    println!("   Tokens match: {}\n", token == token2);
+    let tokens_match = token == token2;
+    tracing::info!(
+        tokens_match = tokens_match,
+        "✅ Token retrieved from cache"
+    );
 
     // 4. Show token info
-    println!("📊 Token Information:");
-    println!("   Length: {} characters", token.len());
-    println!("   Type: Bearer token (for Authorization header)");
-    println!("   Lifetime: ~2 hours (refreshed automatically)\n");
+    tracing::info!("📊 Token Information:");
+    tracing::info!(
+        token_length = token.len(),
+        token_type = "Bearer",
+        lifetime = "~2 hours",
+        "Token details"
+    );
 
-    println!("🎉 Authentication successful!");
-    println!("\n💡 The ClientCredentialsAuth is now authenticated and can be");
-    println!("   used with ArcGISClient to make authenticated API requests.");
-    println!("\n📝 Token will automatically refresh when it expires.");
-    println!("   No manual token management required!");
-
-    println!("\n🚀 Example usage with ArcGIS client:");
-    println!("   let client = ArcGISClient::new(auth);");
-    println!("   // All API calls automatically use refreshed tokens");
+    tracing::info!("🎉 Authentication successful!");
+    tracing::info!("💡 The ClientCredentialsAuth is now authenticated and can be");
+    tracing::info!("   used with ArcGISClient to make authenticated API requests");
+    tracing::info!("📝 Token will automatically refresh when it expires");
+    tracing::info!("   No manual token management required!");
+    tracing::info!("🚀 Example usage:");
+    tracing::info!("   let client = ArcGISClient::new(auth);");
+    tracing::info!("   // All API calls automatically use refreshed tokens");
 
     Ok(())
 }

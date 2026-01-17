@@ -39,55 +39,76 @@ use std::env;
 use uuid::Uuid;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Initialize logging
-    tracing_subscriber::fmt::init();
+async fn main() -> anyhow::Result<()> {
+    // Initialize tracing for structured logging
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+        )
+        .init();
 
-    // Load environment variables
-    dotenvy::dotenv().ok();
+    tracing::info!("Starting edit_session example");
 
-    let client_id = env::var("CLIENT_ID").expect("CLIENT_ID not set");
-    let client_secret = env::var("CLIENT_SECRET").expect("CLIENT_SECRET not set");
-    let version_mgmt_url = env::var("VERSION_MGMT_URL").expect("VERSION_MGMT_URL not set");
-    let feature_service_url = env::var("FEATURE_SERVICE_URL").expect("FEATURE_SERVICE_URL not set");
-    let version_guid_str = env::var("VERSION_GUID").expect("VERSION_GUID not set");
+    // Load environment variables (.env automatically loaded by library)
+    tracing::debug!("Loading configuration from environment");
+    let client_id = env::var("CLIENT_ID")
+        .map_err(|_| anyhow::anyhow!("CLIENT_ID not set in .env"))?;
+    let client_secret = env::var("CLIENT_SECRET")
+        .map_err(|_| anyhow::anyhow!("CLIENT_SECRET not set in .env"))?;
+    let version_mgmt_url = env::var("VERSION_MGMT_URL")
+        .map_err(|_| anyhow::anyhow!("VERSION_MGMT_URL not set in .env"))?;
+    let feature_service_url = env::var("FEATURE_SERVICE_URL")
+        .map_err(|_| anyhow::anyhow!("FEATURE_SERVICE_URL not set in .env"))?;
+    let version_guid_str = env::var("VERSION_GUID")
+        .map_err(|_| anyhow::anyhow!("VERSION_GUID not set in .env"))?;
     let layer_id_val: u32 = env::var("LAYER_ID")
-        .expect("LAYER_ID not set")
+        .map_err(|_| anyhow::anyhow!("LAYER_ID not set in .env"))?
         .parse()
-        .expect("LAYER_ID must be a number");
+        .map_err(|_| anyhow::anyhow!("LAYER_ID must be a number"))?;
 
     // Parse version GUID
     let version_guid = Uuid::parse_str(&version_guid_str)?;
+    tracing::debug!(version_guid = %version_guid, "Parsed version GUID");
 
     // Create authenticated client
+    tracing::info!("Creating authenticated client");
     let auth = ClientCredentialsAuth::new(client_id, client_secret)?;
     let client = ArcGISClient::new(auth);
 
     // Create service clients
+    tracing::debug!(
+        version_mgmt_url = %version_mgmt_url,
+        feature_service_url = %feature_service_url,
+        "Creating service clients"
+    );
     let vm_client = VersionManagementClient::new(&version_mgmt_url, &client);
     let feature_client = FeatureServiceClient::new(&feature_service_url, &client);
 
     // Step 1: Start an edit session
-    println!("Starting edit session...");
+    tracing::info!("Starting edit session");
     let session_id = SessionId::new();
-    println!("Session ID: {}", session_id);
+    tracing::info!(session_id = %session_id, "Generated session ID");
 
     let start_response = vm_client
         .start_editing(version_guid.into(), session_id)
         .await?;
 
     if !start_response.success() {
-        eprintln!(
-            "Failed to start editing session: {:?}",
-            start_response.error()
+        tracing::error!(
+            error = ?start_response.error(),
+            "Failed to start editing session"
         );
-        return Ok(());
+        anyhow::bail!("Edit session failed to start");
     }
 
-    println!("Edit session started at {:?}", start_response.moment());
+    tracing::info!(
+        moment = ?start_response.moment(),
+        "Edit session started successfully"
+    );
 
     // Step 2: Perform edits within the session
-    println!("\nPerforming edits...");
+    tracing::info!("Performing edits within session");
 
     // Create a new feature
     let mut attributes = HashMap::new();
@@ -104,39 +125,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_return_edit_results(true);
 
     let layer_id = LayerId::new(layer_id_val);
+    tracing::debug!(layer_id = layer_id_val, "Adding features to layer");
     let add_result = feature_client
         .add_features(layer_id, vec![new_feature], edit_options.clone())
         .await?;
 
-    println!("Add result:");
+    tracing::info!("Add feature results:");
     for item in add_result.add_results() {
         if *item.success() {
-            println!(
-                "  ✓ Added feature with ObjectID: {}",
-                item.object_id().expect("Has ID")
-            );
+            let object_id = item.object_id().expect("Has ID");
+            tracing::info!(object_id = %object_id, "✓ Added feature successfully");
         } else {
-            println!("  ✗ Failed: {:?}", item.error());
+            tracing::warn!(error = ?item.error(), "✗ Failed to add feature");
         }
     }
 
     // Step 3: Stop the edit session (save changes)
-    println!("\nSaving changes...");
+    tracing::info!("Saving changes");
     let stop_response = vm_client
         .stop_editing(version_guid.into(), session_id, true)
         .await?;
 
     if *stop_response.success() {
-        println!("Changes saved successfully at {:?}", stop_response.moment());
+        tracing::info!(
+            moment = ?stop_response.moment(),
+            "Changes saved successfully"
+        );
     } else {
-        eprintln!("Failed to save changes: {:?}", stop_response.error());
+        tracing::error!(
+            error = ?stop_response.error(),
+            "Failed to save changes"
+        );
     }
 
     // Example: Discard changes instead
-    println!("\n--- Alternative: Discarding changes ---");
+    tracing::info!("--- Alternative: Discarding changes ---");
 
     let session_id_2 = SessionId::new();
-    println!("Starting new session: {}", session_id_2);
+    tracing::info!(session_id = %session_id_2, "Starting new session");
 
     vm_client
         .start_editing(version_guid.into(), session_id_2)
@@ -154,17 +180,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Discard changes (saveEdits = false)
-    println!("Discarding changes...");
+    tracing::info!("Discarding changes");
     let discard_response = vm_client
         .stop_editing(version_guid.into(), session_id_2, false)
         .await?;
 
     if *discard_response.success() {
-        println!(
-            "Changes discarded successfully at {:?}",
-            discard_response.moment()
+        tracing::info!(
+            moment = ?discard_response.moment(),
+            "Changes discarded successfully"
         );
     }
+
+    tracing::info!("Edit session example completed successfully");
 
     Ok(())
 }
