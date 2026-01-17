@@ -17,6 +17,47 @@ pub fn load_env() {
     });
 }
 
+/// Initialize tracing subscriber for tests.
+///
+/// Reads RUST_LOG from environment (via .env file), defaulting to "info" level.
+/// Only initializes once, subsequent calls are no-ops.
+///
+/// Call this at the start of every test function to enable logging.
+///
+/// # Example
+///
+/// ```no_run
+/// #[tokio::test]
+/// async fn test_something() -> anyhow::Result<()> {
+///     common::init_tracing();
+///     tracing::info!("Starting test");
+///     // ... test code
+///     Ok(())
+/// }
+/// ```
+pub fn init_tracing() {
+    use tracing_subscriber::EnvFilter;
+
+    static INIT: OnceLock<()> = OnceLock::new();
+    INIT.get_or_init(|| {
+        load_env();
+
+        let log_level = std::env::var("RUST_LOG")
+            .unwrap_or_else(|_| "info".to_string());
+
+        let env_filter = EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| EnvFilter::new(log_level));
+
+        tracing_subscriber::fmt()
+            .with_env_filter(env_filter)
+            .with_test_writer()
+            .with_target(true)
+            .with_thread_ids(true)
+            .with_line_number(true)
+            .init();
+    });
+}
+
 /// Get an optional API key from environment.
 /// Some tests may use API key instead of OAuth.
 ///

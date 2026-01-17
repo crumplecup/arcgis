@@ -3,6 +3,8 @@
 //! These tests use ESRI's public World Cities sample service and run in CI.
 //! No API key or credentials needed.
 
+mod common;
+
 use arcgis::{FeatureServiceClient, LayerId, ObjectId};
 
 /// Public World Cities feature service (ESRI sample data).
@@ -22,21 +24,26 @@ fn create_public_client() -> arcgis::ArcGISClient {
 
 #[tokio::test]
 #[cfg(feature = "test-public")]
-async fn test_public_service_metadata() {
+async fn test_public_service_metadata() -> anyhow::Result<()> {
+    common::init_tracing();
+    tracing::info!("test_public_service_metadata: Starting");
+
     // Verify we can access service metadata without authentication
     let client = reqwest::Client::new();
     let url = format!("{}?f=json", WORLD_CITIES_SERVICE);
+    tracing::info!(url = %url, "test_public_service_metadata: Fetching service metadata");
 
     rate_limit().await;
 
-    let response = client.get(&url).send().await.expect("Request failed");
+    let response = client.get(&url).send().await?;
 
     assert!(
         response.status().is_success(),
         "Public service should be accessible"
     );
+    tracing::info!("test_public_service_metadata: Service accessible");
 
-    let json: serde_json::Value = response.json().await.expect("Invalid JSON");
+    let json: serde_json::Value = response.json().await?;
 
     // Verify it's a feature service
     assert!(
@@ -49,17 +56,23 @@ async fn test_public_service_metadata() {
         json.get("serviceDescription").is_some(),
         "Service should have serviceDescription field"
     );
+    tracing::info!("test_public_service_metadata: Completed");
+    Ok(())
 }
 
 #[tokio::test]
 #[cfg(feature = "test-public")]
-async fn test_query_where_clause() {
+async fn test_query_where_clause() -> anyhow::Result<()> {
+    common::init_tracing();
+    tracing::info!("test_query_where_clause: Starting");
+
     let client = create_public_client();
     let service = FeatureServiceClient::new(WORLD_CITIES_SERVICE, &client);
 
     rate_limit().await;
 
     // Query for large cities (population > 5 million)
+    tracing::info!("test_query_where_clause: Executing query for cities with POP > 5000000");
     let result = service
         .query(LayerId::new(0))
         .where_clause("POP > 5000000")
@@ -67,10 +80,13 @@ async fn test_query_where_clause() {
         .return_geometry(true)
         .limit(10)
         .execute()
-        .await
-        .expect("Query failed");
+        .await?;
 
     // Should find major world cities
+    tracing::info!(
+        feature_count = result.features().len(),
+        "test_query_where_clause: Received features"
+    );
     assert!(
         !result.features().is_empty(),
         "Should find cities with population > 5 million"
@@ -90,26 +106,36 @@ async fn test_query_where_clause() {
         first.geometry().is_some(),
         "Feature should have geometry when requested"
     );
+
+    tracing::info!("test_query_where_clause: Completed");
+    Ok(())
 }
 
 #[tokio::test]
 #[cfg(feature = "test-public")]
-async fn test_query_count_only() {
+async fn test_query_count_only() -> anyhow::Result<()> {
+    common::init_tracing();
+    tracing::info!("test_query_count_only: Starting");
+
     let client = create_public_client();
     let service = FeatureServiceClient::new(WORLD_CITIES_SERVICE, &client);
 
     rate_limit().await;
 
     // Get count of all cities
+    tracing::info!("test_query_count_only: Executing count-only query");
     let result = service
         .query(LayerId::new(0))
         .where_clause("1=1")
         .count_only(true)
         .execute()
-        .await
-        .expect("Count query failed");
+        .await?;
 
     // Should have a count
+    tracing::info!(
+        count = ?result.count(),
+        "test_query_count_only: Received count"
+    );
     assert!(
         result.count().is_some(),
         "Count-only query should return count"
@@ -124,42 +150,59 @@ async fn test_query_count_only() {
         result.features().is_empty(),
         "Count-only query should not return features"
     );
+
+    tracing::info!("test_query_count_only: Completed");
+    Ok(())
 }
 
 #[tokio::test]
 #[cfg(feature = "test-public")]
-async fn test_query_specific_object_ids() {
+async fn test_query_specific_object_ids() -> anyhow::Result<()> {
+    common::init_tracing();
+    tracing::info!("test_query_specific_object_ids: Starting");
+
     let client = create_public_client();
     let service = FeatureServiceClient::new(WORLD_CITIES_SERVICE, &client);
 
     rate_limit().await;
 
     // Query by specific object IDs (may or may not exist)
+    tracing::info!("test_query_specific_object_ids: Querying for object IDs 1, 2, 3");
     let result = service
         .query(LayerId::new(0))
         .object_ids(&[ObjectId::new(1), ObjectId::new(2), ObjectId::new(3)])
         .out_fields(&["*"])
         .return_geometry(false)
         .execute()
-        .await
-        .expect("Object ID query failed");
+        .await?;
 
     // Should return at most 3 features (if those IDs exist)
+    tracing::info!(
+        feature_count = result.features().len(),
+        "test_query_specific_object_ids: Received features"
+    );
     assert!(
         result.features().len() <= 3,
         "Should return at most requested number of features"
     );
+
+    tracing::info!("test_query_specific_object_ids: Completed");
+    Ok(())
 }
 
 #[tokio::test]
 #[cfg(feature = "test-public")]
-async fn test_query_with_field_filtering() {
+async fn test_query_with_field_filtering() -> anyhow::Result<()> {
+    common::init_tracing();
+    tracing::info!("test_query_with_field_filtering: Starting");
+
     let client = create_public_client();
     let service = FeatureServiceClient::new(WORLD_CITIES_SERVICE, &client);
 
     rate_limit().await;
 
     // Query with specific fields only
+    tracing::info!("test_query_with_field_filtering: Querying with field filtering (CITY_NAME, POP)");
     let result = service
         .query(LayerId::new(0))
         .where_clause("POP > 1000000")
@@ -167,9 +210,12 @@ async fn test_query_with_field_filtering() {
         .return_geometry(false)
         .limit(5)
         .execute()
-        .await
-        .expect("Field filtering query failed");
+        .await?;
 
+    tracing::info!(
+        feature_count = result.features().len(),
+        "test_query_with_field_filtering: Received features"
+    );
     assert!(
         !result.features().is_empty(),
         "Should find cities with population > 1 million"
@@ -189,26 +235,36 @@ async fn test_query_with_field_filtering() {
         first.geometry().is_none(),
         "Should not have geometry when not requested"
     );
+
+    tracing::info!("test_query_with_field_filtering: Completed");
+    Ok(())
 }
 
 #[tokio::test]
 #[cfg(feature = "test-public")]
-async fn test_query_without_geometry() {
+async fn test_query_without_geometry() -> anyhow::Result<()> {
+    common::init_tracing();
+    tracing::info!("test_query_without_geometry: Starting");
+
     let client = create_public_client();
     let service = FeatureServiceClient::new(WORLD_CITIES_SERVICE, &client);
 
     rate_limit().await;
 
     // Query without geometry for faster response
+    tracing::info!("test_query_without_geometry: Querying without geometry");
     let result = service
         .query(LayerId::new(0))
         .where_clause("1=1")
         .return_geometry(false)
         .limit(10)
         .execute()
-        .await
-        .expect("No-geometry query failed");
+        .await?;
 
+    tracing::info!(
+        feature_count = result.features().len(),
+        "test_query_without_geometry: Received features"
+    );
     assert!(!result.features().is_empty(), "Should return features");
 
     // Verify no geometry
@@ -218,11 +274,17 @@ async fn test_query_without_geometry() {
             "Features should not have geometry when not requested"
         );
     }
+
+    tracing::info!("test_query_without_geometry: Completed");
+    Ok(())
 }
 
 #[tokio::test]
 #[cfg(feature = "test-public")]
-async fn test_query_with_limit() {
+async fn test_query_with_limit() -> anyhow::Result<()> {
+    common::init_tracing();
+    tracing::info!("test_query_with_limit: Starting");
+
     let client = create_public_client();
     let service = FeatureServiceClient::new(WORLD_CITIES_SERVICE, &client);
 
@@ -230,35 +292,53 @@ async fn test_query_with_limit() {
 
     // Query with small limit
     let limit = 3u32;
+    tracing::info!(limit = limit, "test_query_with_limit: Querying with limit");
     let result = service
         .query(LayerId::new(0))
         .where_clause("1=1")
         .limit(limit)
         .return_geometry(false)
         .execute()
-        .await
-        .expect("Limited query failed");
+        .await?;
 
     // Should respect limit
+    tracing::info!(
+        feature_count = result.features().len(),
+        limit = limit,
+        "test_query_with_limit: Received features"
+    );
     assert!(
         result.features().len() <= limit as usize,
         "Should not exceed requested limit"
     );
+
+    tracing::info!("test_query_with_limit: Completed");
+    Ok(())
 }
 
 #[tokio::test]
 #[cfg(feature = "test-public")]
-async fn test_feature_count_method() {
+async fn test_feature_count_method() -> anyhow::Result<()> {
+    common::init_tracing();
+    tracing::info!("test_feature_count_method: Starting");
+
     let client = create_public_client();
     let service = FeatureServiceClient::new(WORLD_CITIES_SERVICE, &client);
 
     rate_limit().await;
 
     // Use the dedicated count method
+    tracing::info!("test_feature_count_method: Executing count query for POP > 100000");
     let count = service
         .query_feature_count(LayerId::new(0), "POP > 100000")
-        .await
-        .expect("Count method failed");
+        .await?;
 
+    tracing::info!(
+        count = count,
+        "test_feature_count_method: Received count"
+    );
     assert!(count > 0, "Should find cities with population > 100,000");
+
+    tracing::info!("test_feature_count_method: Completed");
+    Ok(())
 }
