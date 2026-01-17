@@ -107,7 +107,6 @@ impl<'a> VersionManagementClient<'a> {
         );
 
         let url = format!("{}/versions/{}/reconcile", self.base_url, version_guid);
-        let token = self.client.auth().get_token().await?;
 
         let abort_str = if abort_if_conflicts { "true" } else { "false" };
         let with_post_str = if with_post { "true" } else { "false" };
@@ -115,18 +114,28 @@ impl<'a> VersionManagementClient<'a> {
 
         tracing::debug!(url = %url, "Sending reconcile request");
 
+            let session_id_str = session_id.to_string();
+            let mut form = vec![
+                ("sessionId", session_id_str.as_str()),
+                ("abortIfConflicts", abort_str),
+                ("conflictDetection", conflict_detection_str.as_str()),
+                ("withPost", with_post_str),
+                ("f", "json")
+            ];
+
+            // Add token if required by auth provider
+            let token_opt = self.client.get_token_if_required().await?;
+            let token_str;
+            if let Some(token) = token_opt {
+                token_str = token;
+                form.push(("token", token_str.as_str()));
+            }
+
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[
-                ("sessionId", session_id.to_string().as_str()),
-                ("abortIfConflicts", abort_str),
-                ("conflictDetection", conflict_detection_str.as_str()),
-                ("withPost", with_post_str),
-                ("f", "json"),
-                ("token", token.as_str()),
-            ])
+            .form(&form)
             .send()
             .await?;
 
@@ -293,12 +302,10 @@ impl<'a> VersionManagementClient<'a> {
         );
 
         let url = format!("{}/versions/{}/post", self.base_url, version_guid);
-        let token = self.client.auth().get_token().await?;
 
         let mut form = vec![
             ("sessionId", session_id.to_string()),
             ("f", "json".to_string()),
-            ("token", token.to_string()),
         ];
 
         // Serialize partial_rows if provided

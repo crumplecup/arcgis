@@ -64,20 +64,26 @@ impl<'a> VersionManagementClient<'a> {
         );
 
         let url = format!("{}/create", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         let access_str = params.access().to_string();
         let mut form = vec![
             ("versionName", params.version_name().as_str()),
             ("access", access_str.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
 
         if let Some(description) = params.description() {
             form.push(("description", description.as_str()));
         }
 
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
         tracing::debug!(url = %url, "Sending create request");
 
         let response = self.client.http().post(&url).form(&form).send().await?;
@@ -171,14 +177,21 @@ impl<'a> VersionManagementClient<'a> {
         tracing::debug!(version_guid = %version_guid, "Altering version");
 
         let url = format!("{}/versions/{}/alter", self.base_url, version_guid);
-        let token = self.client.auth().get_token().await?;
 
-        let mut form = vec![("f", "json"), ("token", token.as_str())];
+        let mut form = vec![("f", "json")];
 
         let version_name_str;
         if let Some(version_name) = params.version_name() {
             version_name_str = version_name.clone();
             form.push(("versionName", version_name_str.as_str()));
+        }
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
         }
 
         let access_str;
@@ -281,15 +294,25 @@ impl<'a> VersionManagementClient<'a> {
         tracing::debug!(version_guid = %version_guid, "Deleting version");
 
         let url = format!("{}/versions/{}/delete", self.base_url, version_guid);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending delete request");
+
+            let mut form = vec![
+            ];
+
+            // Add token if required by auth provider
+            let token_opt = self.client.get_token_if_required().await?;
+            let token_str;
+            if let Some(token) = token_opt {
+                token_str = token;
+                form.push(("token", token_str.as_str()));
+            }
 
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[("f", "json"), ("token", token.as_str())])
+            .form(&form)
             .send()
             .await?;
 
@@ -370,16 +393,20 @@ impl<'a> VersionManagementClient<'a> {
         tracing::debug!(version_guid = %version_guid, "Getting version info");
 
         let url = format!("{}/versions/{}", self.base_url, version_guid);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending get version info request");
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&url)
-            .query(&[("f", "json"), ("token", token.as_str())])
-            .send()
+            .query(&[("f", "json")]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send()
             .await?;
 
         let status = response.status();
@@ -444,16 +471,20 @@ impl<'a> VersionManagementClient<'a> {
         tracing::debug!("Listing all versions");
 
         let url = format!("{}/versionInfos", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending list versions request");
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&url)
-            .query(&[("f", "json"), ("token", token.as_str())])
-            .send()
+            .query(&[("f", "json")]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send()
             .await?;
 
         let status = response.status();

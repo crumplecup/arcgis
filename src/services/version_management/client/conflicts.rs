@@ -85,19 +85,28 @@ impl<'a> VersionManagementClient<'a> {
         );
 
         let url = format!("{}/versions/{}/conflicts", self.base_url, version_guid);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending conflicts request");
+
+            let session_id_str = session_id.to_string();
+            let mut form = vec![
+                ("sessionId", session_id_str.as_str()),
+                ("f", "json")
+            ];
+
+            // Add token if required by auth provider
+            let token_opt = self.client.get_token_if_required().await?;
+            let token_str;
+            if let Some(token) = token_opt {
+                token_str = token;
+                form.push(("token", token_str.as_str()));
+            }
 
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[
-                ("sessionId", session_id.to_string().as_str()),
-                ("f", "json"),
-                ("token", token.as_str()),
-            ])
+            .form(&form)
             .send()
             .await?;
 
@@ -237,7 +246,6 @@ impl<'a> VersionManagementClient<'a> {
             "{}/versions/{}/inspectConflicts",
             self.base_url, version_guid
         );
-        let token = self.client.auth().get_token().await?;
 
         let inspect_all_str = if inspect_all { "true" } else { "false" };
         let set_inspected_str = if set_inspected { "true" } else { "false" };
@@ -247,7 +255,6 @@ impl<'a> VersionManagementClient<'a> {
             ("inspectAll", inspect_all_str.to_string()),
             ("setInspected", set_inspected_str.to_string()),
             ("f", "json".to_string()),
-            ("token", token.to_string()),
         ];
 
         // Serialize conflicts if provided and not inspecting all
@@ -387,7 +394,6 @@ impl<'a> VersionManagementClient<'a> {
         );
 
         let url = format!("{}/versions/{}/restoreRows", self.base_url, version_guid);
-        let token = self.client.auth().get_token().await?;
 
         // Serialize rows
         let rows_json = serde_json::to_string(&rows)?;
@@ -398,7 +404,6 @@ impl<'a> VersionManagementClient<'a> {
             ("sessionId", session_id.to_string()),
             ("rows", rows_json),
             ("f", "json".to_string()),
-            ("token", token.to_string()),
         ];
 
         let form_refs: Vec<(&str, &str)> = form.iter().map(|(k, v)| (*k, v.as_str())).collect();

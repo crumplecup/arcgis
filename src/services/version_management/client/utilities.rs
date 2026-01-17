@@ -94,20 +94,30 @@ impl<'a> VersionManagementClient<'a> {
             "{}/versions/{}/deleteForwardEdits",
             self.base_url, version_guid
         );
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending delete forward edits request");
+
+            let session_id_str = session_id.to_string();
+            let moment_str = moment.to_string();
+            let mut form = vec![
+                ("sessionId", session_id_str.as_str()),
+                ("moment", moment_str.as_str()),
+                ("f", "json")
+            ];
+
+            // Add token if required by auth provider
+            let token_opt = self.client.get_token_if_required().await?;
+            let token_str;
+            if let Some(token) = token_opt {
+                token_str = token;
+                form.push(("token", token_str.as_str()));
+            }
 
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[
-                ("sessionId", session_id.to_string().as_str()),
-                ("moment", moment.to_string().as_str()),
-                ("f", "json"),
-                ("token", token.as_str()),
-            ])
+            .form(&form)
             .send()
             .await?;
 
@@ -230,14 +240,12 @@ impl<'a> VersionManagementClient<'a> {
         );
 
         let url = format!("{}/versions/{}/differences", self.base_url, version_guid);
-        let token = self.client.auth().get_token().await?;
 
         let result_type_str = result_type.to_string();
 
         let mut form = vec![
             ("resultType", result_type_str),
             ("f", "json".to_string()),
-            ("token", token.to_string()),
         ];
 
         // Add session ID if provided

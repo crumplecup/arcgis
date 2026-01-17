@@ -117,23 +117,25 @@ impl<'a> GeocodeServiceClient<'a> {
         tracing::debug!(address = %address, "Finding address candidates");
 
         let url = format!("{}/findAddressCandidates", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending findAddressCandidates request");
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&url)
             .query(&[
                 ("SingleLine", address.as_str()),
                 ("f", "json"),
-                ("token", token.as_str()),
                 ("outFields", "*"),
                 ("maxLocations", "50"),
-            ])
-            .send()
-            .await?;
+            ]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -196,13 +198,12 @@ impl<'a> GeocodeServiceClient<'a> {
         tracing::debug!(address = %address, "Finding address candidates with options");
 
         let url = format!("{}/findAddressCandidates", self.base_url);
-        let token = self.client.auth().get_token().await?;
+
 
         let max_locs = max_locations.unwrap_or(50).to_string();
         let mut params = vec![
             ("SingleLine", address.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
             ("outFields", "*"),
             ("maxLocations", max_locs.as_str()),
         ];
@@ -218,7 +219,13 @@ impl<'a> GeocodeServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending findAddressCandidates request");
 
-        let response = self.client.http().get(&url).query(&params).send().await?;
+        let mut request = self.client.http().get(&url).query(&params);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -285,11 +292,10 @@ impl<'a> GeocodeServiceClient<'a> {
         tracing::debug!(address = %address, out_sr = out_sr, "Finding address candidates with custom SR");
 
         let url = format!("{}/findAddressCandidates", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending findAddressCandidates request");
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&url)
@@ -297,12 +303,15 @@ impl<'a> GeocodeServiceClient<'a> {
                 ("SingleLine", address.as_str()),
                 ("outSR", out_sr.to_string().as_str()),
                 ("f", "json"),
-                ("token", token.as_str()),
                 ("outFields", "*"),
                 ("maxLocations", "50"),
-            ])
-            .send()
-            .await?;
+            ]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -366,23 +375,25 @@ impl<'a> GeocodeServiceClient<'a> {
         tracing::debug!(x = location.x, y = location.y, "Reverse geocoding location");
 
         let url = format!("{}/reverseGeocode", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         let location_str = format!("{},{}", location.x, location.y);
 
         tracing::debug!(url = %url, location = %location_str, "Sending reverseGeocode request");
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&url)
             .query(&[
                 ("location", location_str.as_str()),
                 ("f", "json"),
-                ("token", token.as_str()),
-            ])
-            .send()
-            .await?;
+            ]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -455,13 +466,12 @@ impl<'a> GeocodeServiceClient<'a> {
         );
 
         let url = format!("{}/reverseGeocode", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         let location_str = format!("{},{}", location.x, location.y);
 
         tracing::debug!(url = %url, location = %location_str, "Sending reverseGeocode request");
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&url)
@@ -469,10 +479,13 @@ impl<'a> GeocodeServiceClient<'a> {
                 ("location", location_str.as_str()),
                 ("outSR", out_sr.to_string().as_str()),
                 ("f", "json"),
-                ("token", token.as_str()),
-            ])
-            .send()
-            .await?;
+            ]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -531,21 +544,23 @@ impl<'a> GeocodeServiceClient<'a> {
         tracing::debug!(text = %text, "Getting autocomplete suggestions");
 
         let url = format!("{}/suggest", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending suggest request");
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&url)
             .query(&[
                 ("text", text.as_str()),
                 ("f", "json"),
-                ("token", token.as_str()),
-            ])
-            .send()
-            .await?;
+            ]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -612,11 +627,10 @@ impl<'a> GeocodeServiceClient<'a> {
         tracing::debug!(text = %text, category = ?category, "Getting category-filtered suggestions");
 
         let url = format!("{}/suggest", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending suggest request with category filter");
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&url)
@@ -624,10 +638,13 @@ impl<'a> GeocodeServiceClient<'a> {
                 ("text", text.as_str()),
                 ("category", category.as_str()),
                 ("f", "json"),
-                ("token", token.as_str()),
-            ])
-            .send()
-            .await?;
+            ]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -688,7 +705,6 @@ impl<'a> GeocodeServiceClient<'a> {
         tracing::debug!("Batch geocoding addresses");
 
         let url = format!("{}/geocodeAddresses", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         let addresses_json = serde_json::json!({
             "records": addresses
@@ -696,15 +712,25 @@ impl<'a> GeocodeServiceClient<'a> {
 
         tracing::debug!(url = %url, count = addresses.len(), "Sending geocodeAddresses request");
 
+        let addresses_str = addresses_json.to_string();
+        let mut form = vec![
+            ("addresses", addresses_str.as_str()),
+            ("f", "json"),
+        ];
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
+
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[
-                ("addresses", addresses_json.to_string().as_str()),
-                ("f", "json"),
-                ("token", token.as_str()),
-            ])
+            .form(&form)
             .send()
             .await?;
 
@@ -766,7 +792,6 @@ impl<'a> GeocodeServiceClient<'a> {
         tracing::debug!("Finding address candidates in batch");
 
         let url = format!("{}/findAddressCandidates", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         let addresses_json = serde_json::json!({
             "records": addresses
@@ -774,15 +799,25 @@ impl<'a> GeocodeServiceClient<'a> {
 
         tracing::debug!(url = %url, count = addresses.len(), "Sending findAddressCandidates batch request");
 
+        let addresses_str = addresses_json.to_string();
+        let mut form = vec![
+            ("addresses", addresses_str.as_str()),
+            ("f", "json"),
+        ];
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
+
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[
-                ("addresses", addresses_json.to_string().as_str()),
-                ("f", "json"),
-                ("token", token.as_str()),
-            ])
+            .form(&form)
             .send()
             .await?;
 

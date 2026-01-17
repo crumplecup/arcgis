@@ -166,16 +166,22 @@ impl<'a> GeometryServiceClient<'a> {
         tracing::debug!("Projecting geometries with params");
 
         let url = format!("{}/project", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending project request");
 
         let params_json = serde_json::to_string(&params)?;
-        let form = vec![
+        let mut form = vec![
             ("geometries", params_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
 
@@ -250,16 +256,22 @@ impl<'a> GeometryServiceClient<'a> {
         tracing::debug!("Buffering geometries");
 
         let url = format!("{}/buffer", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending buffer request");
 
         let params_json = serde_json::to_string(&params)?;
-        let form = vec![
+        let mut form = vec![
             ("bufferParameters", params_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
 
@@ -324,7 +336,6 @@ impl<'a> GeometryServiceClient<'a> {
         tracing::debug!("Finding datum transformations");
 
         let url = format!("{}/findTransformations", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending findTransformations request");
 
@@ -332,8 +343,15 @@ impl<'a> GeometryServiceClient<'a> {
             ("inSR", in_sr.to_string()),
             ("outSR", out_sr.to_string()),
             ("f", "json".to_string()),
-            ("token", token.to_string()),
         ];
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str));
+        }
 
         if let Some(extent) = extent_of_interest {
             let extent_json = serde_json::to_string(&extent)?;
@@ -429,16 +447,22 @@ impl<'a> GeometryServiceClient<'a> {
         tracing::debug!("Simplifying geometries");
 
         let url = format!("{}/simplify", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending simplify request");
 
         let params_json = serde_json::to_string(&params)?;
-        let form = vec![
+        let mut form = vec![
             ("geometries", params_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
 
@@ -523,16 +547,22 @@ impl<'a> GeometryServiceClient<'a> {
         tracing::debug!("Unioning geometries");
 
         let url = format!("{}/union", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending union request");
 
         let params_json = serde_json::to_string(&params)?;
-        let form = vec![
+        let mut form = vec![
             ("geometries", params_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
 
@@ -610,16 +640,22 @@ impl<'a> GeometryServiceClient<'a> {
         tracing::debug!("Calculating areas and lengths");
 
         let url = format!("{}/areasAndLengths", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending areasAndLengths request");
 
         let params_json = serde_json::to_string(&params)?;
-        let form = vec![
+        let mut form = vec![
             ("polygons", params_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
 
@@ -702,16 +738,22 @@ impl<'a> GeometryServiceClient<'a> {
         tracing::debug!("Calculating distance");
 
         let url = format!("{}/distance", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending distance request");
 
         let params_json = serde_json::to_string(&params)?;
-        let form = vec![
+        let mut form = vec![
             ("geometry1", params_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
 
