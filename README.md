@@ -89,6 +89,8 @@ A type-safe Rust SDK for the [ArcGIS REST API](https://developers.arcgis.com/res
 
 ## Quick Start
 
+### 1. Add Dependency
+
 Add to your `Cargo.toml`:
 
 ```toml
@@ -97,15 +99,37 @@ arcgis = "0.1"
 tokio = { version = "1", features = ["full"] }
 ```
 
-### Query Features
+### 2. Set Up Credentials
+
+Create a `.env` file in your project root (automatically loaded by the SDK):
+
+```bash
+cp .env.example .env
+```
+
+Add your credentials to `.env`:
+
+```env
+ARCGIS_API_KEY=your_api_key_here
+```
+
+**Important**: Add `.env` to your `.gitignore` to keep credentials out of version control!
+
+Get your API key from the [ArcGIS Developer Dashboard](https://developers.arcgis.com/).
+
+### 3. Query Features
 
 ```rust
 use arcgis::{ApiKeyAuth, ArcGISClient, FeatureServiceClient, LayerId};
 
 #[tokio::main]
 async fn main() -> arcgis::Result<()> {
+    // Load API key from environment (.env is automatically loaded)
+    let api_key = std::env::var("ARCGIS_API_KEY")
+        .expect("ARCGIS_API_KEY must be set in .env");
+
     // Create authenticated client
-    let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    let auth = ApiKeyAuth::new(api_key);
     let client = ArcGISClient::new(auth);
 
     // Connect to a feature service
@@ -173,6 +197,8 @@ params.spatial_rel = SpatialRel::Intersects;    // Typos = compile errors!
 
 ## Authentication
 
+The SDK automatically loads credentials from a `.env` file when you create a client. This keeps your API keys and secrets out of your code and version control.
+
 ### API Key (Simplest)
 
 Best for development, testing, and simple applications:
@@ -180,7 +206,11 @@ Best for development, testing, and simple applications:
 ```rust
 use arcgis::{ApiKeyAuth, ArcGISClient};
 
-let auth = ApiKeyAuth::new("YOUR_API_KEY");
+// Load API key from environment (.env automatically loaded)
+let api_key = std::env::var("ARCGIS_API_KEY")
+    .expect("ARCGIS_API_KEY must be set in .env");
+
+let auth = ApiKeyAuth::new(api_key);
 let client = ArcGISClient::new(auth);
 ```
 
