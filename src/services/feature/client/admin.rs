@@ -35,11 +35,22 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!("Truncating layer");
 
         let url = format!("{}/{}/truncate", self.base_url, layer_id);
-        let token = self.client.auth().get_token().await?;
+        // Build form data
 
-        tracing::debug!(url = %url, "Sending truncate request");
+        let mut form = vec![("f", "json")];
 
-        let form = vec![("f", "json"), ("token", token.as_str())];
+
+        // Add token if required by auth provider
+
+        let token_value;
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+
+            token_value = token;
+
+            form.push(("token", token_value.as_str()));
+
+        }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
 
@@ -92,7 +103,6 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!("Querying domains");
 
         let url = format!("{}/queryDomains", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         let layers_str = layers
             .iter()
@@ -102,7 +112,15 @@ impl<'a> FeatureServiceClient<'a> {
 
         tracing::debug!(url = %url, layers = %layers_str, "Sending queryDomains request");
 
-        let mut form = vec![("f", "json"), ("token", token.as_str())];
+        let mut form = vec![("f", "json")];
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
         if !layers_str.is_empty() {
             form.push(("layers", &layers_str));

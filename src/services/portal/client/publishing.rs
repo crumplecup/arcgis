@@ -43,7 +43,6 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/content/users/{{username}}/publish", self.base_url);
 
         // Get authentication token and user info
-        let token = self.client.auth().get_token().await?;
         let user = self.get_self().await?;
         let url = url.replace("{username}", user.username());
 
@@ -108,9 +107,8 @@ impl<'a> PortalClient<'a> {
         }
 
         // Build form data
-        let form = reqwest::multipart::Form::new()
+        let mut form = reqwest::multipart::Form::new()
             .text("f", "json")
-            .text("token", token.clone())
             .text("itemId", item_id.to_string())
             .text("filetype", "serviceDefinition")
             .text(
@@ -119,6 +117,15 @@ impl<'a> PortalClient<'a> {
             );
 
         // Build request
+        // Add token if required by auth provider
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+
+            form = form.text("token", token);
+
+        }
+
+
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
         // Check for HTTP errors
@@ -175,20 +182,21 @@ impl<'a> PortalClient<'a> {
         );
 
         // Get authentication token and user info
-        let token = self.client.auth().get_token().await?;
         let user = self.get_self().await?;
         let url = url.replace("{username}", user.username());
 
         tracing::debug!(url = %url, "Sending getPublishStatus request");
 
         // Build request
-        let response = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[("f", "json"), ("token", &token)])
-            .send()
-            .await?;
+        let mut request = self.client.http().get(&url).query(&[("f", "json")]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+
+            request = request.query(&[("token", token)]);
+
+        }
+
+        let response = request.send().await?;
 
         // Check for HTTP errors
         let status = response.status();
@@ -256,14 +264,11 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/updateDefinition", service_url);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending updateServiceDefinition request");
 
         // Build update parameters
         let mut form = reqwest::multipart::Form::new()
-            .text("f", "json")
-            .text("token", token.clone());
+            .text("f", "json");
 
         if let Some(def) = params.service_definition() {
             form = form.text("updateDefinition", def.to_string());
@@ -282,6 +287,15 @@ impl<'a> PortalClient<'a> {
         }
 
         // Build request
+        // Add token if required by auth provider
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+
+            form = form.text("token", token);
+
+        }
+
+
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
         // Check for HTTP errors
@@ -373,7 +387,6 @@ impl<'a> PortalClient<'a> {
         );
 
         // Get authentication token and user info
-        let token = self.client.auth().get_token().await?;
         let user = self.get_self().await?;
         let url = url.replace("{username}", user.username());
 
@@ -382,7 +395,6 @@ impl<'a> PortalClient<'a> {
         // Build form data
         let mut form = reqwest::multipart::Form::new()
             .text("f", "json")
-            .text("token", token.clone())
             .text("sourceItemId", params.source_item_id().to_string())
             .text("overwrite", "true");
 
@@ -391,6 +403,15 @@ impl<'a> PortalClient<'a> {
         }
 
         // Build request
+        // Add token if required by auth provider
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+
+            form = form.text("token", token);
+
+        }
+
+
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
         // Check for HTTP errors

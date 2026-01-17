@@ -50,17 +50,14 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!("Querying attachments for feature");
 
         let url = format!("{}/{}/{}/attachments", self.base_url, layer_id, object_id);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending queryAttachments request");
 
-        let response = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[("f", "json"), ("token", token.as_str())])
-            .send()
-            .await?;
+        let mut request = self.client.http().get(&url).query(&[("f", "json")]);
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -130,8 +127,6 @@ impl<'a> FeatureServiceClient<'a> {
             "{}/{}/{}/deleteAttachments",
             self.base_url, layer_id, object_id
         );
-        let token = self.client.auth().get_token().await?;
-
         // Convert AttachmentIds to comma-separated string
         let attachment_ids_str = attachment_ids
             .iter()
@@ -145,11 +140,18 @@ impl<'a> FeatureServiceClient<'a> {
             "Sending deleteAttachments request"
         );
 
-        let form = vec![
+        let mut form = vec![
             ("attachmentIds", attachment_ids_str.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
 
@@ -239,8 +241,6 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!("Adding attachment to feature");
 
         let url = format!("{}/{}/{}/addAttachment", self.base_url, layer_id, object_id);
-        let token = self.client.auth().get_token().await?;
-
         // Build multipart form
         let mut form = reqwest::multipart::Form::new();
 
@@ -333,7 +333,11 @@ impl<'a> FeatureServiceClient<'a> {
 
         // Add standard parameters
         form = form.text("f", "json");
-        form = form.text("token", token);
+
+        // Add token if required by auth provider
+        if let Some(token) = self.client.get_token_if_required().await? {
+            form = form.text("token", token);
+        }
 
         tracing::debug!(url = %url, "Sending addAttachment request");
 
@@ -414,8 +418,6 @@ impl<'a> FeatureServiceClient<'a> {
             "{}/{}/{}/updateAttachment",
             self.base_url, layer_id, object_id
         );
-        let token = self.client.auth().get_token().await?;
-
         // Build multipart form
         let mut form = reqwest::multipart::Form::new();
 
@@ -506,7 +508,11 @@ impl<'a> FeatureServiceClient<'a> {
 
         // Add standard parameters
         form = form.text("f", "json");
-        form = form.text("token", token);
+
+        // Add token if required by auth provider
+        if let Some(token) = self.client.get_token_if_required().await? {
+            form = form.text("token", token);
+        }
 
         tracing::debug!(url = %url, "Sending updateAttachment request");
 
@@ -604,17 +610,13 @@ impl<'a> FeatureServiceClient<'a> {
             "{}/{}/{}/attachments/{}",
             self.base_url, layer_id, object_id, attachment_id
         );
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending download request");
 
-        let response = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[("token", token.as_str())])
-            .send()
-            .await?;
+        let mut request = self.client.http().get(&url);
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {

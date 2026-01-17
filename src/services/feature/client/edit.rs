@@ -52,7 +52,6 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!("Adding features to layer");
 
         let url = format!("{}/{}/addFeatures", self.base_url, layer_id);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, feature_count = features.len(), "Sending addFeatures request");
 
@@ -61,7 +60,6 @@ impl<'a> FeatureServiceClient<'a> {
         let mut form = vec![
             ("features", features_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
 
         // Add optional parameters
@@ -83,6 +81,14 @@ impl<'a> FeatureServiceClient<'a> {
                 "returnEditResults",
                 if return_results { "true" } else { "false" },
             ));
+        }
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
         }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
@@ -157,7 +163,6 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!("Updating features in layer");
 
         let url = format!("{}/{}/updateFeatures", self.base_url, layer_id);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, feature_count = features.len(), "Sending updateFeatures request");
 
@@ -166,7 +171,6 @@ impl<'a> FeatureServiceClient<'a> {
         let mut form = vec![
             ("features", features_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
 
         // Add optional parameters
@@ -188,6 +192,14 @@ impl<'a> FeatureServiceClient<'a> {
                 "returnEditResults",
                 if return_results { "true" } else { "false" },
             ));
+        }
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
         }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
@@ -254,7 +266,6 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!("Deleting features from layer");
 
         let url = format!("{}/{}/deleteFeatures", self.base_url, layer_id);
-        let token = self.client.auth().get_token().await?;
 
         // Convert ObjectIds to comma-separated string
         let object_ids_str = object_ids
@@ -269,7 +280,6 @@ impl<'a> FeatureServiceClient<'a> {
         let mut form = vec![
             ("objectIds", object_ids_str.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
 
         // Add optional parameters
@@ -284,6 +294,14 @@ impl<'a> FeatureServiceClient<'a> {
                 "returnEditResults",
                 if return_results { "true" } else { "false" },
             ));
+        }
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
         }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
@@ -393,7 +411,6 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!("Applying batch edits to layer");
 
         let url = format!("{}/{}/applyEdits", self.base_url, layer_id);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending applyEdits request");
 
@@ -408,7 +425,7 @@ impl<'a> FeatureServiceClient<'a> {
         });
 
         // Build form data with references to owned strings
-        let mut form: Vec<(&str, &str)> = vec![("f", "json"), ("token", token.as_str())];
+        let mut form: Vec<(&str, &str)> = vec![("f", "json")];
 
         if let Some(ref adds) = adds_json {
             form.push(("adds", adds.as_str()));
@@ -439,6 +456,14 @@ impl<'a> FeatureServiceClient<'a> {
                 "returnEditResults",
                 if return_results { "true" } else { "false" },
             ));
+        }
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
         }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
@@ -520,7 +545,6 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!("Calculating field values");
 
         let url = format!("{}/{}/calculate", self.base_url, layer_id);
-        let token = self.client.auth().get_token().await?;
 
         let where_str = where_clause.into();
         let calc_json = serde_json::to_string(&calc_expression)?;
@@ -531,7 +555,6 @@ impl<'a> FeatureServiceClient<'a> {
             ("where", where_str.as_str()),
             ("calcExpression", calc_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
 
         // Add optional parameters
@@ -544,6 +567,14 @@ impl<'a> FeatureServiceClient<'a> {
         }
         if let Some(rollback) = options.rollback_on_failure {
             form.push(("rollbackOnFailure", if rollback { "true" } else { "false" }));
+        }
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
         }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
@@ -641,7 +672,6 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!("Applying batch edits to layer using global IDs");
 
         let url = format!("{}/{}/applyEdits", self.base_url, layer_id);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending applyEdits (global IDs) request");
 
@@ -653,7 +683,6 @@ impl<'a> FeatureServiceClient<'a> {
         // Build form data with references to owned strings
         let mut form: Vec<(&str, &str)> = vec![
             ("f", "json"),
-            ("token", token.as_str()),
             ("useGlobalIds", "true"),
         ];
 
@@ -677,6 +706,14 @@ impl<'a> FeatureServiceClient<'a> {
         }
         if let Some(rollback) = options.rollback_on_failure {
             form.push(("rollbackOnFailure", if rollback { "true" } else { "false" }));
+        }
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
         }
 
         let response = self.client.http().post(&url).form(&form).send().await?;

@@ -43,8 +43,6 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/search", self.base_url);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending search request");
 
         // Build query parameters
@@ -64,8 +62,11 @@ impl<'a> PortalClient<'a> {
             #[serde(skip_serializing_if = "Option::is_none")]
             num: Option<u32>,
             f: &'static str,
-            token: &'a str,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            token: Option<String>,
         }
+
+        let token_opt = self.client.get_token_if_required().await?;
 
         let query = SearchQuery {
             q: params.query(),
@@ -84,7 +85,7 @@ impl<'a> PortalClient<'a> {
             start: *params.start(),
             num: *params.num(),
             f: "json",
-            token: &token,
+            token: token_opt,
         };
 
         // Build request

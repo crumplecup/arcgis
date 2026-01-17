@@ -29,19 +29,17 @@ impl<'a> PortalClient<'a> {
 
         let url = format!("{}/community/self", self.base_url);
 
-        // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending getSelf request");
 
-        // Build request
-        let response = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[("f", "json"), ("token", &token)])
-            .send()
-            .await?;
+        // Build request with query parameters
+        let mut request = self.client.http().get(&url).query(&[("f", "json")]);
+
+        // Add token if required by auth provider
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         // Check for HTTP errors
         let status = response.status();

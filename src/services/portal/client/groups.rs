@@ -37,8 +37,6 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/community/groups", self.base_url);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending searchGroups request");
 
         // Build query parameters
@@ -54,8 +52,12 @@ impl<'a> PortalClient<'a> {
             #[serde(skip_serializing_if = "Option::is_none")]
             num: Option<u32>,
             f: &'static str,
-            token: &'a str,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            token: Option<String>,
         }
+
+
+        let token_opt = self.client.get_token_if_required().await?;
 
         let query = GroupSearchQuery {
             q: params.query(),
@@ -67,7 +69,7 @@ impl<'a> PortalClient<'a> {
             start: *params.start(),
             num: *params.num(),
             f: "json",
-            token: &token,
+            token: token_opt,
         };
 
         // Build request
@@ -123,18 +125,14 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/community/groups/{}", self.base_url, group_id);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending getGroup request");
 
         // Build request
-        let response = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[("f", "json"), ("token", &token)])
-            .send()
-            .await?;
+        let mut request = self.client.http().get(&url).query(&[("f", "json")]);
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+        let response = request.send().await?;
 
         // Check for HTTP errors
         let status = response.status();
@@ -182,15 +180,17 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/community/createGroup", self.base_url);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending createGroup request");
 
         // Build form data
         let mut form = reqwest::multipart::Form::new()
             .text("f", "json")
-            .text("token", token.clone())
             .text("title", params.title().to_string());
+
+        // Add token if required by auth provider
+        if let Some(token) = self.client.get_token_if_required().await? {
+            form = form.text("token", token);
+        }
 
         if let Some(desc) = params.description() {
             form = form.text("description", desc.to_string());
@@ -281,14 +281,16 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/community/groups/{}/update", self.base_url, group_id);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending updateGroup request");
 
         // Build form data
         let mut form = reqwest::multipart::Form::new()
-            .text("f", "json")
-            .text("token", token.clone());
+            .text("f", "json");
+
+        // Add token if required by auth provider
+        if let Some(token) = self.client.get_token_if_required().await? {
+            form = form.text("token", token);
+        }
 
         if let Some(title) = params.title() {
             form = form.text("title", title.to_string());
@@ -373,16 +375,32 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/community/groups/{}/delete", self.base_url, group_id);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending deleteGroup request");
 
         // Build request
+        let mut form_data = vec![("f", "json")];
+
+
+        // Add token if required by auth provider
+
+        let token_opt = self.client.get_token_if_required().await?;
+
+        let token_str;
+
+        if let Some(token) = token_opt {
+
+            token_str = token;
+
+            form_data.push(("token", token_str.as_str()));
+
+        }
+
+
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[("f", "json"), ("token", &token)])
+            .form(&form_data)
             .send()
             .await?;
 
@@ -428,16 +446,32 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/community/groups/{}/join", self.base_url, group_id);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending joinGroup request");
 
         // Build request
+        let mut form_data = vec![("f", "json")];
+
+
+        // Add token if required by auth provider
+
+        let token_opt = self.client.get_token_if_required().await?;
+
+        let token_str;
+
+        if let Some(token) = token_opt {
+
+            token_str = token;
+
+            form_data.push(("token", token_str.as_str()));
+
+        }
+
+
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[("f", "json"), ("token", &token)])
+            .form(&form_data)
             .send()
             .await?;
 
@@ -483,16 +517,32 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/community/groups/{}/leave", self.base_url, group_id);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending leaveGroup request");
 
         // Build request
+        let mut form_data = vec![("f", "json")];
+
+
+        // Add token if required by auth provider
+
+        let token_opt = self.client.get_token_if_required().await?;
+
+        let token_str;
+
+        if let Some(token) = token_opt {
+
+            token_str = token;
+
+            form_data.push(("token", token_str.as_str()));
+
+        }
+
+
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[("f", "json"), ("token", &token)])
+            .form(&form_data)
             .send()
             .await?;
 
@@ -543,16 +593,32 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/content/items/{}/share", self.base_url, item_id);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending addToGroup request");
 
         // Build request
+        let mut form_data = vec![("f", "json"), ("groups", group_id)];
+
+
+        // Add token if required by auth provider
+
+        let token_opt = self.client.get_token_if_required().await?;
+
+        let token_str;
+
+        if let Some(token) = token_opt {
+
+            token_str = token;
+
+            form_data.push(("token", token_str.as_str()));
+
+        }
+
+
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[("f", "json"), ("token", &token), ("groups", group_id)])
+            .form(&form_data)
             .send()
             .await?;
 
@@ -603,16 +669,32 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/content/items/{}/unshare", self.base_url, item_id);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending removeFromGroup request");
 
         // Build request
+        let mut form_data = vec![("f", "json"), ("groups", group_id)];
+
+
+        // Add token if required by auth provider
+
+        let token_opt = self.client.get_token_if_required().await?;
+
+        let token_str;
+
+        if let Some(token) = token_opt {
+
+            token_str = token;
+
+            form_data.push(("token", token_str.as_str()));
+
+        }
+
+
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[("f", "json"), ("token", &token), ("groups", group_id)])
+            .form(&form_data)
             .send()
             .await?;
 

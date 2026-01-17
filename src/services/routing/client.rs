@@ -115,7 +115,6 @@ impl<'a> RoutingServiceClient<'a> {
         tracing::debug!("Solving route");
 
         let url = format!("{}/solve", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending route solve request");
 
@@ -137,7 +136,6 @@ impl<'a> RoutingServiceClient<'a> {
         let mut form = vec![
             ("stops", stops_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
 
         // Add optional parameters
@@ -158,6 +156,14 @@ impl<'a> RoutingServiceClient<'a> {
         }
         if let Some(ref out_sr) = out_sr_str {
             form.push(("outSR", out_sr.as_str()));
+        }
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
         }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
@@ -231,7 +237,6 @@ impl<'a> RoutingServiceClient<'a> {
         tracing::debug!("Solving service area");
 
         let url = format!("{}/solveServiceArea", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending service area solve request");
 
@@ -256,11 +261,18 @@ impl<'a> RoutingServiceClient<'a> {
             ("facilities", facilities_json.as_str()),
             ("defaultBreaks", breaks_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
 
         if let Some(ref out_sr) = out_sr_str {
             form.push(("outSR", out_sr.as_str()));
+        }
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
         }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
@@ -347,7 +359,6 @@ impl<'a> RoutingServiceClient<'a> {
         tracing::debug!("Solving closest facility");
 
         let url = format!("{}/solveClosestFacility", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending closest facility solve request");
 
@@ -383,7 +394,6 @@ impl<'a> RoutingServiceClient<'a> {
             ("incidents", incidents_json.as_str()),
             ("facilities", facilities_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
 
         if let Some(ref out_sr) = out_sr_str {
@@ -397,6 +407,14 @@ impl<'a> RoutingServiceClient<'a> {
                 "returnRoutes",
                 if *return_routes { "true" } else { "false" },
             ));
+        }
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
         }
 
         let response = self.client.http().post(&url).form(&form).send().await?;
@@ -481,7 +499,6 @@ impl<'a> RoutingServiceClient<'a> {
         tracing::debug!("Generating OD cost matrix");
 
         let url = format!("{}/generateOriginDestinationCostMatrix", self.base_url);
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending OD cost matrix request");
 
@@ -514,11 +531,18 @@ impl<'a> RoutingServiceClient<'a> {
             ("origins", origins_json.as_str()),
             ("destinations", destinations_json.as_str()),
             ("f", "json"),
-            ("token", token.as_str()),
         ];
 
         if let Some(ref out_sr) = out_sr_str {
             form.push(("outSR", out_sr.as_str()));
+        }
+
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
         }
 
         let response = self.client.http().post(&url).form(&form).send().await?;

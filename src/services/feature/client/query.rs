@@ -45,20 +45,17 @@ impl<'a> FeatureServiceClient<'a> {
         // Construct the query URL
         let url = format!("{}/{}/query", self.base_url, layer_id);
 
-        // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending query request");
 
-        // Build request with query parameters and token
-        let response = self
-            .client
-            .http()
-            .get(&url)
-            .query(&params)
-            .query(&[("token", token)])
-            .send()
-            .await?;
+        // Build request with query parameters
+        let mut request = self.client.http().get(&url).query(&params);
+
+        // Add token if required by auth provider
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         // Check for HTTP errors
         let status = response.status();
@@ -148,20 +145,17 @@ impl<'a> FeatureServiceClient<'a> {
         // Construct the URL
         let url = format!("{}/{}/queryRelatedRecords", self.base_url, layer_id);
 
-        // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending query related records request");
 
-        // Build request with query parameters and token
-        let response = self
-            .client
-            .http()
-            .get(&url)
-            .query(&params)
-            .query(&[("token", token)])
-            .send()
-            .await?;
+        // Build request with query parameters
+        let mut request = self.client.http().get(&url).query(&params);
+
+        // Add token if required by auth provider
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         // Check for HTTP errors
         let status = response.status();
@@ -242,20 +236,17 @@ impl<'a> FeatureServiceClient<'a> {
         // Construct the URL
         let url = format!("{}/{}/queryTopFeatures", self.base_url, layer_id);
 
-        // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         tracing::debug!(url = %url, "Sending query top features request");
 
-        // Build request with query parameters and token
-        let response = self
-            .client
-            .http()
-            .get(&url)
-            .query(&params)
-            .query(&[("token", token)])
-            .send()
-            .await?;
+        // Build request with query parameters
+        let mut request = self.client.http().get(&url).query(&params);
+
+        // Add token if required by auth provider
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         // Check for HTTP errors
         let status = response.status();

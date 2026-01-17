@@ -46,6 +46,35 @@ impl ArcGISClient {
             auth: Arc::new(auth),
         }
     }
+
+    /// Gets authentication token if required by the provider.
+    ///
+    /// Returns `Some(token)` if the auth provider requires token parameters
+    /// (e.g., ApiKeyAuth, ClientCredentials), or `None` for providers that
+    /// don't require tokens (e.g., NoAuth for public services).
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ArcGISClient, NoAuth};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let client = ArcGISClient::new(NoAuth);
+    /// let token = client.get_token_if_required().await?;
+    /// assert!(token.is_none()); // NoAuth returns None
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self))]
+    pub async fn get_token_if_required(&self) -> crate::Result<Option<String>> {
+        if self.auth.requires_token_param() {
+            tracing::debug!("Auth provider requires token, retrieving");
+            Ok(Some(self.auth.get_token().await?))
+        } else {
+            tracing::debug!("Auth provider does not require token");
+            Ok(None)
+        }
+    }
 }
 
 // TODO: Add request/response helpers

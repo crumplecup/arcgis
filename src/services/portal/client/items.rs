@@ -32,18 +32,19 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/content/items/{}", self.base_url, item_id);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending getItem request");
 
         // Build request
-        let response = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[("f", "json"), ("token", &token)])
-            .send()
-            .await?;
+        let mut request = self.client.http().get(&url).query(&[("f", "json")]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+
+            request = request.query(&[("token", token)]);
+
+        }
+
+        let response = request.send().await?;
 
         // Check for HTTP errors
         let status = response.status();
@@ -90,7 +91,6 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(title = %params.title(), item_type = %params.item_type(), "Adding item");
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
 
         // We need the username to construct the URL
         let user = self.get_self().await?;
@@ -105,7 +105,6 @@ impl<'a> PortalClient<'a> {
         // Build form data
         let mut form = reqwest::multipart::Form::new()
             .text("f", "json")
-            .text("token", token.clone())
             .text("title", params.title().to_string())
             .text("type", params.item_type().to_string());
 
@@ -152,6 +151,15 @@ impl<'a> PortalClient<'a> {
         }
 
         // Build request
+        // Add token if required by auth provider
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+
+            form = form.text("token", token);
+
+        }
+
+
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
         // Check for HTTP errors
@@ -204,7 +212,6 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(item_id = %item_id, "Updating item");
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
 
         // Get the item to find its owner
         let item = self.get_item(item_id).await?;
@@ -219,8 +226,7 @@ impl<'a> PortalClient<'a> {
 
         // Build form data
         let mut form = reqwest::multipart::Form::new()
-            .text("f", "json")
-            .text("token", token.clone());
+            .text("f", "json");
 
         if let Some(title) = params.title() {
             form = form.text("title", title.to_string());
@@ -264,6 +270,15 @@ impl<'a> PortalClient<'a> {
         }
 
         // Build request
+        // Add token if required by auth provider
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+
+            form = form.text("token", token);
+
+        }
+
+
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
         // Check for HTTP errors
@@ -308,7 +323,6 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(item_id = %item_id, "Deleting item");
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
 
         // Get the item to find its owner
         let item = self.get_item(item_id).await?;
@@ -322,11 +336,29 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(url = %url, owner = %item.owner(), "Sending deleteItem request");
 
         // Build request
+        let mut form_data = vec![("f", "json")];
+
+
+        // Add token if required by auth provider
+
+        let token_opt = self.client.get_token_if_required().await?;
+
+        let token_str;
+
+        if let Some(token) = token_opt {
+
+            token_str = token;
+
+            form_data.push(("token", token_str.as_str()));
+
+        }
+
+
         let response = self
             .client
             .http()
             .post(&url)
-            .form(&[("f", "json"), ("token", &token)])
+            .form(&form_data)
             .send()
             .await?;
 
@@ -375,18 +407,19 @@ impl<'a> PortalClient<'a> {
         let url = format!("{}/content/items/{}/data", self.base_url, item_id);
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
 
         tracing::debug!(url = %url, "Sending getItemData request");
 
         // Build request
-        let response = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[("f", "json"), ("token", &token)])
-            .send()
-            .await?;
+        let mut request = self.client.http().get(&url).query(&[("f", "json")]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+
+            request = request.query(&[("token", token)]);
+
+        }
+
+        let response = request.send().await?;
 
         // Check for HTTP errors
         let status = response.status();
@@ -435,7 +468,6 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(item_id = %item_id, size = data.len(), "Updating item data");
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
 
         // Get the item to find its owner
         let item = self.get_item(item_id).await?;
@@ -453,12 +485,16 @@ impl<'a> PortalClient<'a> {
             .file_name("data.json")
             .mime_str("application/json")?;
 
-        let form = reqwest::multipart::Form::new()
+        let mut form = reqwest::multipart::Form::new()
             .text("f", "json")
-            .text("token", token)
             .part("file", part);
 
-        // Build request
+        // Add token if required by auth provider
+        if let Some(token) = self.client.get_token_if_required().await? {
+            form = form.text("token", token);
+        }
+
+
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
         // Check for HTTP errors

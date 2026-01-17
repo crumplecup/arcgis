@@ -33,8 +33,6 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(item_id = %item_id, "Sharing item");
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         // Get the item to find its owner
         let item = self.get_item(item_id).await?;
         let url = format!(
@@ -48,8 +46,7 @@ impl<'a> PortalClient<'a> {
 
         // Build form data
         let mut form = reqwest::multipart::Form::new()
-            .text("f", "json")
-            .text("token", token.clone());
+            .text("f", "json");
 
         if let Some(everyone) = params.everyone() {
             form = form.text("everyone", everyone.to_string());
@@ -64,6 +61,15 @@ impl<'a> PortalClient<'a> {
         }
 
         // Build request
+        // Add token if required by auth provider
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+
+            form = form.text("token", token);
+
+        }
+
+
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
         // Check for HTTP errors
@@ -115,8 +121,6 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(item_id = %item_id, "Unsharing item");
 
         // Get authentication token
-        let token = self.client.auth().get_token().await?;
-
         // Get the item to find its owner
         let item = self.get_item(item_id).await?;
         let url = format!(
@@ -130,14 +134,22 @@ impl<'a> PortalClient<'a> {
 
         // Build form data
         let mut form = reqwest::multipart::Form::new()
-            .text("f", "json")
-            .text("token", token.clone());
+            .text("f", "json");
 
         if let Some(groups) = params.groups() {
             form = form.text("groups", groups.join(","));
         }
 
         // Build request
+        // Add token if required by auth provider
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+
+            form = form.text("token", token);
+
+        }
+
+
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
         // Check for HTTP errors
