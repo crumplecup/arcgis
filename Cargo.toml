@@ -93,6 +93,7 @@ tokio-test = "0.4"
 mockito = "1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow = "1"
+config = "0.14"
 
 [build-dependencies]
 prost-build = "0.14"

@@ -7,28 +7,20 @@
 
 mod common;
 
-use arcgis::{ApiKeyAuth, ArcGISClient, Error, ErrorKind};
+use arcgis::{ApiKeyAuth, ArcGISClient};
 use tracing::instrument;
-
-/// Get an optional API key from environment.
-#[instrument]
-fn api_key() -> Option<String> {
-    common::load_env();
-    std::env::var("ARCGIS_API_KEY").ok()
-}
 
 /// Create a test client with API key authentication.
 ///
+/// Uses `common::api_key()` which automatically selects the correct
+/// environment variable based on the active test tier (test-public, etc.).
+///
 /// # Errors
 ///
-/// Returns an error if ARCGIS_API_KEY is not set in environment.
+/// Returns an error if the required API key is not set in environment.
 #[instrument]
-fn create_api_key_client() -> Result<ArcGISClient, Error> {
-    let key = api_key().ok_or_else(|| {
-        Error::from(ErrorKind::Validation(
-            "ARCGIS_API_KEY not found in environment. Add to .env file".to_string(),
-        ))
-    })?;
+fn create_api_key_client() -> anyhow::Result<ArcGISClient> {
+    let key = common::api_key()?;
     let auth = ApiKeyAuth::new(key);
     Ok(ArcGISClient::new(auth))
 }
@@ -65,19 +57,20 @@ fn test_credentials_available() {
     common::init_tracing();
     tracing::info!("test_credentials_available: Starting");
 
-    common::load_env();
-
     // API key should be available for testing
-    // OAuth credentials will be checked when OAuth is implemented (Phase 2)
-    let has_api_key = api_key().is_some();
+    // For test-public tier, this checks for ARCGIS_PUBLIC_KEY
+    let api_key_result = common::api_key();
+    let has_api_key = api_key_result.is_ok();
+
     tracing::info!(
         has_api_key = has_api_key,
+        tier = "public",
         "test_credentials_available: Checked API key availability"
     );
 
     assert!(
         has_api_key,
-        "ARCGIS_API_KEY must be set in .env for integration tests"
+        "ARCGIS_PUBLIC_KEY must be set in .env for test-public integration tests"
     );
 
     tracing::info!("test_credentials_available: Completed");

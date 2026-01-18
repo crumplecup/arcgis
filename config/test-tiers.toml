@@ -1,0 +1,34 @@
+# Test Tier Configuration
+#
+# Maps test feature flags to environment variable names for API keys.
+# This allows a single .env file to contain multiple keys for different
+# privilege tiers, with the correct key selected based on the active test tier.
+
+[tiers.public]
+env_var = "ARCGIS_PUBLIC_KEY"
+credits_per_request = 0.0
+description = "Public services - no authentication required (World Cities, etc.)"
+requires_auth = false
+
+[tiers.location]
+env_var = "ARCGIS_LOCATION_KEY"
+credits_per_request = 0.004
+description = "Location services - geocoding, routing, geometry operations"
+requires_auth = true
+
+[tiers.portal]
+env_var = "ARCGIS_PORTAL_KEY"
+credits_per_request = 0.001
+description = "Portal operations - content management, groups, sharing"
+requires_auth = true
+
+[tiers.publishing]
+env_var = "ARCGIS_PUBLISH_KEY"
+credits_per_request = 0.001
+description = "Publishing operations - feature service creation, versioning"
+requires_auth = true
+
+# Default tier when no test feature is active
+[default]
+tier = "public"
+env_var = "ARCGIS_API_KEY"
