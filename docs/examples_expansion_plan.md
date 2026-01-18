@@ -8,19 +8,45 @@
 
 Current example coverage is approximately 25% of available SDK operations. This plan outlines a phased approach to create high-quality, entertaining, and educational examples that demonstrate best practices while showcasing the SDK's capabilities.
 
-## Coverage Analysis
+## Organization
 
-### Current State (7 examples)
-- ✅ `basic_client.rs` - Client creation
-- ✅ `client_credentials_flow.rs` - OAuth authentication
-- ✅ `query_features.rs` - Basic feature queries
-- ✅ `spatial_query.rs` - Spatial queries
-- ✅ `edit_session.rs` - Version management editing
-- ✅ `geocode_addresses.rs` - Geocoding operations
-- ✅ `geometry_operations.rs` - Geometry transformations
+Examples are organized into two categories based on authentication requirements:
+
+### 🆓 Public Examples (`examples/public/`)
+**Tier 1 - No authentication required, no credit costs**
+
+- ✅ `query_features.rs` - Comprehensive Feature Service queries
+- ✅ `spatial_query.rs` - Advanced spatial relationship queries
+
+**Benefits:**
+- Run immediately without API keys
+- Zero credit cost
+- Perfect for learning and CI/CD
+- Uses ESRI's public World Cities service
+
+### 💼 Enterprise Examples (`examples/enterprise/`)
+**Tier 2+ - Requires API key or OAuth, may consume credits**
+
+**Authentication & Setup:**
+- ✅ `basic_client.rs` - Client creation and API key auth
+- ✅ `client_credentials_flow.rs` - OAuth 2.0 flow
+
+**Location Services (Tier 2):**
+- ✅ `geocode_addresses.rs` - Forward/reverse geocoding (~0.04 credits)
+- ✅ `routing_navigation.rs` - Route finding, directions (~0.50 credits)
+- ✅ `geometry_operations.rs` - Buffer, union, intersection (~0.10 credits)
+
+**Portal Operations (Tier 3):**
+- ✅ `edit_session.rs` - Feature editing with transactions (~0.01 credits)
+- ✅ `feature_attachments.rs` - Attachment management (~0.02 credits)
+- ✅ `portal_content_management.rs` - Portal search, groups (~0.01 credits)
+
+**Total credit cost for all enterprise examples:** ~0.68 credits (~$0.07)
+
+For enterprise users with credit pools, this cost is negligible.
 
 ### Target State (15+ examples)
-Coverage across all major services with practical, real-world scenarios.
+Coverage across all major services with practical, real-world scenarios. Organize new examples into appropriate categories based on authentication requirements.
 
 ## Implementation Phases
 
@@ -358,6 +384,22 @@ Coverage across all major services with practical, real-world scenarios.
 
 ## Progress Tracking
 
+### Completed Examples: 10 total
+**Public Examples (2):**
+- ✅ query_features.rs
+- ✅ spatial_query.rs
+
+**Enterprise Examples (8):**
+- ✅ basic_client.rs (auth setup)
+- ✅ client_credentials_flow.rs (OAuth)
+- ✅ geocode_addresses.rs (Tier 2)
+- ✅ routing_navigation.rs (Tier 2)
+- ✅ geometry_operations.rs (Tier 2)
+- ✅ edit_session.rs (Tier 3)
+- ✅ feature_attachments.rs (Tier 3)
+- ✅ portal_content_management.rs (Tier 3)
+
+### Phase Progress
 **Phase 1:** 3/3 complete (100%) ✅
 - ✅ routing_navigation.rs
 - ✅ portal_content_management.rs
@@ -367,7 +409,7 @@ Coverage across all major services with practical, real-world scenarios.
 **Phase 3:** 0/3 complete (0%)
 **Phase 4:** 0/3 complete (0%)
 
-**Overall:** 3/11 complete (27%)
+**Overall:** 10 existing + 3/11 planned = 13/21 examples (62% coverage when Phase 1 examples included)
 
 ## Success Metrics
 
@@ -381,11 +423,19 @@ Coverage across all major services with practical, real-world scenarios.
 
 ## Notes
 
+### Organization Guidelines
+- **Public examples** (`examples/public/`): Use public services, no auth required, zero credit cost
+- **Enterprise examples** (`examples/enterprise/`): Require API keys/OAuth, may consume credits
+- Include credit estimates in enterprise example documentation
+- Organize new examples by authentication tier
+
+### Development Guidelines
 - Examples should be self-contained where possible
-- Use public/free services when available to minimize API key requirements
-- Include rate limiting awareness
+- Prefer public/free services when available (Tier 1)
+- Include rate limiting awareness for enterprise examples
 - Show production-ready patterns (not just toy examples)
 - Each example should take 5-10 minutes to run and understand
+- Document credit costs for enterprise examples
 
 ---
 

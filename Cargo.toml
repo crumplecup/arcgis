@@ -105,3 +105,47 @@ lto = "thin"
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+# Public examples (Tier 1 - no auth required)
+[[example]]
+name = "query_features"
+path = "examples/public/query_features.rs"
+
+[[example]]
+name = "spatial_query"
+path = "examples/public/spatial_query.rs"
+
+# Enterprise examples - Authentication & Setup
+[[example]]
+name = "basic_client"
+path = "examples/enterprise/basic_client.rs"
+
+[[example]]
+name = "client_credentials_flow"
+path = "examples/enterprise/client_credentials_flow.rs"
+
+# Enterprise examples - Location Services (Tier 2)
+[[example]]
+name = "geocode_addresses"
+path = "examples/enterprise/geocode_addresses.rs"
+
+[[example]]
+name = "routing_navigation"
+path = "examples/enterprise/routing_navigation.rs"
+
+[[example]]
+name = "geometry_operations"
+path = "examples/enterprise/geometry_operations.rs"
+
+# Enterprise examples - Portal Operations (Tier 3)
+[[example]]
+name = "edit_session"
+path = "examples/enterprise/edit_session.rs"
+
+[[example]]
+name = "feature_attachments"
+path = "examples/enterprise/feature_attachments.rs"
+
+[[example]]
+name = "portal_content_management"
+path = "examples/enterprise/portal_content_management.rs"

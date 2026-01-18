@@ -1,6 +1,9 @@
 # ArcGIS Rust SDK Examples
 
-This directory contains comprehensive examples demonstrating the ArcGIS Rust SDK's capabilities.
+This directory contains comprehensive examples demonstrating the ArcGIS Rust SDK's capabilities, organized into two categories:
+
+- **[public/](./public/)** - Examples using public services (no authentication required)
+- **[enterprise/](./enterprise/)** - Examples requiring API keys or OAuth (may consume credits)
 
 All examples follow consistent patterns:
 - ✅ `main() -> anyhow::Result<()>` for proper error handling
@@ -8,199 +11,114 @@ All examples follow consistent patterns:
 - ✅ Secure credential management via `.env` files
 - ✅ Real-world use cases with best practices
 
-## Running Examples
+## Quick Start
+
+### Public Examples (No Auth Required)
+
+Run immediately without any setup:
 
 ```bash
-cargo run --example <example_name>
+cargo run --example query_features
+cargo run --example spatial_query
 ```
 
-Set log level for detailed output:
-```bash
-RUST_LOG=debug cargo run --example query_features
-```
+See [public/README.md](./public/README.md) for details.
 
-## Authentication Setup
+### Enterprise Examples (Auth Required)
 
-Most examples require credentials. Create a `.env` file in the project root:
+1. Create a `.env` file in the project root:
 
-```bash
-cp .env.example .env
-# Edit .env and add your credentials
-```
-
-`.env` file contents:
 ```env
 ARCGIS_API_KEY=your_api_key_here
 CLIENT_ID=your_client_id           # For OAuth examples
 CLIENT_SECRET=your_client_secret   # For OAuth examples
 ```
 
-**Get credentials:** [ArcGIS Developers Dashboard](https://developers.arcgis.com/)
-
-## Available Examples
-
-### 🌟 Getting Started
-
-#### `basic_client.rs`
-**Authentication:** API Key required
-**Demonstrates:**
-- Creating an ArcGIS client
-- API key authentication
-- Environment variable loading
-
-```bash
-cargo run --example basic_client
-```
-
-#### `client_credentials_flow.rs`
-**Authentication:** OAuth Client Credentials required
-**Demonstrates:**
-- Fully automated OAuth 2.0 flow (no browser needed)
-- Token caching and automatic refresh
-- Server-to-server authentication
-
-```bash
-cargo run --example client_credentials_flow
-```
-
-### 📍 Feature Service (Queries & Data)
-
-#### `query_features.rs`
-**Authentication:** None (uses public service)
-**Demonstrates:**
-- Basic WHERE clause queries
-- Field filtering (`out_fields`)
-- Geometry control (`return_geometry`)
-- Count-only queries
-- Object ID queries
-- Manual pagination (offset/limit)
-- Auto-pagination (`execute_all`)
-- Response formats (GeoJSON, PBF)
-
-```bash
-cargo run --example query_features
-```
-
-**Key Features:**
-- No authentication required (public data)
-- Comprehensive query examples
-- Performance optimization techniques
-
-#### `spatial_query.rs`
-**Authentication:** None (uses public service)
-**Demonstrates:**
-- Bounding box queries (envelope)
-- Polygon queries (custom shapes)
-- Spatial relationships (Intersects, Contains, Within)
-- Combined spatial + attribute filters
-- Large area queries with pagination
-
-```bash
-cargo run --example spatial_query
-```
-
-**Key Features:**
-- Advanced spatial queries
-- Multiple spatial relationship types
-- No authentication required
-
-#### `edit_session.rs`
-**Authentication:** OAuth Client Credentials required
-**Demonstrates:**
-- Versioned editing workflows
-- Edit sessions for transaction semantics
-- Adding features with session IDs
-- Saving vs. discarding changes
-- Branch-versioned geodatabases
-
-```bash
-cargo run --example edit_session
-```
-
-**Requirements:**
-- ArcGIS Enterprise 11.2+
-- Branch-versioned feature service
-- Version Management Server
-
-### 🗺️ Geocoding Service
-
-#### `geocode_addresses.rs`
-**Authentication:** API Key required
-**Demonstrates:**
-- Forward geocoding (address → coordinates)
-- Reverse geocoding (coordinates → address)
-- Autocomplete suggestions
-- Multiple address processing
-- Score-based filtering for quality
+2. Run examples:
 
 ```bash
 cargo run --example geocode_addresses
+cargo run --example routing_navigation
 ```
 
-**Key Features:**
-- Complete geocoding workflows
-- Quality filtering examples
-- Rate limiting best practices
+See [enterprise/README.md](./enterprise/README.md) for credit estimates and full details.
 
-### 📐 Geometry Service
-
-#### `geometry_operations.rs`
-**Authentication:** API Key required
-**Demonstrates:**
-- Coordinate projection (WGS84 ↔ Web Mercator)
-- Buffer creation with geodesic calculations
-- Distance calculation between points
-- Batch geometry processing
-- Builder pattern for parameters
-
-```bash
-cargo run --example geometry_operations
-```
-
-**Key Features:**
-- GeoRust integration
-- Type-safe units (LinearUnit enum)
-- Multiple projection examples
+**Get credentials:** [ArcGIS Developers Dashboard](https://developers.arcgis.com/)
 
 ## Example Categories
 
-| Category | Examples | Auth Required |
-|----------|----------|---------------|
-| **Getting Started** | `basic_client`, `client_credentials_flow` | API Key / OAuth |
-| **Feature Queries** | `query_features`, `spatial_query` | None (public) |
-| **Editing** | `edit_session` | OAuth |
-| **Geocoding** | `geocode_addresses` | API Key |
-| **Geometry** | `geometry_operations` | API Key |
+### 🆓 Public Examples (Tier 1 - No Auth)
 
-## Tips
+**Location:** [public/](./public/)
 
-### Logging
+These examples use public services and can be run immediately without any API key or credentials.
 
-Control output verbosity with `RUST_LOG`:
+| Example | Description | Runtime |
+|---------|-------------|---------|
+| `query_features` | Comprehensive Feature Service queries | ~5-10s |
+| `spatial_query` | Advanced spatial relationship queries | ~5-10s |
+
+**Credit Cost:** None
+
+See [public/README.md](./public/README.md) for detailed documentation.
+
+---
+
+### 💼 Enterprise Examples (Tier 2+ - Auth Required)
+
+**Location:** [enterprise/](./enterprise/)
+
+These examples require authentication and may consume credits from your ArcGIS subscription. For enterprise users, the marginal cost is typically near zero.
+
+#### Authentication & Setup
+
+| Example | Tier | Credits | Description |
+|---------|------|---------|-------------|
+| `basic_client` | N/A | 0 | Creating an ArcGIS client with API key auth |
+| `client_credentials_flow` | N/A | 0 | OAuth 2.0 client credentials flow |
+
+#### Location Services (Tier 2)
+
+| Example | Est. Credits | Runtime | Description |
+|---------|--------------|---------|-------------|
+| `geocode_addresses` | 0.04 | 5-10s | Forward/reverse geocoding, batch operations |
+| `routing_navigation` | 0.50 | 10-15s | Route finding, turn-by-turn directions |
+| `geometry_operations` | 0.10 | 5-10s | Buffer, union, intersection operations |
+
+#### Portal Operations (Tier 3)
+
+| Example | Est. Credits | Runtime | Description |
+|---------|--------------|---------|-------------|
+| `edit_session` | 0.01 | 5-10s | Feature editing with transactions |
+| `feature_attachments` | 0.02 | 5-10s | Attachment upload/download/management |
+| `portal_content_management` | 0.01 | 10-15s | Portal search, groups, metadata |
+
+**Total for all enterprise examples:** ~0.68 credits (~$0.07)
+
+See [enterprise/README.md](./enterprise/README.md) for detailed credit estimates and full documentation.
+
+## Running Examples
+
+All examples follow the same pattern:
 
 ```bash
-# Show all logs
+cargo run --example <example_name>
+```
+
+Control log output with `RUST_LOG`:
+
+```bash
+# Show all logs (verbose)
 RUST_LOG=debug cargo run --example query_features
 
-# Show only warnings and errors
+# Show only warnings and errors (quiet)
 RUST_LOG=warn cargo run --example geocode_addresses
 
 # Show specific module logs
 RUST_LOG=arcgis=debug cargo run --example geometry_operations
 ```
 
-### Public vs Authenticated Services
-
-Some examples use **public services** (no auth required):
-- `query_features.rs` - World Cities service
-- `spatial_query.rs` - World Cities service
-
-Others require **authentication**:
-- `geocode_addresses.rs` - Requires API key (credits consumed)
-- `geometry_operations.rs` - Requires API key
-- `edit_session.rs` - Requires OAuth + enterprise setup
-
-### Best Practices
+## Best Practices
 
 All examples demonstrate:
 - ✅ Secure credential management (`.env` files, not hardcoded)
@@ -209,6 +127,17 @@ All examples demonstrate:
 - ✅ Builder patterns where appropriate
 - ✅ Type-safe enums (no magic strings)
 - ✅ Real-world use cases
+
+## Credit Management
+
+Enterprise examples may consume credits from your ArcGIS subscription. Key points:
+
+- **Free tier:** 2M basemap tiles, 20k geocodes, 5k routes per month
+- **Enterprise pools:** Shared credits across organization
+- **Marginal cost:** Near zero for testing/learning
+- **Monitor usage:** Check your [ArcGIS Dashboard](https://developers.arcgis.com/dashboard)
+
+See [enterprise/README.md](./enterprise/README.md) for detailed credit estimates per example.
 
 ## Further Reading
 
