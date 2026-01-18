@@ -75,27 +75,18 @@ impl<'a> VersionManagementClient<'a> {
 
         tracing::debug!(url = %url, "Sending startEditing request");
 
-            let session_id_str = session_id.to_string();
-            let mut form = vec![
-                ("sessionId", session_id_str.as_str()),
-                ("f", "json")
-            ];
+        let session_id_str = session_id.to_string();
+        let mut form = vec![("sessionId", session_id_str.as_str()), ("f", "json")];
 
-            // Add token if required by auth provider
-            let token_opt = self.client.get_token_if_required().await?;
-            let token_str;
-            if let Some(token) = token_opt {
-                token_str = token;
-                form.push(("token", token_str.as_str()));
-            }
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
-        let response = self
-            .client
-            .http()
-            .post(&url)
-            .form(&form)
-            .send()
-            .await?;
+        let response = self.client.http().post(&url).form(&form).send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -206,28 +197,22 @@ impl<'a> VersionManagementClient<'a> {
 
         tracing::debug!(url = %url, save_edits = save_edits, "Sending stopEditing request");
 
-            let session_id_str = session_id.to_string();
-            let mut form = vec![
-                ("sessionId", session_id_str.as_str()),
-                ("saveEdits", save_edits_str),
-                ("f", "json")
-            ];
+        let session_id_str = session_id.to_string();
+        let mut form = vec![
+            ("sessionId", session_id_str.as_str()),
+            ("saveEdits", save_edits_str),
+            ("f", "json"),
+        ];
 
-            // Add token if required by auth provider
-            let token_opt = self.client.get_token_if_required().await?;
-            let token_str;
-            if let Some(token) = token_opt {
-                token_str = token;
-                form.push(("token", token_str.as_str()));
-            }
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
-        let response = self
-            .client
-            .http()
-            .post(&url)
-            .form(&form)
-            .send()
-            .await?;
+        let response = self.client.http().post(&url).form(&form).send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -334,27 +319,18 @@ impl<'a> VersionManagementClient<'a> {
 
         tracing::debug!(url = %url, "Sending startReading request");
 
-            let session_id_str = session_id.to_string();
-            let mut form = vec![
-                ("sessionId", session_id_str.as_str()),
-                ("f", "json")
-            ];
+        let session_id_str = session_id.to_string();
+        let mut form = vec![("sessionId", session_id_str.as_str()), ("f", "json")];
 
-            // Add token if required by auth provider
-            let token_opt = self.client.get_token_if_required().await?;
-            let token_str;
-            if let Some(token) = token_opt {
-                token_str = token;
-                form.push(("token", token_str.as_str()));
-            }
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
-        let response = self
-            .client
-            .http()
-            .post(&url)
-            .form(&form)
-            .send()
-            .await?;
+        let response = self.client.http().post(&url).form(&form).send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -451,27 +427,18 @@ impl<'a> VersionManagementClient<'a> {
 
         tracing::debug!(url = %url, "Sending stopReading request");
 
-            let session_id_str = session_id.to_string();
-            let mut form = vec![
-                ("sessionId", session_id_str.as_str()),
-                ("f", "json")
-            ];
+        let session_id_str = session_id.to_string();
+        let mut form = vec![("sessionId", session_id_str.as_str()), ("f", "json")];
 
-            // Add token if required by auth provider
-            let token_opt = self.client.get_token_if_required().await?;
-            let token_str;
-            if let Some(token) = token_opt {
-                token_str = token;
-                form.push(("token", token_str.as_str()));
-            }
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
-        let response = self
-            .client
-            .http()
-            .post(&url)
-            .form(&form)
-            .send()
-            .await?;
+        let response = self.client.http().post(&url).form(&form).send().await?;
 
         let status = response.status();
         if !status.is_success() {

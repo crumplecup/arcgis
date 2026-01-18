@@ -108,7 +108,11 @@ async fn main() -> anyhow::Result<()> {
 
         let long_label = response.address().long_label().as_deref().unwrap_or("N/A");
         let city = response.address().city().as_deref().unwrap_or("N/A");
-        let country = response.address().country_code().as_deref().unwrap_or("N/A");
+        let country = response
+            .address()
+            .country_code()
+            .as_deref()
+            .unwrap_or("N/A");
 
         tracing::info!(
             name = %name,
@@ -189,9 +193,7 @@ async fn main() -> anyhow::Result<()> {
     let test_address = "380 New York St, Redlands";
     let min_score = 90.0; // Only accept matches with 90%+ confidence
 
-    let response = geocoder
-        .find_address_candidates(test_address)
-        .await?;
+    let response = geocoder.find_address_candidates(test_address).await?;
 
     let high_quality_matches: Vec<_> = response
         .candidates()

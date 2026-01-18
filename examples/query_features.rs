@@ -252,7 +252,9 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("\n✅ All query examples completed successfully!");
     tracing::info!("💡 Tips:");
-    tracing::info!("   - Use return_geometry(false) for better performance when you don't need geometry");
+    tracing::info!(
+        "   - Use return_geometry(false) for better performance when you don't need geometry"
+    );
     tracing::info!("   - Use count_only(true) to get counts without retrieving features");
     tracing::info!("   - Use execute_all() for automatic pagination");
     tracing::info!("   - Use .geojson() for GeoJSON format (standard for web mapping)");

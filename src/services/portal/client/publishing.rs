@@ -120,11 +120,8 @@ impl<'a> PortalClient<'a> {
         // Add token if required by auth provider
 
         if let Some(token) = self.client.get_token_if_required().await? {
-
             form = form.text("token", token);
-
         }
-
 
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
@@ -191,9 +188,7 @@ impl<'a> PortalClient<'a> {
         let mut request = self.client.http().get(&url).query(&[("f", "json")]);
 
         if let Some(token) = self.client.get_token_if_required().await? {
-
             request = request.query(&[("token", token)]);
-
         }
 
         let response = request.send().await?;
@@ -267,8 +262,7 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(url = %url, "Sending updateServiceDefinition request");
 
         // Build update parameters
-        let mut form = reqwest::multipart::Form::new()
-            .text("f", "json");
+        let mut form = reqwest::multipart::Form::new().text("f", "json");
 
         if let Some(def) = params.service_definition() {
             form = form.text("updateDefinition", def.to_string());
@@ -290,11 +284,8 @@ impl<'a> PortalClient<'a> {
         // Add token if required by auth provider
 
         if let Some(token) = self.client.get_token_if_required().await? {
-
             form = form.text("token", token);
-
         }
-
 
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
@@ -406,11 +397,8 @@ impl<'a> PortalClient<'a> {
         // Add token if required by auth provider
 
         if let Some(token) = self.client.get_token_if_required().await? {
-
             form = form.text("token", token);
-
         }
-
 
         let response = self.client.http().post(&url).multipart(form).send().await?;
 

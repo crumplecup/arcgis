@@ -133,10 +133,7 @@ impl<'a> RoutingServiceClient<'a> {
         // Prepare string values that need to outlive the form vector
         let out_sr_str = params.out_sr().map(|sr| sr.to_string());
 
-        let mut form = vec![
-            ("stops", stops_json.as_str()),
-            ("f", "json"),
-        ];
+        let mut form = vec![("stops", stops_json.as_str()), ("f", "json")];
 
         // Add optional parameters
         if let Some(return_directions) = params.return_directions() {

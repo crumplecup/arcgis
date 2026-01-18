@@ -50,10 +50,10 @@ async fn main() -> anyhow::Result<()> {
     // Define a bounding box around California
     // IMPORTANT: Must specify spatial reference so service knows coordinate system
     let california_bbox = ArcGISEnvelope {
-        xmin: -124.5, // West
-        ymin: 32.5,   // South
-        xmax: -114.0, // East
-        ymax: 42.0,   // North
+        xmin: -124.5,                                       // West
+        ymin: 32.5,                                         // South
+        xmax: -114.0,                                       // East
+        ymax: 42.0,                                         // North
         spatial_reference: Some(SpatialReference::wgs84()), // WGS84 (lat/lon)
     };
 

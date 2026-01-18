@@ -38,19 +38,17 @@ pub fn from_geojson(fc: geojson::FeatureCollection) -> Result<FeatureSet> {
 
         // Convert GeoJSON geometry to ArcGIS geometry
         let geometry = match geojson_feature.geometry {
-            Some(geom) => {
-                match geometry_from_geojson(&geom) {
-                    Ok(g) => Some(g),
-                    Err(e) => {
-                        tracing::error!(
-                            feature_index = index,
-                            error = %e,
-                            "Failed to convert geometry"
-                        );
-                        return Err(e);
-                    }
+            Some(geom) => match geometry_from_geojson(&geom) {
+                Ok(g) => Some(g),
+                Err(e) => {
+                    tracing::error!(
+                        feature_index = index,
+                        error = %e,
+                        "Failed to convert geometry"
+                    );
+                    return Err(e);
                 }
-            }
+            },
             None => None,
         };
 
@@ -64,10 +62,10 @@ pub fn from_geojson(fc: geojson::FeatureCollection) -> Result<FeatureSet> {
 
     // GeoJSON doesn't include these ArcGIS-specific fields
     Ok(FeatureSet::new(
-        None,    // geometry_type
+        None,     // geometry_type
         features, // features
-        None,    // count
-        false,   // exceeded_transfer_limit
+        None,     // count
+        false,    // exceeded_transfer_limit
     ))
 }
 

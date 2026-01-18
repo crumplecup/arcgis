@@ -176,11 +176,13 @@ impl<'a> MapServiceClient<'a> {
         match params.format_response() {
             ResponseFormat::Image => {
                 // Direct binary response - stream immediately
-                self.stream_export(&url, &params, token_opt.as_deref(), target).await
+                self.stream_export(&url, &params, token_opt.as_deref(), target)
+                    .await
             }
             ResponseFormat::Json | ResponseFormat::PJson => {
                 // JSON response with href - fetch image from href
-                self.export_via_json(&url, &params, token_opt.as_deref(), target).await
+                self.export_via_json(&url, &params, token_opt.as_deref(), target)
+                    .await
             }
             _ => {
                 tracing::error!(format = ?params.format_response(), "Unsupported response format");
@@ -241,10 +243,7 @@ impl<'a> MapServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending tile request");
 
-        let mut request = self
-            .client
-            .http()
-            .get(&url);
+        let mut request = self.client.http().get(&url);
 
         if let Some(token) = self.client.get_token_if_required().await? {
             request = request.query(&[("token", token)]);
@@ -303,10 +302,7 @@ impl<'a> MapServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending legend request");
 
-        let mut request = self
-            .client
-            .http()
-            .get(&url);
+        let mut request = self.client.http().get(&url);
 
         if let Some(token) = self.client.get_token_if_required().await? {
             request = request.query(&[("token", token)]);
@@ -366,10 +362,7 @@ impl<'a> MapServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending metadata request");
 
-        let mut request = self
-            .client
-            .http()
-            .get(url);
+        let mut request = self.client.http().get(url);
 
         if let Some(token) = self.client.get_token_if_required().await? {
             request = request.query(&[("token", token)]);
@@ -444,11 +437,7 @@ impl<'a> MapServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending identify request");
 
-        let mut request = self
-            .client
-            .http()
-            .get(&url)
-            .query(&params);
+        let mut request = self.client.http().get(&url).query(&params);
 
         if let Some(token) = self.client.get_token_if_required().await? {
             request = request.query(&[("token", token)]);
@@ -492,18 +481,13 @@ impl<'a> MapServiceClient<'a> {
     ) -> Result<ExportResult> {
         tracing::debug!("Streaming export (direct image response)");
 
-        let mut request = self
-            .client
-            .http()
-            .get(url)
-            .query(&params);
+        let mut request = self.client.http().get(url).query(&params);
 
-            if let Some(token) = token {
-                request = request.query(&[("token", token)]);
-            }
+        if let Some(token) = token {
+            request = request.query(&[("token", token)]);
+        }
 
-            let response = request.send()
-            .await?;
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -532,18 +516,13 @@ impl<'a> MapServiceClient<'a> {
     ) -> Result<ExportResult> {
         tracing::debug!("Exporting via JSON (will fetch href)");
 
-        let mut request = self
-            .client
-            .http()
-            .get(url)
-            .query(&params);
+        let mut request = self.client.http().get(url).query(&params);
 
-            if let Some(token) = token {
-                request = request.query(&[("token", token)]);
-            }
+        if let Some(token) = token {
+            request = request.query(&[("token", token)]);
+        }
 
-            let response = request.send()
-            .await?;
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -853,10 +832,7 @@ impl<'a> MapServiceClient<'a> {
         );
 
         let params_json = serde_json::to_string(&params)?;
-        let mut form = vec![
-            ("classificationDef", params_json.as_str()),
-            ("f", "json"),
-        ];
+        let mut form = vec![("classificationDef", params_json.as_str()), ("f", "json")];
 
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;
@@ -936,7 +912,6 @@ impl<'a> MapServiceClient<'a> {
         tracing::debug!(url = %url, layers = %layers_str, "Sending queryDomains request");
 
         let mut form = vec![("f", "json")];
-
 
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;

@@ -45,8 +45,7 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(url = %url, owner = %item.owner(), "Sending shareItem request");
 
         // Build form data
-        let mut form = reqwest::multipart::Form::new()
-            .text("f", "json");
+        let mut form = reqwest::multipart::Form::new().text("f", "json");
 
         if let Some(everyone) = params.everyone() {
             form = form.text("everyone", everyone.to_string());
@@ -64,11 +63,8 @@ impl<'a> PortalClient<'a> {
         // Add token if required by auth provider
 
         if let Some(token) = self.client.get_token_if_required().await? {
-
             form = form.text("token", token);
-
         }
-
 
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
@@ -133,8 +129,7 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(url = %url, owner = %item.owner(), "Sending unshareItem request");
 
         // Build form data
-        let mut form = reqwest::multipart::Form::new()
-            .text("f", "json");
+        let mut form = reqwest::multipart::Form::new().text("f", "json");
 
         if let Some(groups) = params.groups() {
             form = form.text("groups", groups.join(","));
@@ -144,11 +139,8 @@ impl<'a> PortalClient<'a> {
         // Add token if required by auth provider
 
         if let Some(token) = self.client.get_token_if_required().await? {
-
             form = form.text("token", token);
-
         }
-
 
         let response = self.client.http().post(&url).multipart(form).send().await?;
 

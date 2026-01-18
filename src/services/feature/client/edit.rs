@@ -57,10 +57,7 @@ impl<'a> FeatureServiceClient<'a> {
 
         // Build form data
         let features_json = serde_json::to_string(&features)?;
-        let mut form = vec![
-            ("features", features_json.as_str()),
-            ("f", "json"),
-        ];
+        let mut form = vec![("features", features_json.as_str()), ("f", "json")];
 
         // Add optional parameters
         let session_id_str = options.session_id.as_ref().map(|s| s.to_string());
@@ -168,10 +165,7 @@ impl<'a> FeatureServiceClient<'a> {
 
         // Build form data
         let features_json = serde_json::to_string(&features)?;
-        let mut form = vec![
-            ("features", features_json.as_str()),
-            ("f", "json"),
-        ];
+        let mut form = vec![("features", features_json.as_str()), ("f", "json")];
 
         // Add optional parameters
         let session_id_str = options.session_id.as_ref().map(|s| s.to_string());
@@ -277,10 +271,7 @@ impl<'a> FeatureServiceClient<'a> {
         tracing::debug!(url = %url, object_ids = %object_ids_str, "Sending deleteFeatures request");
 
         // Build form data
-        let mut form = vec![
-            ("objectIds", object_ids_str.as_str()),
-            ("f", "json"),
-        ];
+        let mut form = vec![("objectIds", object_ids_str.as_str()), ("f", "json")];
 
         // Add optional parameters
         if let Some(ref gdb_version) = options.gdb_version {
@@ -681,10 +672,7 @@ impl<'a> FeatureServiceClient<'a> {
         let deletes_json = deletes.as_ref().map(serde_json::to_string).transpose()?;
 
         // Build form data with references to owned strings
-        let mut form: Vec<(&str, &str)> = vec![
-            ("f", "json"),
-            ("useGlobalIds", "true"),
-        ];
+        let mut form: Vec<(&str, &str)> = vec![("f", "json"), ("useGlobalIds", "true")];
 
         if let Some(ref adds) = adds_json {
             form.push(("adds", adds.as_str()));

@@ -39,9 +39,7 @@ impl<'a> PortalClient<'a> {
         let mut request = self.client.http().get(&url).query(&[("f", "json")]);
 
         if let Some(token) = self.client.get_token_if_required().await? {
-
             request = request.query(&[("token", token)]);
-
         }
 
         let response = request.send().await?;
@@ -154,11 +152,8 @@ impl<'a> PortalClient<'a> {
         // Add token if required by auth provider
 
         if let Some(token) = self.client.get_token_if_required().await? {
-
             form = form.text("token", token);
-
         }
-
 
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
@@ -225,8 +220,7 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(url = %url, owner = %item.owner(), "Sending updateItem request");
 
         // Build form data
-        let mut form = reqwest::multipart::Form::new()
-            .text("f", "json");
+        let mut form = reqwest::multipart::Form::new().text("f", "json");
 
         if let Some(title) = params.title() {
             form = form.text("title", title.to_string());
@@ -273,11 +267,8 @@ impl<'a> PortalClient<'a> {
         // Add token if required by auth provider
 
         if let Some(token) = self.client.get_token_if_required().await? {
-
             form = form.text("token", token);
-
         }
-
 
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
@@ -338,7 +329,6 @@ impl<'a> PortalClient<'a> {
         // Build request
         let mut form_data = vec![("f", "json")];
 
-
         // Add token if required by auth provider
 
         let token_opt = self.client.get_token_if_required().await?;
@@ -346,13 +336,10 @@ impl<'a> PortalClient<'a> {
         let token_str;
 
         if let Some(token) = token_opt {
-
             token_str = token;
 
             form_data.push(("token", token_str.as_str()));
-
         }
-
 
         let response = self
             .client
@@ -414,9 +401,7 @@ impl<'a> PortalClient<'a> {
         let mut request = self.client.http().get(&url).query(&[("f", "json")]);
 
         if let Some(token) = self.client.get_token_if_required().await? {
-
             request = request.query(&[("token", token)]);
-
         }
 
         let response = request.send().await?;
@@ -493,7 +478,6 @@ impl<'a> PortalClient<'a> {
         if let Some(token) = self.client.get_token_if_required().await? {
             form = form.text("token", token);
         }
-
 
         let response = self.client.http().post(&url).multipart(form).send().await?;
 

@@ -203,16 +203,12 @@ impl<'a> GeometryServiceClient<'a> {
         let out_sr_str = params.out_sr().to_string();
 
         // Use GET request with query parameters
-        let mut request = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[
-                ("geometries", geometries_json.as_str()),
-                ("inSR", in_sr_str.as_str()),
-                ("outSR", out_sr_str.as_str()),
-                ("f", "json"),
-            ]);
+        let mut request = self.client.http().get(&url).query(&[
+            ("geometries", geometries_json.as_str()),
+            ("inSR", in_sr_str.as_str()),
+            ("outSR", out_sr_str.as_str()),
+            ("f", "json"),
+        ]);
 
         // Add token as query parameter if required
         if let Some(token) = self.client.get_token_if_required().await? {
@@ -394,17 +390,13 @@ impl<'a> GeometryServiceClient<'a> {
         // Build base query parameters
         // Note: When using geodesic=true, the unit parameter should NOT be sent
         // The bufferSR determines the distance units
-        let mut request = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[
-                ("geometries", geometries_param.as_str()),
-                ("inSR", in_sr_str.as_str()),
-                ("bufferSR", buffer_sr_str.as_str()),
-                ("distances", distances_param.as_str()),
-                ("f", "json"),
-            ]);
+        let mut request = self.client.http().get(&url).query(&[
+            ("geometries", geometries_param.as_str()),
+            ("inSR", in_sr_str.as_str()),
+            ("bufferSR", buffer_sr_str.as_str()),
+            ("distances", distances_param.as_str()),
+            ("f", "json"),
+        ]);
 
         // Add optional parameters
         if let Some(union) = params.union_results() {
@@ -646,10 +638,7 @@ impl<'a> GeometryServiceClient<'a> {
         tracing::debug!(url = %url, "Sending simplify request");
 
         let params_json = serde_json::to_string(&params)?;
-        let mut form = vec![
-            ("geometries", params_json.as_str()),
-            ("f", "json"),
-        ];
+        let mut form = vec![("geometries", params_json.as_str()), ("f", "json")];
 
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;
@@ -746,10 +735,7 @@ impl<'a> GeometryServiceClient<'a> {
         tracing::debug!(url = %url, "Sending union request");
 
         let params_json = serde_json::to_string(&params)?;
-        let mut form = vec![
-            ("geometries", params_json.as_str()),
-            ("f", "json"),
-        ];
+        let mut form = vec![("geometries", params_json.as_str()), ("f", "json")];
 
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;
@@ -839,10 +825,7 @@ impl<'a> GeometryServiceClient<'a> {
         tracing::debug!(url = %url, "Sending areasAndLengths request");
 
         let params_json = serde_json::to_string(&params)?;
-        let mut form = vec![
-            ("polygons", params_json.as_str()),
-            ("f", "json"),
-        ];
+        let mut form = vec![("polygons", params_json.as_str()), ("f", "json")];
 
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;
@@ -984,16 +967,12 @@ impl<'a> GeometryServiceClient<'a> {
         );
 
         // Build GET request (like other geometry operations)
-        let mut request = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[
-                ("geometry1", geometry1_json.as_str()),
-                ("geometry2", geometry2_json.as_str()),
-                ("sr", sr_str.as_str()),
-                ("f", "json"),
-            ]);
+        let mut request = self.client.http().get(&url).query(&[
+            ("geometry1", geometry1_json.as_str()),
+            ("geometry2", geometry2_json.as_str()),
+            ("sr", sr_str.as_str()),
+            ("f", "json"),
+        ]);
 
         // Add optional parameters
         // Note: When using geodesic=true, do NOT send distanceUnit

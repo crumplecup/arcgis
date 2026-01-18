@@ -114,30 +114,24 @@ impl<'a> VersionManagementClient<'a> {
 
         tracing::debug!(url = %url, "Sending reconcile request");
 
-            let session_id_str = session_id.to_string();
-            let mut form = vec![
-                ("sessionId", session_id_str.as_str()),
-                ("abortIfConflicts", abort_str),
-                ("conflictDetection", conflict_detection_str.as_str()),
-                ("withPost", with_post_str),
-                ("f", "json")
-            ];
+        let session_id_str = session_id.to_string();
+        let mut form = vec![
+            ("sessionId", session_id_str.as_str()),
+            ("abortIfConflicts", abort_str),
+            ("conflictDetection", conflict_detection_str.as_str()),
+            ("withPost", with_post_str),
+            ("f", "json"),
+        ];
 
-            // Add token if required by auth provider
-            let token_opt = self.client.get_token_if_required().await?;
-            let token_str;
-            if let Some(token) = token_opt {
-                token_str = token;
-                form.push(("token", token_str.as_str()));
-            }
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
-        let response = self
-            .client
-            .http()
-            .post(&url)
-            .form(&form)
-            .send()
-            .await?;
+        let response = self.client.http().post(&url).form(&form).send().await?;
 
         let status = response.status();
         if !status.is_success() {

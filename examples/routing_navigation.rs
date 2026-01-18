@@ -31,11 +31,11 @@
 //! ⚠️ This example uses the World Routing Service which consumes routing credits.
 //! Check your ArcGIS Online quota before running multiple times.
 
+use anyhow::Context;
 use arcgis::{
-    ArcGISClient, ArcGISGeometry, ArcGISPoint, ApiKeyAuth, ClosestFacilityParameters, NALocation,
+    ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, ClosestFacilityParameters, NALocation,
     RouteParameters, RoutingServiceClient, ServiceAreaParameters,
 };
-use anyhow::Context;
 
 /// World Routing Service endpoints
 const ROUTE_SERVICE: &str =
@@ -72,7 +72,11 @@ async fn main() -> anyhow::Result<()> {
     let seattle = create_stop(-122.3321, 47.6062, "Seattle, WA");
 
     let route_params = RouteParameters::builder()
-        .stops(vec![san_francisco.clone(), portland.clone(), seattle.clone()])
+        .stops(vec![
+            san_francisco.clone(),
+            portland.clone(),
+            seattle.clone(),
+        ])
         .return_directions(true)
         .return_routes(true)
         .return_stops(true)
@@ -199,12 +203,17 @@ async fn main() -> anyhow::Result<()> {
         tracing::info!("⛽ Closest gas station:");
         tracing::info!("   Distance: {:.2} miles away", distance_miles);
         tracing::info!("   Drive time: {:.1} minutes", time_minutes);
-        tracing::info!("   Route geometry points: {}",
+        tracing::info!(
+            "   Route geometry points: {}",
             if let Some(geom) = route.geometry() {
-                format!("{} points", match geom {
-                    ArcGISGeometry::Polyline(line) => line.paths.iter().map(|p| p.len()).sum::<usize>(),
-                    _ => 0,
-                })
+                format!(
+                    "{} points",
+                    match geom {
+                        ArcGISGeometry::Polyline(line) =>
+                            line.paths.iter().map(|p| p.len()).sum::<usize>(),
+                        _ => 0,
+                    }
+                )
             } else {
                 "No geometry".to_string()
             }

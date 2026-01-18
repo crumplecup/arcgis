@@ -39,17 +39,14 @@ impl<'a> FeatureServiceClient<'a> {
 
         let mut form = vec![("f", "json")];
 
-
         // Add token if required by auth provider
 
         let token_value;
 
         if let Some(token) = self.client.get_token_if_required().await? {
-
             token_value = token;
 
             form.push(("token", token_value.as_str()));
-
         }
 
         let response = self.client.http().post(&url).form(&form).send().await?;

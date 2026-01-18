@@ -44,7 +44,7 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
 
@@ -52,16 +52,16 @@ async fn main() -> anyhow::Result<()> {
 
     // Load environment variables (.env automatically loaded by library)
     tracing::debug!("Loading configuration from environment");
-    let client_id = env::var("CLIENT_ID")
-        .map_err(|_| anyhow::anyhow!("CLIENT_ID not set in .env"))?;
-    let client_secret = env::var("CLIENT_SECRET")
-        .map_err(|_| anyhow::anyhow!("CLIENT_SECRET not set in .env"))?;
+    let client_id =
+        env::var("CLIENT_ID").map_err(|_| anyhow::anyhow!("CLIENT_ID not set in .env"))?;
+    let client_secret =
+        env::var("CLIENT_SECRET").map_err(|_| anyhow::anyhow!("CLIENT_SECRET not set in .env"))?;
     let version_mgmt_url = env::var("VERSION_MGMT_URL")
         .map_err(|_| anyhow::anyhow!("VERSION_MGMT_URL not set in .env"))?;
     let feature_service_url = env::var("FEATURE_SERVICE_URL")
         .map_err(|_| anyhow::anyhow!("FEATURE_SERVICE_URL not set in .env"))?;
-    let version_guid_str = env::var("VERSION_GUID")
-        .map_err(|_| anyhow::anyhow!("VERSION_GUID not set in .env"))?;
+    let version_guid_str =
+        env::var("VERSION_GUID").map_err(|_| anyhow::anyhow!("VERSION_GUID not set in .env"))?;
     let layer_id_val: u32 = env::var("LAYER_ID")
         .map_err(|_| anyhow::anyhow!("LAYER_ID not set in .env"))?
         .parse()

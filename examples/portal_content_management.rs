@@ -34,11 +34,11 @@
 //! This example focuses on discovery and read-only operations that work with
 //! all authentication methods.
 
+use anyhow::Context;
 use arcgis::{
     ArcGISClient, ClientCredentialsAuth, GroupSearchParameters, PortalClient, SearchParameters,
     SortOrder,
 };
-use anyhow::Context;
 
 /// ArcGIS Online Portal URL (SaaS)
 const PORTAL_URL: &str = "https://www.arcgis.com/sharing/rest";
@@ -60,8 +60,8 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
 
     // Create authenticated client with OAuth2 client credentials
-    let client_id = std::env::var("ARCGIS_CLIENT_ID")
-        .context("ARCGIS_CLIENT_ID not found in environment")?;
+    let client_id =
+        std::env::var("ARCGIS_CLIENT_ID").context("ARCGIS_CLIENT_ID not found in environment")?;
     let client_secret = std::env::var("ARCGIS_CLIENT_SECRET")
         .context("ARCGIS_CLIENT_SECRET not found in environment")?;
 
@@ -74,8 +74,8 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("\n=== Example 1: Basic Content Search ===");
     tracing::info!("Find feature services related to 'parks'");
 
-    let search_params = SearchParameters::new("type:\"Feature Service\" AND tags:parks")
-        .with_pagination(1, 10); // Start at 1, get 10 results
+    let search_params =
+        SearchParameters::new("type:\"Feature Service\" AND tags:parks").with_pagination(1, 10); // Start at 1, get 10 results
 
     tracing::debug!("Sending search request");
     let search_results = portal
@@ -91,12 +91,7 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("📊 Top parks-related feature services:");
     for (i, item) in search_results.results().iter().take(5).enumerate() {
-        tracing::info!(
-            "   {}. {} ({})",
-            i + 1,
-            item.title(),
-            item.owner()
-        );
+        tracing::info!("   {}. {} ({})", i + 1, item.title(), item.owner());
         tracing::debug!(item_id = %item.id(), item_type = %item.item_type(), "Item details");
     }
 
@@ -170,8 +165,8 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("\n=== Example 4: Group Discovery ===");
     tracing::info!("Find public groups related to 'open data'");
 
-    let group_search = GroupSearchParameters::new("title:\"open data\" AND access:public")
-        .with_pagination(1, 5);
+    let group_search =
+        GroupSearchParameters::new("title:\"open data\" AND access:public").with_pagination(1, 5);
 
     let group_results = portal
         .search_groups(group_search)
@@ -207,15 +202,20 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Fetching {} pages of imagery results:", max_pages);
 
     for page_num in 1..=max_pages {
-        let page_params = SearchParameters::new("type:\"Image Service\"")
-            .with_pagination(start, page_size);
+        let page_params =
+            SearchParameters::new("type:\"Image Service\"").with_pagination(start, page_size);
 
         let page_results = portal
             .search(page_params)
             .await
             .context("Failed to search page")?;
 
-        tracing::info!("📄 Page {} (items {}-{}):", page_num, start, start + page_size - 1);
+        tracing::info!(
+            "📄 Page {} (items {}-{}):",
+            page_num,
+            start,
+            start + page_size - 1
+        );
         for (i, item) in page_results.results().iter().enumerate() {
             tracing::info!("   {}. {}", i + 1, item.title());
         }

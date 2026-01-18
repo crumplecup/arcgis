@@ -76,7 +76,6 @@ impl<'a> VersionManagementClient<'a> {
             form.push(("description", description.as_str()));
         }
 
-
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;
         let token_str;
@@ -297,24 +296,17 @@ impl<'a> VersionManagementClient<'a> {
 
         tracing::debug!(url = %url, "Sending delete request");
 
-            let mut form = vec![
-            ];
+        let mut form = vec![];
 
-            // Add token if required by auth provider
-            let token_opt = self.client.get_token_if_required().await?;
-            let token_str;
-            if let Some(token) = token_opt {
-                token_str = token;
-                form.push(("token", token_str.as_str()));
-            }
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str.as_str()));
+        }
 
-        let response = self
-            .client
-            .http()
-            .post(&url)
-            .form(&form)
-            .send()
-            .await?;
+        let response = self.client.http().post(&url).form(&form).send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -396,18 +388,13 @@ impl<'a> VersionManagementClient<'a> {
 
         tracing::debug!(url = %url, "Sending get version info request");
 
-        let mut request = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[("f", "json")]);
+        let mut request = self.client.http().get(&url).query(&[("f", "json")]);
 
         if let Some(token) = self.client.get_token_if_required().await? {
             request = request.query(&[("token", token)]);
         }
 
-        let response = request.send()
-            .await?;
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -474,18 +461,13 @@ impl<'a> VersionManagementClient<'a> {
 
         tracing::debug!(url = %url, "Sending list versions request");
 
-        let mut request = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[("f", "json")]);
+        let mut request = self.client.http().get(&url).query(&[("f", "json")]);
 
         if let Some(token) = self.client.get_token_if_required().await? {
             request = request.query(&[("token", token)]);
         }
 
-        let response = request.send()
-            .await?;
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {

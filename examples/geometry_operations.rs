@@ -18,8 +18,8 @@
 //! ```
 
 use arcgis::{
-    ArcGISClient, ArcGISGeometry, ArcGISPoint, ArcGISPolyline, GeometryServiceClient,
-    LinearUnit, NoAuth,
+    ArcGISClient, ArcGISGeometry, ArcGISPoint, ArcGISPolyline, GeometryServiceClient, LinearUnit,
+    NoAuth,
 };
 
 /// ArcGIS Online Geometry Service URL
@@ -180,8 +180,7 @@ async fn main() -> anyhow::Result<()> {
 
     let batch_result = geom_service
         .project(
-            points,
-            4326, // WGS84
+            points, 4326, // WGS84
             3857, // Web Mercator
         )
         .await?;

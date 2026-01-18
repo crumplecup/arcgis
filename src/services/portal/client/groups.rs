@@ -56,7 +56,6 @@ impl<'a> PortalClient<'a> {
             token: Option<String>,
         }
 
-
         let token_opt = self.client.get_token_if_required().await?;
 
         let query = GroupSearchQuery {
@@ -284,8 +283,7 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(url = %url, "Sending updateGroup request");
 
         // Build form data
-        let mut form = reqwest::multipart::Form::new()
-            .text("f", "json");
+        let mut form = reqwest::multipart::Form::new().text("f", "json");
 
         // Add token if required by auth provider
         if let Some(token) = self.client.get_token_if_required().await? {
@@ -380,7 +378,6 @@ impl<'a> PortalClient<'a> {
         // Build request
         let mut form_data = vec![("f", "json")];
 
-
         // Add token if required by auth provider
 
         let token_opt = self.client.get_token_if_required().await?;
@@ -388,13 +385,10 @@ impl<'a> PortalClient<'a> {
         let token_str;
 
         if let Some(token) = token_opt {
-
             token_str = token;
 
             form_data.push(("token", token_str.as_str()));
-
         }
-
 
         let response = self
             .client
@@ -451,7 +445,6 @@ impl<'a> PortalClient<'a> {
         // Build request
         let mut form_data = vec![("f", "json")];
 
-
         // Add token if required by auth provider
 
         let token_opt = self.client.get_token_if_required().await?;
@@ -459,13 +452,10 @@ impl<'a> PortalClient<'a> {
         let token_str;
 
         if let Some(token) = token_opt {
-
             token_str = token;
 
             form_data.push(("token", token_str.as_str()));
-
         }
-
 
         let response = self
             .client
@@ -522,7 +512,6 @@ impl<'a> PortalClient<'a> {
         // Build request
         let mut form_data = vec![("f", "json")];
 
-
         // Add token if required by auth provider
 
         let token_opt = self.client.get_token_if_required().await?;
@@ -530,13 +519,10 @@ impl<'a> PortalClient<'a> {
         let token_str;
 
         if let Some(token) = token_opt {
-
             token_str = token;
 
             form_data.push(("token", token_str.as_str()));
-
         }
-
 
         let response = self
             .client
@@ -598,7 +584,6 @@ impl<'a> PortalClient<'a> {
         // Build request
         let mut form_data = vec![("f", "json"), ("groups", group_id)];
 
-
         // Add token if required by auth provider
 
         let token_opt = self.client.get_token_if_required().await?;
@@ -606,13 +591,10 @@ impl<'a> PortalClient<'a> {
         let token_str;
 
         if let Some(token) = token_opt {
-
             token_str = token;
 
             form_data.push(("token", token_str.as_str()));
-
         }
-
 
         let response = self
             .client
@@ -674,7 +656,6 @@ impl<'a> PortalClient<'a> {
         // Build request
         let mut form_data = vec![("f", "json"), ("groups", group_id)];
 
-
         // Add token if required by auth provider
 
         let token_opt = self.client.get_token_if_required().await?;
@@ -682,13 +663,10 @@ impl<'a> PortalClient<'a> {
         let token_str;
 
         if let Some(token) = token_opt {
-
             token_str = token;
 
             form_data.push(("token", token_str.as_str()));
-
         }
-
 
         let response = self
             .client

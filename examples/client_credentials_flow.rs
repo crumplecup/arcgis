@@ -41,7 +41,7 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
 
@@ -65,10 +65,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("🔄 Getting token again (should use cache)");
     let token2 = auth.get_token().await?;
     let tokens_match = token == token2;
-    tracing::info!(
-        tokens_match = tokens_match,
-        "✅ Token retrieved from cache"
-    );
+    tracing::info!(tokens_match = tokens_match, "✅ Token retrieved from cache");
 
     // 3. Show token info
     tracing::info!("📊 Token Information:");
