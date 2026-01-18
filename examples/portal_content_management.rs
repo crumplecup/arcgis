@@ -1,23 +1,22 @@
-//! 📦 Portal Content Management - Complete Content Lifecycle
+//! 📦 Portal Content Discovery - Search and Explore ArcGIS Online
 //!
-//! Demonstrates the full lifecycle of managing content in ArcGIS Online/Portal:
-//! Search for existing datasets, create new items with rich metadata, update content,
-//! create collaboration groups, and share with your team!
+//! Demonstrates searching and exploring public content in ArcGIS Online/Portal.
+//! Learn how to discover datasets, retrieve metadata, search groups, and build
+//! powerful Lucene queries to find exactly what you need!
 //!
 //! # What You'll Learn
 //!
 //! - **Content search**: Discover items using Lucene query syntax
-//! - **Item creation**: Upload GeoJSON and create feature layers
-//! - **Metadata management**: Add rich descriptions, tags, and thumbnails
-//! - **Group collaboration**: Create project groups for team work
-//! - **Sharing workflows**: Control access (private, org, groups, public)
-//! - **Builder patterns**: Construct complex parameters elegantly
+//! - **Advanced filters**: Search by type, tags, owner, and more
+//! - **Pagination**: Handle large result sets efficiently
+//! - **Item metadata**: Retrieve detailed information about items
+//! - **Group discovery**: Find public and organizational groups
+//! - **Builder patterns**: Construct complex search parameters
 //!
 //! # Prerequisites
 //!
-//! - API key with content creation permissions OR
-//! - OAuth2 credentials (user account with publish privileges)
-//! - Set `ARCGIS_API_KEY` in `.env` file
+//! - OAuth2 client credentials (for org content) OR API key (for public content)
+//! - Set `ARCGIS_CLIENT_ID` + `ARCGIS_CLIENT_SECRET` OR `ARCGIS_API_KEY` in `.env`
 //!
 //! # Running
 //!
@@ -28,14 +27,16 @@
 //! RUST_LOG=debug cargo run --example portal_content_management
 //! ```
 //!
-//! # Cost Awareness
+//! # Note on Content Creation
 //!
-//! ⚠️ This example creates actual items in your ArcGIS Online account.
-//! Items count toward your storage quota. Clean up test items when done!
+//! Creating, updating, and managing content requires **user authentication**
+//! via OAuth2 PKCE flow (browser-based login), not client credentials or API keys.
+//! This example focuses on discovery and read-only operations that work with
+//! all authentication methods.
 
 use arcgis::{
-    AddItemParams, ArcGISClient, ApiKeyAuth, CreateGroupParams, PortalClient, SearchParameters,
-    SharingParameters, UpdateItemParams,
+    ArcGISClient, ClientCredentialsAuth, GroupSearchParameters, PortalClient, SearchParameters,
+    SortOrder,
 };
 use anyhow::Context;
 
@@ -52,16 +53,25 @@ async fn main() -> anyhow::Result<()> {
         )
         .init();
 
-    tracing::info!("📦 ArcGIS Portal Content Management Examples");
-    tracing::info!("Demonstrating complete content lifecycle workflows");
+    tracing::info!("📦 ArcGIS Portal Content Discovery Examples");
+    tracing::info!("Demonstrating search and exploration workflows");
 
-    // Create authenticated client
-    let auth = ApiKeyAuth::from_env().context("Failed to load API key from environment")?;
+    // Load environment variables from .env
+    dotenvy::dotenv().ok();
+
+    // Create authenticated client with OAuth2 client credentials
+    let client_id = std::env::var("ARCGIS_CLIENT_ID")
+        .context("ARCGIS_CLIENT_ID not found in environment")?;
+    let client_secret = std::env::var("ARCGIS_CLIENT_SECRET")
+        .context("ARCGIS_CLIENT_SECRET not found in environment")?;
+
+    let auth = ClientCredentialsAuth::new(client_id, client_secret)
+        .context("Failed to create OAuth2 authentication")?;
     let client = ArcGISClient::new(auth);
     let portal = PortalClient::new(PORTAL_URL, &client);
 
-    // Example 1: Search for Existing Content
-    tracing::info!("\n=== Example 1: Searching for Content ===");
+    // Example 1: Basic Content Search
+    tracing::info!("\n=== Example 1: Basic Content Search ===");
     tracing::info!("Find feature services related to 'parks'");
 
     let search_params = SearchParameters::new("type:\"Feature Service\" AND tags:parks")
@@ -79,208 +89,160 @@ async fn main() -> anyhow::Result<()> {
         "✅ Search completed"
     );
 
-    tracing::info!("📊 Top results:");
+    tracing::info!("📊 Top parks-related feature services:");
     for (i, item) in search_results.results().iter().take(5).enumerate() {
         tracing::info!(
             "   {}. {} ({})",
             i + 1,
             item.title(),
-            item.item_type()
+            item.owner()
         );
-        tracing::debug!(item_id = %item.id(), owner = %item.owner(), "Item details");
+        tracing::debug!(item_id = %item.id(), item_type = %item.item_type(), "Item details");
     }
 
-    // Example 2: Create a New Item
-    tracing::info!("\n=== Example 2: Creating a New Item ===");
-    tracing::info!("Upload a GeoJSON file as a new item");
+    // Example 2: Advanced Query with Sorting
+    tracing::info!("\n=== Example 2: Advanced Query with Sorting ===");
+    tracing::info!("Find recent web maps, sorted by modification date");
 
-    // Sample GeoJSON with a point feature
-    let geojson_data = serde_json::json!({
-        "type": "FeatureCollection",
-        "features": [{
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [-122.4194, 37.7749] // San Francisco
-            },
-            "properties": {
-                "name": "Sample Location",
-                "description": "A test point in San Francisco"
-            }
-        }]
-    });
+    let recent_maps = SearchParameters::new("type:\"Web Map\"")
+        .with_pagination(1, 5)
+        .with_sort("modified", SortOrder::Desc); // Most recently modified first
 
-    let add_params = AddItemParams::new("My Sample GeoJSON", "GeoJson")
-        .with_description("A sample GeoJSON dataset created via the ArcGIS Rust SDK")
-        .with_snippet("Demonstrates item creation with rich metadata")
-        .with_tags(vec![
-            "sample".to_string(),
-            "demo".to_string(),
-            "rust-sdk".to_string(),
-        ])
-        .with_type_keywords(vec!["Data".to_string(), "geojson".to_string()])
-        .with_access("private".to_string()); // Private by default
+    let maps_result = portal
+        .search(recent_maps)
+        .await
+        .context("Failed to search web maps")?;
 
-    tracing::debug!(
-        title = %add_params.title(),
-        item_type = %add_params.item_type(),
-        "Creating item"
+    tracing::info!(
+        total_found = maps_result.total(),
+        "✅ Found {} total web maps",
+        maps_result.total()
     );
 
-    let add_result = portal
-        .add_item(add_params)
-        .await
-        .context("Failed to create item")?;
-
-    if *add_result.success() {
-        tracing::info!(
-            item_id = %add_result.id(),
-            "✅ Item created successfully!"
+    tracing::info!("📍 Recently modified web maps:");
+    for (i, item) in maps_result.results().iter().enumerate() {
+        tracing::info!("   {}. {}", i + 1, item.title());
+        tracing::debug!(
+            modified = %item.modified(),
+            "Modified timestamp"
         );
+    }
 
-        let created_item_id = add_result.id().to_string();
+    // Example 3: Retrieve Item Details
+    tracing::info!("\n=== Example 3: Retrieve Item Metadata ===");
+    tracing::info!("Get detailed information about a specific item");
 
-        // Upload the actual GeoJSON data
-        tracing::debug!("Uploading GeoJSON data");
-        let data_bytes = serde_json::to_vec(&geojson_data)
-            .context("Failed to serialize GeoJSON")?;
+    if let Some(first_item) = search_results.results().first() {
+        let item_id = first_item.id();
+        tracing::debug!(item_id = %item_id, "Fetching item details");
 
-        let update_result = portal
-            .update_item_data(&created_item_id, data_bytes)
+        let item_details = portal
+            .get_item(item_id)
             .await
-            .context("Failed to upload item data")?;
+            .context("Failed to retrieve item details")?;
 
-        if *update_result.success() {
-            tracing::info!("✅ GeoJSON data uploaded successfully");
+        tracing::info!("📋 Item Details:");
+        tracing::info!("   Title: {}", item_details.title());
+        tracing::info!("   Type: {}", item_details.item_type());
+        tracing::info!("   Owner: {}", item_details.owner());
+
+        if let Some(desc) = item_details.description() {
+            let preview = desc.chars().take(100).collect::<String>();
+            tracing::info!("   Description: {}...", preview);
         }
 
-        // Example 3: Update Item Metadata
-        tracing::info!("\n=== Example 3: Updating Item Metadata ===");
-        tracing::info!("Add more detailed information to the item");
+        if !item_details.tags().is_empty() {
+            tracing::info!("   Tags: {}", item_details.tags().join(", "));
+        }
 
-        let update_params = UpdateItemParams::new()
-            .with_description(
-                "Updated description: This GeoJSON dataset demonstrates the complete \
-                content management workflow using the ArcGIS Rust SDK. It includes \
-                sample point features and rich metadata."
-            )
-            .with_snippet("Enhanced with detailed workflow documentation")
-            .with_tags(vec![
-                "sample".to_string(),
-                "demo".to_string(),
-                "rust-sdk".to_string(),
-                "updated".to_string(),
-            ]);
+        if let Some(url) = item_details.url() {
+            tracing::info!("   URL: {}", url);
+        }
 
-        tracing::debug!(item_id = %created_item_id, "Updating metadata");
-        let update_meta_result = portal
-            .update_item(&created_item_id, update_params)
+        tracing::debug!(
+            id = %item_details.id(),
+            access = %item_details.access(),
+            "Full item metadata retrieved"
+        );
+    }
+
+    // Example 4: Search Groups
+    tracing::info!("\n=== Example 4: Group Discovery ===");
+    tracing::info!("Find public groups related to 'open data'");
+
+    let group_search = GroupSearchParameters::new("title:\"open data\" AND access:public")
+        .with_pagination(1, 5);
+
+    let group_results = portal
+        .search_groups(group_search)
+        .await
+        .context("Failed to search groups")?;
+
+    tracing::info!(
+        total_found = group_results.total(),
+        returned = group_results.results().len(),
+        "✅ Found {} total groups",
+        group_results.total()
+    );
+
+    tracing::info!("👥 Open data groups:");
+    for (i, group) in group_results.results().iter().take(5).enumerate() {
+        tracing::info!("   {}. {}", i + 1, group.title());
+        tracing::info!("      Owner: {}", group.owner());
+        if let Some(desc) = group.description() {
+            let preview = desc.chars().take(60).collect::<String>();
+            tracing::info!("      Description: {}...", preview);
+        }
+        tracing::debug!(group_id = %group.id(), access = %group.access(), "Group details");
+    }
+
+    // Example 5: Pagination Pattern
+    tracing::info!("\n=== Example 5: Pagination Pattern ===");
+    tracing::info!("Retrieve multiple pages of search results");
+
+    let page_size = 5;
+    let mut start = 1;
+    let max_pages = 3;
+
+    tracing::info!("Fetching {} pages of imagery results:", max_pages);
+
+    for page_num in 1..=max_pages {
+        let page_params = SearchParameters::new("type:\"Image Service\"")
+            .with_pagination(start, page_size);
+
+        let page_results = portal
+            .search(page_params)
             .await
-            .context("Failed to update item metadata")?;
+            .context("Failed to search page")?;
 
-        if *update_meta_result.success() {
-            tracing::info!("✅ Metadata updated successfully");
+        tracing::info!("📄 Page {} (items {}-{}):", page_num, start, start + page_size - 1);
+        for (i, item) in page_results.results().iter().enumerate() {
+            tracing::info!("   {}. {}", i + 1, item.title());
         }
 
-        // Verify the update by fetching the item
-        tracing::debug!("Verifying changes");
-        let updated_item = portal
-            .get_item(&created_item_id)
-            .await
-            .context("Failed to retrieve updated item")?;
+        start += page_size;
 
-        tracing::info!("📋 Item details:");
-        tracing::info!("   Title: {}", updated_item.title());
-        tracing::info!("   Type: {}", updated_item.item_type());
-        tracing::info!("   Owner: {}", updated_item.owner());
-        if let Some(desc) = updated_item.description() {
-            tracing::info!("   Description: {}...", desc.chars().take(80).collect::<String>());
+        if page_results.results().len() < page_size as usize {
+            tracing::info!("   (Last page)");
+            break;
         }
-        if !updated_item.tags().is_empty() {
-            tracing::info!("   Tags: {}", updated_item.tags().join(", "));
-        }
-
-        // Example 4: Create a Collaboration Group
-        tracing::info!("\n=== Example 4: Creating a Project Group ===");
-        tracing::info!("Set up a group for team collaboration");
-
-        let group_params = CreateGroupParams::new("Rust SDK Sample Project")
-            .with_description(
-                "A collaboration group for testing ArcGIS Rust SDK portal operations"
-            )
-            .with_snippet("Demonstrates group creation and sharing workflows")
-            .with_tags(vec![
-                "rust-sdk".to_string(),
-                "sample".to_string(),
-                "collaboration".to_string(),
-            ])
-            .with_access("org".to_string()); // Visible to organization
-
-        tracing::debug!(title = %group_params.title(), "Creating group");
-        let group_result = portal
-            .create_group(group_params)
-            .await
-            .context("Failed to create group")?;
-
-        if *group_result.success() {
-            if let Some(group_id) = group_result.group_id() {
-                tracing::info!(
-                    group_id = %group_id,
-                    "✅ Group created successfully!"
-                );
-
-                // Example 5: Share Item with Group
-                tracing::info!("\n=== Example 5: Sharing Content ===");
-                tracing::info!("Share the item with the project group");
-
-                let share_params = SharingParameters::new()
-                    .with_groups(vec![group_id.to_string()])
-                    .with_org(true); // Also share with organization
-
-                tracing::debug!(
-                    item_id = %created_item_id,
-                    group_id = %group_id,
-                    "Sharing item"
-                );
-
-                let share_result = portal
-                    .share_item(&created_item_id, share_params)
-                    .await
-                    .context("Failed to share item")?;
-
-                if *share_result.success() {
-                    tracing::info!("✅ Item shared with group and organization");
-                    tracing::info!("   Group members can now access this item");
-                }
-
-                // Clean up: Delete the group (cleanup test data)
-                tracing::info!("\n💡 Cleanup tip:");
-                tracing::info!("   To delete test group: portal.delete_group(\"{}\").await", group_id);
-            } else {
-                tracing::warn!("⚠️  Group created but no ID returned");
-            }
-        } else {
-            tracing::warn!("⚠️  Group creation failed");
-        }
-
-        // Clean up: Delete the test item (uncomment to actually delete)
-        tracing::info!("\n💡 Cleanup tip:");
-        tracing::info!("   To delete test item: portal.delete_item(\"{}\").await", created_item_id);
-        tracing::info!("   Item URL: https://www.arcgis.com/home/item.html?id={}", created_item_id);
-    } else {
-        tracing::error!("❌ Item creation failed");
     }
 
     // Summary and Best Practices
-    tracing::info!("\n✅ Portal content management examples completed!");
-    tracing::info!("💡 Content Management Best Practices:");
-    tracing::info!("   - Use rich metadata: tags, descriptions, snippets help discoverability");
-    tracing::info!("   - Start private: Create items as private, then share deliberately");
-    tracing::info!("   - Organize with groups: Use groups for project-based collaboration");
-    tracing::info!("   - Clean up test data: Delete experimental items to manage quota");
-    tracing::info!("   - Version control metadata: Track item updates in your workflow");
-    tracing::info!("   - Use type keywords: Help Portal categorize and filter content");
-    tracing::info!("⚠️  Note: Created items persist in your account - remember to clean up!");
+    tracing::info!("\n✅ Portal content discovery examples completed!");
+    tracing::info!("💡 Search Best Practices:");
+    tracing::info!("   - Use Lucene query syntax for powerful filtering");
+    tracing::info!("   - Combine type filters: type:\"Feature Service\" AND tags:parks");
+    tracing::info!("   - Sort by 'modified', 'created', 'title', 'owner', or 'numviews'");
+    tracing::info!("   - Paginate large result sets (max 100 per page)");
+    tracing::info!("   - Cache item metadata to reduce API calls");
+    tracing::info!("   - Search is case-insensitive by default");
+    tracing::info!("\n📚 Common search patterns:");
+    tracing::info!("   - By owner: owner:username");
+    tracing::info!("   - By org: orgid:abc123");
+    tracing::info!("   - Public only: access:public");
+    tracing::info!("   - Date range: modified:[NOW-7DAYS TO NOW]");
+    tracing::info!("   - Multiple tags: tags:(transportation AND roads)");
 
     Ok(())
 }
