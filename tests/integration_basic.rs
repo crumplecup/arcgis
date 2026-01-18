@@ -3,7 +3,46 @@
 //! These tests use public ArcGIS Online services and require no authentication.
 //! Run with: `cargo test --features test-public`
 
+#![cfg(feature = "test-public")]
+
 mod common;
+
+use arcgis::{ApiKeyAuth, ArcGISClient, Error, ErrorKind};
+use tracing::instrument;
+
+/// Get an optional API key from environment.
+#[instrument]
+fn api_key() -> Option<String> {
+    common::load_env();
+    std::env::var("ARCGIS_API_KEY").ok()
+}
+
+/// Create a test client with API key authentication.
+///
+/// # Errors
+///
+/// Returns an error if ARCGIS_API_KEY is not set in environment.
+#[instrument]
+fn create_api_key_client() -> Result<ArcGISClient, Error> {
+    let key = api_key().ok_or_else(|| {
+        Error::from(ErrorKind::Validation(
+            "ARCGIS_API_KEY not found in environment. Add to .env file".to_string(),
+        ))
+    })?;
+    let auth = ApiKeyAuth::new(key);
+    Ok(ArcGISClient::new(auth))
+}
+
+/// Public ArcGIS Online feature service for testing (read-only).
+/// This is ESRI's World Cities sample service.
+const SAMPLE_FEATURE_SERVICE: &str =
+    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer";
+
+/// Rate limiting helper to be polite to the API.
+#[instrument]
+async fn rate_limit() {
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+}
 
 #[tokio::test]
 #[cfg(feature = "test-public")]
@@ -11,7 +50,7 @@ async fn test_client_creation_with_api_key() -> anyhow::Result<()> {
     common::init_tracing();
     tracing::info!("test_client_creation_with_api_key: Starting");
 
-    let _client = common::create_api_key_client()?;
+    let _client = create_api_key_client()?;
     tracing::info!("test_client_creation_with_api_key: Client created successfully");
 
     // Client creation should succeed without panicking
@@ -30,7 +69,7 @@ fn test_credentials_available() {
 
     // API key should be available for testing
     // OAuth credentials will be checked when OAuth is implemented (Phase 2)
-    let has_api_key = common::api_key().is_some();
+    let has_api_key = api_key().is_some();
     tracing::info!(
         has_api_key = has_api_key,
         "test_credentials_available: Checked API key availability"
@@ -54,10 +93,10 @@ async fn test_public_feature_service_accessible() -> anyhow::Result<()> {
     // without authentication (read-only)
 
     let client = reqwest::Client::new();
-    let url = format!("{}?f=json", common::SAMPLE_FEATURE_SERVICE);
+    let url = format!("{}?f=json", SAMPLE_FEATURE_SERVICE);
     tracing::info!(url = %url, "test_public_feature_service_accessible: Fetching service metadata");
 
-    common::rate_limit().await;
+    rate_limit().await;
 
     let response = client.get(&url).send().await?;
 
@@ -86,11 +125,11 @@ async fn test_feature_query_with_where_clause() -> anyhow::Result<()> {
     common::init_tracing();
     tracing::info!("test_feature_query_with_where_clause: Starting");
 
-    let client = common::create_api_key_client()?;
-    let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
+    let client = create_api_key_client()?;
+    let feature_service = FeatureServiceClient::new(SAMPLE_FEATURE_SERVICE, &client);
     tracing::info!("test_feature_query_with_where_clause: Client and service created");
 
-    common::rate_limit().await;
+    rate_limit().await;
 
     // Query for cities with population > 5 million using the fluent API
     tracing::info!("test_feature_query_with_where_clause: Executing query (POP > 5000000)");
@@ -141,10 +180,10 @@ async fn test_feature_query_count_only() -> anyhow::Result<()> {
     common::init_tracing();
     tracing::info!("test_feature_query_count_only: Starting");
 
-    let client = common::create_api_key_client()?;
-    let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
+    let client = create_api_key_client()?;
+    let feature_service = FeatureServiceClient::new(SAMPLE_FEATURE_SERVICE, &client);
 
-    common::rate_limit().await;
+    rate_limit().await;
 
     // Query for count of all features using the fluent API
     tracing::info!("test_feature_query_count_only: Executing count query");
@@ -186,10 +225,10 @@ async fn test_feature_query_with_object_ids() -> anyhow::Result<()> {
     common::init_tracing();
     tracing::info!("test_feature_query_with_object_ids: Starting");
 
-    let client = common::create_api_key_client()?;
-    let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
+    let client = create_api_key_client()?;
+    let feature_service = FeatureServiceClient::new(SAMPLE_FEATURE_SERVICE, &client);
 
-    common::rate_limit().await;
+    rate_limit().await;
 
     // Query specific features by object ID using the fluent API
     tracing::info!("test_feature_query_with_object_ids: Querying by object IDs [1, 2]");
@@ -223,10 +262,10 @@ async fn test_feature_query_autopagination() -> anyhow::Result<()> {
     common::init_tracing();
     tracing::info!("test_feature_query_autopagination: Starting");
 
-    let client = common::create_api_key_client()?;
-    let feature_service = FeatureServiceClient::new(common::SAMPLE_FEATURE_SERVICE, &client);
+    let client = create_api_key_client()?;
+    let feature_service = FeatureServiceClient::new(SAMPLE_FEATURE_SERVICE, &client);
 
-    common::rate_limit().await;
+    rate_limit().await;
 
     // Use execute_all() to automatically paginate through all results
     // Using a small page size to force multiple requests

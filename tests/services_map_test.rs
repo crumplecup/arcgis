@@ -4,8 +4,8 @@ mod common;
 
 use arcgis::{
     ApiKeyAuth, ArcGISClient, ExportMapParams, ExportResult, ExportTarget, GeometryType,
-    IdentifyParams, ImageFormat, LayerOperation, LayerSelection, MapServiceClient,
-    TileCoordinate, TimeRelation,
+    IdentifyParams, ImageFormat, LayerOperation, LayerSelection, MapServiceClient, TileCoordinate,
+    TimeRelation,
 };
 
 #[test]
@@ -44,7 +44,7 @@ fn test_image_format_default() -> anyhow::Result<()> {
 
     tracing::info!("test_image_format_default: Checking default format");
     let format = ImageFormat::default();
-    
+
     tracing::info!(
         format = ?format,
         "test_image_format_default: Verifying default"
@@ -101,7 +101,7 @@ fn test_time_relation_default() -> anyhow::Result<()> {
 
     tracing::info!("test_time_relation_default: Checking default relation");
     let relation = TimeRelation::default();
-    
+
     tracing::info!(
         relation = ?relation,
         "test_time_relation_default: Verifying default"
@@ -143,7 +143,7 @@ fn test_layer_selection_default() -> anyhow::Result<()> {
 
     tracing::info!("test_layer_selection_default: Checking default selection");
     let selection = LayerSelection::default();
-    
+
     tracing::info!(
         selection = ?selection,
         "test_layer_selection_default: Verifying default"
@@ -194,7 +194,7 @@ fn test_export_map_params_default() -> anyhow::Result<()> {
 
     tracing::info!("test_export_map_params_default: Creating default params");
     let params = ExportMapParams::default();
-    
+
     tracing::info!(
         bbox = %params.bbox(),
         size = ?params.size(),
@@ -256,7 +256,7 @@ fn test_tile_coordinate_creation() -> anyhow::Result<()> {
 
     tracing::info!("test_tile_coordinate_creation: Creating TileCoordinate");
     let coord = TileCoordinate::new(5, 10, 15);
-    
+
     tracing::info!(
         level = coord.level(),
         row = coord.row(),

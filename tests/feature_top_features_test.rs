@@ -2,9 +2,7 @@
 
 mod common;
 
-use arcgis::{
-    ApiKeyAuth, ArcGISClient, FeatureServiceClient, TopFeaturesParams, TopFilter,
-};
+use arcgis::{ApiKeyAuth, ArcGISClient, FeatureServiceClient, TopFeaturesParams, TopFilter};
 
 #[test]
 fn test_top_filter_creation() -> anyhow::Result<()> {
@@ -40,7 +38,9 @@ fn test_top_filter_multiple_group_by_fields() -> anyhow::Result<()> {
     common::init_tracing();
     tracing::info!("test_top_filter_multiple_group_by_fields: Starting");
 
-    tracing::info!("test_top_filter_multiple_group_by_fields: Creating filter with multiple group-by fields");
+    tracing::info!(
+        "test_top_filter_multiple_group_by_fields: Creating filter with multiple group-by fields"
+    );
     let filter = TopFilter::new(
         vec!["State".to_string(), "County".to_string()],
         5,
@@ -64,7 +64,9 @@ fn test_top_filter_multiple_order_by_fields() -> anyhow::Result<()> {
     common::init_tracing();
     tracing::info!("test_top_filter_multiple_order_by_fields: Starting");
 
-    tracing::info!("test_top_filter_multiple_order_by_fields: Creating filter with multiple order-by fields");
+    tracing::info!(
+        "test_top_filter_multiple_order_by_fields: Creating filter with multiple order-by fields"
+    );
     let filter = TopFilter::new(
         vec!["Category".to_string()],
         10,
@@ -164,7 +166,9 @@ fn test_top_features_params_with_spatial_filter() -> anyhow::Result<()> {
         vec!["Sales DESC".to_string()],
     );
 
-    tracing::info!("test_top_features_params_with_spatial_filter: Building params with spatial filter");
+    tracing::info!(
+        "test_top_features_params_with_spatial_filter: Building params with spatial filter"
+    );
     let params = TopFeaturesParams::builder()
         .top_filter(filter)
         .spatial_rel(arcgis::SpatialRel::Intersects)
@@ -198,7 +202,9 @@ fn test_top_features_params_with_geometry_options() -> anyhow::Result<()> {
         vec!["Elevation DESC".to_string()],
     );
 
-    tracing::info!("test_top_features_params_with_geometry_options: Building params with geometry options");
+    tracing::info!(
+        "test_top_features_params_with_geometry_options: Building params with geometry options"
+    );
     let params = TopFeaturesParams::builder()
         .top_filter(filter)
         .return_geometry(true)
@@ -276,7 +282,7 @@ fn test_top_features_client_method_compiles() -> anyhow::Result<()> {
 
     // This won't execute but verifies the API compiles
     drop(service);
-    
+
     tracing::info!("test_top_features_client_method_compiles: Completed");
     Ok(())
 }
@@ -301,7 +307,7 @@ fn test_top_features_params_serialization() -> anyhow::Result<()> {
 
     tracing::info!("test_top_features_params_serialization: Serializing to JSON");
     let serialized = serde_json::to_string(&params)?;
-    
+
     tracing::info!(
         serialized_len = serialized.len(),
         "test_top_features_params_serialization: Verifying serialization"
@@ -328,7 +334,7 @@ fn test_top_filter_serialization() -> anyhow::Result<()> {
 
     tracing::info!("test_top_filter_serialization: Serializing to JSON");
     let serialized = serde_json::to_string(&filter)?;
-    
+
     tracing::info!(
         serialized_len = serialized.len(),
         "test_top_filter_serialization: Verifying serialization"

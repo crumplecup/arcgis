@@ -206,7 +206,9 @@ async fn test_query_with_field_filtering() -> anyhow::Result<()> {
     rate_limit().await;
 
     // Query with specific fields only
-    tracing::info!("test_query_with_field_filtering: Querying with field filtering (CITY_NAME, POP)");
+    tracing::info!(
+        "test_query_with_field_filtering: Querying with field filtering (CITY_NAME, POP)"
+    );
     let result = service
         .query(LayerId::new(0))
         .where_clause("POP > 1000000")
@@ -337,10 +339,7 @@ async fn test_feature_count_method() -> anyhow::Result<()> {
         .query_feature_count(LayerId::new(0), "POP > 100000")
         .await?;
 
-    tracing::info!(
-        count = count,
-        "test_feature_count_method: Received count"
-    );
+    tracing::info!(count = count, "test_feature_count_method: Received count");
     assert!(count > 0, "Should find cities with population > 100,000");
 
     tracing::info!("test_feature_count_method: Completed");

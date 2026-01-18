@@ -11,7 +11,7 @@ fn test_layer_id_creation() -> anyhow::Result<()> {
 
     tracing::info!("test_layer_id_creation: Creating LayerId");
     let id = LayerId::new(42);
-    
+
     tracing::info!(
         id = id.get(),
         id_string = %id.to_string(),
@@ -31,7 +31,7 @@ fn test_layer_id_from_u32() -> anyhow::Result<()> {
 
     tracing::info!("test_layer_id_from_u32: Converting u32 to LayerId");
     let id: LayerId = 42.into();
-    
+
     tracing::info!(
         id = id.get(),
         "test_layer_id_from_u32: Verifying conversion"
@@ -49,10 +49,10 @@ fn test_object_id_serialization() -> anyhow::Result<()> {
 
     tracing::info!("test_object_id_serialization: Creating ObjectId");
     let id = ObjectId::new(123);
-    
+
     tracing::info!("test_object_id_serialization: Serializing to JSON");
     let json = serde_json::to_string(&id)?;
-    
+
     tracing::info!(
         json = %json,
         "test_object_id_serialization: Verifying serialization"
@@ -69,10 +69,10 @@ fn test_object_id_deserialization() -> anyhow::Result<()> {
     tracing::info!("test_object_id_deserialization: Starting");
 
     let json = "456";
-    
+
     tracing::info!("test_object_id_deserialization: Deserializing from JSON");
     let id: ObjectId = serde_json::from_str(json)?;
-    
+
     tracing::info!(
         id = id.get(),
         "test_object_id_deserialization: Verifying deserialization"

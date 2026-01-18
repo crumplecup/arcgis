@@ -6,14 +6,6 @@
 use std::sync::OnceLock;
 use tracing::instrument;
 
-#[cfg(any(
-    feature = "test-public",
-    feature = "test-location",
-    feature = "test-portal",
-    feature = "test-publishing"
-))]
-use arcgis::{ApiKeyAuth, ArcGISClient, Error, ErrorKind};
-
 /// Load environment variables from .env file.
 /// Only loads once, subsequent calls are no-ops.
 #[instrument]
@@ -63,66 +55,6 @@ pub fn init_tracing() {
             .with_line_number(true)
             .init();
     });
-}
-
-/// Get an optional API key from environment.
-/// Some tests may use API key instead of OAuth.
-#[instrument]
-#[cfg(any(
-    feature = "test-public",
-    feature = "test-location",
-    feature = "test-portal",
-    feature = "test-publishing"
-))]
-pub fn api_key() -> Option<String> {
-    load_env();
-    std::env::var("ARCGIS_API_KEY").ok()
-}
-
-/// Create a test client with API key authentication.
-///
-/// # Errors
-///
-/// Returns an error if ARCGIS_API_KEY is not set in environment.
-#[instrument]
-#[cfg(any(
-    feature = "test-public",
-    feature = "test-location",
-    feature = "test-portal",
-    feature = "test-publishing"
-))]
-pub fn create_api_key_client() -> Result<ArcGISClient, Error> {
-    let key = api_key().ok_or_else(|| {
-        Error::from(ErrorKind::Validation(
-            "ARCGIS_API_KEY not found in environment. Add to .env file".to_string(),
-        ))
-    })?;
-    let auth = ApiKeyAuth::new(key);
-    Ok(ArcGISClient::new(auth))
-}
-
-/// Public ArcGIS Online feature service for testing (read-only).
-/// This is ESRI's World Cities sample service.
-#[cfg(any(
-    feature = "test-public",
-    feature = "test-location",
-    feature = "test-portal",
-    feature = "test-publishing"
-))]
-pub const SAMPLE_FEATURE_SERVICE: &str =
-    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer";
-
-/// Rate limiting helper to be polite to the API.
-/// Sleeps for a short duration between requests.
-#[instrument]
-#[cfg(any(
-    feature = "test-public",
-    feature = "test-location",
-    feature = "test-portal",
-    feature = "test-publishing"
-))]
-pub async fn rate_limit() {
-    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 }
 
 #[cfg(test)]

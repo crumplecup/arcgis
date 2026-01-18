@@ -3,8 +3,7 @@
 mod common;
 
 use arcgis::{
-    ApiKeyAuth, ArcGISClient, FeatureServiceClient, LayerId, StatisticDefinition,
-    StatisticType,
+    ApiKeyAuth, ArcGISClient, FeatureServiceClient, LayerId, StatisticDefinition, StatisticType,
 };
 
 #[test]
@@ -101,7 +100,7 @@ fn test_statistic_definition_serialization() -> anyhow::Result<()> {
 
     tracing::info!("test_statistic_definition_serialization: Serializing to JSON");
     let json = serde_json::to_string(&stat)?;
-    
+
     tracing::info!(
         json_len = json.len(),
         "test_statistic_definition_serialization: Verifying JSON content"
@@ -127,7 +126,7 @@ fn test_statistic_definition_deserialization() -> anyhow::Result<()> {
 
     tracing::info!("test_statistic_definition_deserialization: Deserializing from JSON");
     let stat: StatisticDefinition = serde_json::from_str(json)?;
-    
+
     tracing::info!(
         statistic_type = ?stat.statistic_type(),
         on_field = %stat.on_statistic_field(),
@@ -172,7 +171,7 @@ fn test_query_builder_statistics() -> anyhow::Result<()> {
         .having("total > 100");
 
     drop(builder);
-    
+
     tracing::info!("test_query_builder_statistics: Completed");
     Ok(())
 }
@@ -188,7 +187,9 @@ fn test_query_builder_statistics_with_order_by() -> anyhow::Result<()> {
     let service = FeatureServiceClient::new("https://example.com/FeatureServer", &client);
 
     // Test statistics with ordering
-    tracing::info!("test_query_builder_statistics_with_order_by: Building query with statistics and ordering");
+    tracing::info!(
+        "test_query_builder_statistics_with_order_by: Building query with statistics and ordering"
+    );
     let builder = service
         .query(LayerId::new(0))
         .statistics(vec![StatisticDefinition::new(
@@ -200,7 +201,7 @@ fn test_query_builder_statistics_with_order_by() -> anyhow::Result<()> {
         .order_by(&["avg_area DESC"]);
 
     drop(builder);
-    
+
     tracing::info!("test_query_builder_statistics_with_order_by: Completed");
     Ok(())
 }
@@ -282,7 +283,9 @@ fn test_having_clause_compilation() -> anyhow::Result<()> {
         .group_by(&["CATEGORY"])
         .having("cnt > 10");
 
-    tracing::info!("test_having_clause_compilation: Testing HAVING clause format 2 (total >= 1000)");
+    tracing::info!(
+        "test_having_clause_compilation: Testing HAVING clause format 2 (total >= 1000)"
+    );
     let _builder2 = service
         .query(LayerId::new(0))
         .statistics(vec![StatisticDefinition::new(

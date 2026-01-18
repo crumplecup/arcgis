@@ -28,7 +28,7 @@ fn test_response_format_serialization() -> anyhow::Result<()> {
     let pbf_format = ResponseFormat::Pbf;
     let serialized = serde_json::to_string(&pbf_format)?;
     assert_eq!(serialized, "\"pbf\"");
-    
+
     tracing::info!("test_response_format_serialization: Completed");
     Ok(())
 }
@@ -55,7 +55,7 @@ fn test_feature_query_params_builder() -> anyhow::Result<()> {
     assert_eq!(params.where_clause(), "POPULATION > 100000");
     assert_eq!(params.out_fields().as_ref().map(|f| f.len()), Some(2));
     assert!(params.return_geometry());
-    
+
     tracing::info!("test_feature_query_params_builder: Completed");
     Ok(())
 }
@@ -67,7 +67,7 @@ fn test_feature_query_params_default() -> anyhow::Result<()> {
 
     tracing::info!("test_feature_query_params_default: Creating default params");
     let params = FeatureQueryParams::default();
-    
+
     tracing::info!(
         where_clause = %params.where_clause(),
         return_geometry = params.return_geometry(),
@@ -77,7 +77,7 @@ fn test_feature_query_params_default() -> anyhow::Result<()> {
     assert_eq!(params.where_clause(), "1=1");
     assert!(params.return_geometry());
     assert_eq!(*params.format(), ResponseFormat::Json);
-    
+
     tracing::info!("test_feature_query_params_default: Completed");
     Ok(())
 }
@@ -97,14 +97,14 @@ fn test_feature_serialization() -> anyhow::Result<()> {
 
     tracing::info!("test_feature_serialization: Serializing to JSON");
     let json = serde_json::to_string(&feature)?;
-    
+
     tracing::info!(
         json_len = json.len(),
         "test_feature_serialization: Verifying JSON content"
     );
     assert!(json.contains("NAME"));
     assert!(json.contains("Test City"));
-    
+
     tracing::info!("test_feature_serialization: Completed");
     Ok(())
 }
@@ -129,7 +129,7 @@ fn test_feature_set_deserialization() -> anyhow::Result<()> {
 
     tracing::info!("test_feature_set_deserialization: Deserializing FeatureSet");
     let feature_set: FeatureSet = serde_json::from_str(json)?;
-    
+
     tracing::info!(
         geometry_type = ?feature_set.geometry_type(),
         features_count = feature_set.features().len(),
@@ -139,7 +139,7 @@ fn test_feature_set_deserialization() -> anyhow::Result<()> {
     assert_eq!(*feature_set.geometry_type(), Some(GeometryType::Point));
     assert_eq!(feature_set.features().len(), 1);
     assert!(!feature_set.exceeded_transfer_limit());
-    
+
     tracing::info!("test_feature_set_deserialization: Completed");
     Ok(())
 }
@@ -159,7 +159,7 @@ fn test_feature_service_client_creation() -> anyhow::Result<()> {
 
     // Just verify it compiles and constructs correctly
     drop(feature_service);
-    
+
     tracing::info!("test_feature_service_client_creation: Completed");
     Ok(())
 }

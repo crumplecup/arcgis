@@ -2,9 +2,7 @@
 
 mod common;
 
-use arcgis::{
-    ApiKeyAuth, ArcGISClient, FeatureServiceClient, ObjectId, RelatedRecordsParams,
-};
+use arcgis::{ApiKeyAuth, ArcGISClient, FeatureServiceClient, ObjectId, RelatedRecordsParams};
 
 #[test]
 fn test_related_records_params_builder() -> anyhow::Result<()> {
@@ -65,7 +63,9 @@ fn test_related_records_params_with_definition_expression() -> anyhow::Result<()
     common::init_tracing();
     tracing::info!("test_related_records_params_with_definition_expression: Starting");
 
-    tracing::info!("test_related_records_params_with_definition_expression: Building params with definition expression");
+    tracing::info!(
+        "test_related_records_params_with_definition_expression: Building params with definition expression"
+    );
     let params = RelatedRecordsParams::builder()
         .object_ids(vec![ObjectId::new(100)])
         .relationship_id(2u32)
@@ -140,7 +140,9 @@ fn test_related_records_params_with_geometry_options() -> anyhow::Result<()> {
     common::init_tracing();
     tracing::info!("test_related_records_params_with_geometry_options: Starting");
 
-    tracing::info!("test_related_records_params_with_geometry_options: Building params with geometry options");
+    tracing::info!(
+        "test_related_records_params_with_geometry_options: Building params with geometry options"
+    );
     let params = RelatedRecordsParams::builder()
         .object_ids(vec![ObjectId::new(1)])
         .relationship_id(1u32)
@@ -189,7 +191,7 @@ fn test_related_records_client_method_compiles() -> anyhow::Result<()> {
 
     // This won't execute but verifies the API compiles
     drop(service);
-    
+
     tracing::info!("test_related_records_client_method_compiles: Completed");
     Ok(())
 }
@@ -209,7 +211,7 @@ fn test_related_records_params_serialization() -> anyhow::Result<()> {
 
     tracing::info!("test_related_records_params_serialization: Serializing to JSON");
     let serialized = serde_json::to_string(&params)?;
-    
+
     tracing::info!(
         serialized_len = serialized.len(),
         "test_related_records_params_serialization: Verifying serialization"
@@ -249,7 +251,9 @@ fn test_related_records_params_with_gdb_version() -> anyhow::Result<()> {
     common::init_tracing();
     tracing::info!("test_related_records_params_with_gdb_version: Starting");
 
-    tracing::info!("test_related_records_params_with_gdb_version: Building params with GDB version");
+    tracing::info!(
+        "test_related_records_params_with_gdb_version: Building params with GDB version"
+    );
     let params = RelatedRecordsParams::builder()
         .object_ids(vec![ObjectId::new(1)])
         .relationship_id(1u32)

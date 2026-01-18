@@ -21,10 +21,6 @@ test-location = []   # Tier 2: Location services (requires ARCGIS_LOCATION_KEY)
 test-portal = []     # Tier 3: Portal operations (requires ARCGIS_PORTAL_KEY, manual only)
 test-publishing = [] # Tier 3: Publishing operations (requires ARCGIS_PUBLISH_KEY, manual only)
 
-# Legacy feature flag (backward compatibility)
-api = ["test-public"] # Deprecated: Use test-public instead
-
-
 [dependencies]
 # Core HTTP and async runtime
 reqwest = { version = "0.13", features = [
