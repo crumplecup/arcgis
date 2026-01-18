@@ -1,12 +1,12 @@
 //! Basic integration tests for ArcGIS SDK.
 //!
-//! These tests require credentials in a `.env` file and the `api` feature flag.
-//! Run with: `cargo test --features api`
+//! These tests use public ArcGIS Online services and require no authentication.
+//! Run with: `cargo test --features test-public`
 
 mod common;
 
 #[tokio::test]
-#[cfg(feature = "api")]
+#[cfg(feature = "test-public")]
 async fn test_client_creation_with_api_key() -> anyhow::Result<()> {
     common::init_tracing();
     tracing::info!("test_client_creation_with_api_key: Starting");
@@ -21,7 +21,7 @@ async fn test_client_creation_with_api_key() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg(feature = "api")]
+#[cfg(feature = "test-public")]
 fn test_credentials_available() {
     common::init_tracing();
     tracing::info!("test_credentials_available: Starting");
@@ -45,7 +45,7 @@ fn test_credentials_available() {
 }
 
 #[tokio::test]
-#[cfg(feature = "api")]
+#[cfg(feature = "test-public")]
 async fn test_public_feature_service_accessible() -> anyhow::Result<()> {
     common::init_tracing();
     tracing::info!("test_public_feature_service_accessible: Starting");
@@ -79,7 +79,7 @@ async fn test_public_feature_service_accessible() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-#[cfg(feature = "api")]
+#[cfg(feature = "test-public")]
 async fn test_feature_query_with_where_clause() -> anyhow::Result<()> {
     use arcgis::{FeatureServiceClient, LayerId};
 
@@ -134,7 +134,7 @@ async fn test_feature_query_with_where_clause() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-#[cfg(feature = "api")]
+#[cfg(feature = "test-public")]
 async fn test_feature_query_count_only() -> anyhow::Result<()> {
     use arcgis::{FeatureServiceClient, LayerId};
 
@@ -179,7 +179,7 @@ async fn test_feature_query_count_only() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-#[cfg(feature = "api")]
+#[cfg(feature = "test-public")]
 async fn test_feature_query_with_object_ids() -> anyhow::Result<()> {
     use arcgis::{FeatureServiceClient, LayerId, ObjectId};
 
@@ -216,7 +216,7 @@ async fn test_feature_query_with_object_ids() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-#[cfg(feature = "api")]
+#[cfg(feature = "test-public")]
 async fn test_feature_query_autopagination() -> anyhow::Result<()> {
     use arcgis::{FeatureServiceClient, LayerId};
 

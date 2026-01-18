@@ -4,12 +4,19 @@
 //! set in a `.env` file at the repository root.
 
 use std::sync::OnceLock;
+use tracing::instrument;
 
-#[cfg(feature = "api")]
+#[cfg(any(
+    feature = "test-public",
+    feature = "test-location",
+    feature = "test-portal",
+    feature = "test-publishing"
+))]
 use arcgis::{ApiKeyAuth, ArcGISClient, Error, ErrorKind};
 
 /// Load environment variables from .env file.
 /// Only loads once, subsequent calls are no-ops.
+#[instrument]
 pub fn load_env() {
     static INIT: OnceLock<()> = OnceLock::new();
     INIT.get_or_init(|| {
@@ -35,6 +42,7 @@ pub fn load_env() {
 ///     Ok(())
 /// }
 /// ```
+#[instrument]
 pub fn init_tracing() {
     use tracing_subscriber::EnvFilter;
 
@@ -42,11 +50,10 @@ pub fn init_tracing() {
     INIT.get_or_init(|| {
         load_env();
 
-        let log_level = std::env::var("RUST_LOG")
-            .unwrap_or_else(|_| "info".to_string());
+        let log_level = std::env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string());
 
-        let env_filter = EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| EnvFilter::new(log_level));
+        let env_filter =
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(log_level));
 
         tracing_subscriber::fmt()
             .with_env_filter(env_filter)
@@ -60,26 +67,30 @@ pub fn init_tracing() {
 
 /// Get an optional API key from environment.
 /// Some tests may use API key instead of OAuth.
-///
-/// Available with the `api` feature.
-#[cfg(feature = "api")]
+#[instrument]
+#[cfg(any(
+    feature = "test-public",
+    feature = "test-location",
+    feature = "test-portal",
+    feature = "test-publishing"
+))]
 pub fn api_key() -> Option<String> {
     load_env();
     std::env::var("ARCGIS_API_KEY").ok()
 }
-
-// TODO: Add OAuth helper functions when implementing Phase 2
-// pub fn client_id() -> String { ... }
-// pub fn client_secret() -> String { ... }
 
 /// Create a test client with API key authentication.
 ///
 /// # Errors
 ///
 /// Returns an error if ARCGIS_API_KEY is not set in environment.
-///
-/// Available with the `api` feature.
-#[cfg(feature = "api")]
+#[instrument]
+#[cfg(any(
+    feature = "test-public",
+    feature = "test-location",
+    feature = "test-portal",
+    feature = "test-publishing"
+))]
 pub fn create_api_key_client() -> Result<ArcGISClient, Error> {
     let key = api_key().ok_or_else(|| {
         Error::from(ErrorKind::Validation(
@@ -92,17 +103,24 @@ pub fn create_api_key_client() -> Result<ArcGISClient, Error> {
 
 /// Public ArcGIS Online feature service for testing (read-only).
 /// This is ESRI's World Cities sample service.
-///
-/// Available with the `api` feature.
-#[cfg(feature = "api")]
+#[cfg(any(
+    feature = "test-public",
+    feature = "test-location",
+    feature = "test-portal",
+    feature = "test-publishing"
+))]
 pub const SAMPLE_FEATURE_SERVICE: &str =
     "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer";
 
 /// Rate limiting helper to be polite to the API.
 /// Sleeps for a short duration between requests.
-///
-/// Available with the `api` feature.
-#[cfg(feature = "api")]
+#[instrument]
+#[cfg(any(
+    feature = "test-public",
+    feature = "test-location",
+    feature = "test-portal",
+    feature = "test-publishing"
+))]
 pub async fn rate_limit() {
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 }
