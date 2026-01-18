@@ -23,10 +23,12 @@ pub struct ProjectParameters {
 
     /// Datum transformation WKID (optional).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     transformation: Option<i32>,
 
     /// Whether to transform forward or reverse.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     transform_forward: Option<bool>,
 }
 

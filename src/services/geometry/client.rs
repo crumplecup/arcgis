@@ -169,11 +169,30 @@ impl<'a> GeometryServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending project request");
 
-        let params_json = serde_json::to_string(&params)?;
+        // Serialize just the geometries array
+        let geometries_json = serde_json::to_string(params.geometries())?;
+        let in_sr_str = params.in_sr().to_string();
+        let out_sr_str = params.out_sr().to_string();
+
         let mut form = vec![
-            ("geometries", params_json.as_str()),
+            ("geometries", geometries_json.as_str()),
+            ("inSR", in_sr_str.as_str()),
+            ("outSR", out_sr_str.as_str()),
             ("f", "json"),
         ];
+
+        // Add optional transformation parameters
+        let transformation_str;
+        if let Some(transformation) = params.transformation() {
+            transformation_str = transformation.to_string();
+            form.push(("transformation", transformation_str.as_str()));
+        }
+
+        let transform_forward_str;
+        if let Some(transform_forward) = params.transform_forward() {
+            transform_forward_str = transform_forward.to_string();
+            form.push(("transformForward", transform_forward_str.as_str()));
+        }
 
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;
@@ -198,7 +217,37 @@ impl<'a> GeometryServiceClient<'a> {
             }));
         }
 
-        let result: ProjectResult = response.json().await?;
+        let response_text = response.text().await?;
+
+        // Check for ArcGIS error response (HTTP 200 but with error payload)
+        if response_text.contains("\"error\"") {
+            tracing::error!(response = %response_text, "API returned error in response body");
+
+            // Try to parse error details
+            #[derive(serde::Deserialize)]
+            struct ErrorResponse {
+                error: ErrorDetail,
+            }
+            #[derive(serde::Deserialize)]
+            struct ErrorDetail {
+                code: i32,
+                message: String,
+            }
+
+            if let Ok(err_resp) = serde_json::from_str::<ErrorResponse>(&response_text) {
+                return Err(crate::Error::from(crate::ErrorKind::Api {
+                    code: err_resp.error.code,
+                    message: err_resp.error.message,
+                }));
+            } else {
+                return Err(crate::Error::from(crate::ErrorKind::Api {
+                    code: 0,
+                    message: response_text,
+                }));
+            }
+        }
+
+        let result: ProjectResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             result_count = result.geometries().len(),
