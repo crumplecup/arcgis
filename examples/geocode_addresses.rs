@@ -150,7 +150,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("\n=== Example 4: Processing Multiple Addresses ===");
     tracing::info!("Geocode multiple addresses efficiently");
 
-    let tech_companies = vec![
+    let tech_companies = [
         "1 Apple Park Way, Cupertino, CA",
         "1 Microsoft Way, Redmond, WA",
         "1600 Amphitheatre Parkway, Mountain View, CA",

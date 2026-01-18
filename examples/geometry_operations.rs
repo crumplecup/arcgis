@@ -156,7 +156,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("\n=== Example 4: Batch Projection ===");
     tracing::info!("Project multiple points at once");
 
-    let cities = vec![
+    let cities = [
         ("San Francisco", -122.4194, 37.7749),
         ("Los Angeles", -118.2437, 34.0522),
         ("Seattle", -122.3321, 47.6062),

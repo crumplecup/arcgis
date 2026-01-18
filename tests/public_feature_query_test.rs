@@ -5,18 +5,22 @@
 
 mod common;
 
+#[cfg(feature = "test-public")]
 use arcgis::{FeatureServiceClient, LayerId, ObjectId};
 
 /// Public World Cities feature service (ESRI sample data).
+#[cfg(feature = "test-public")]
 const WORLD_CITIES_SERVICE: &str =
     "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer";
 
 /// Rate limiting helper to be polite to public services.
+#[cfg(feature = "test-public")]
 async fn rate_limit() {
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 }
 
 /// Create an unauthenticated client for public service access.
+#[cfg(feature = "test-public")]
 fn create_public_client() -> arcgis::ArcGISClient {
     use arcgis::NoAuth;
     arcgis::ArcGISClient::new(NoAuth)

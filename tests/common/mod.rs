@@ -113,6 +113,7 @@ mod tests {
 
     #[test]
     fn test_env_loading() {
+        init_tracing();
         load_env();
         // Just verify it doesn't panic - credentials are optional for basic tests
     }
