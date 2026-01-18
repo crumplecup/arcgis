@@ -29,10 +29,9 @@
 //! ```
 //!
 //! The example will:
-//! 1. Create a Client Credentials authenticator
-//! 2. Automatically fetch an access token (no browser needed!)
-//! 3. Display the token information
-//! 4. Demonstrate automatic token refresh
+//! 1. Automatically fetch an access token (no browser needed!)
+//! 2. Display the token information
+//! 3. Demonstrate automatic token caching
 
 use arcgis::{AuthProvider, ClientCredentialsAuth};
 
@@ -49,19 +48,12 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("🔐 ArcGIS OAuth 2.0 Client Credentials Flow Example");
     tracing::info!("✨ Fully automated - no browser interaction required!");
 
-    // Load environment variables (.env is automatically loaded by library)
-    tracing::debug!("Loading credentials from environment");
-    let client_id = std::env::var("CLIENT_ID")
-        .map_err(|_| anyhow::anyhow!("CLIENT_ID must be set in .env or environment"))?;
-    let client_secret = std::env::var("CLIENT_SECRET")
-        .map_err(|_| anyhow::anyhow!("CLIENT_SECRET must be set in .env or environment"))?;
-
-    // 1. Create OAuth Client Credentials authenticator
-    tracing::info!("📋 Creating OAuth Client Credentials authenticator");
-    let auth = ClientCredentialsAuth::new(client_id, client_secret)?;
+    // Load credentials from .env file (CLIENT_ID and CLIENT_SECRET automatically loaded)
+    tracing::info!("📋 Creating OAuth Client Credentials authenticator from environment");
+    let auth = ClientCredentialsAuth::from_env()?;
     tracing::info!("✅ Authenticator created");
 
-    // 2. Get access token (fetched automatically on first use)
+    // 1. Get access token (fetched automatically on first use)
     tracing::info!("🔑 Fetching access token");
     let token = auth.get_token().await?;
     tracing::info!(
@@ -69,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
         "✅ Access token obtained"
     );
 
-    // 3. Get token again (should return cached token)
+    // 2. Get token again (should return cached token)
     tracing::info!("🔄 Getting token again (should use cache)");
     let token2 = auth.get_token().await?;
     let tokens_match = token == token2;
@@ -78,7 +70,7 @@ async fn main() -> anyhow::Result<()> {
         "✅ Token retrieved from cache"
     );
 
-    // 4. Show token info
+    // 3. Show token info
     tracing::info!("📊 Token Information:");
     tracing::info!(
         token_length = token.len(),
