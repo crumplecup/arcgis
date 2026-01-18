@@ -18,7 +18,7 @@
 
 use arcgis::{
     ArcGISClient, ArcGISEnvelope, ArcGISGeometry, ArcGISPolygon, FeatureServiceClient,
-    GeometryType, LayerId, NoAuth, SpatialRel,
+    GeometryType, LayerId, NoAuth, SpatialReference, SpatialRel,
 };
 
 /// Public World Cities feature service (no auth required).
@@ -48,12 +48,13 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Find cities within a geographic extent (California)");
 
     // Define a bounding box around California
+    // IMPORTANT: Must specify spatial reference so service knows coordinate system
     let california_bbox = ArcGISEnvelope {
         xmin: -124.5, // West
         ymin: 32.5,   // South
         xmax: -114.0, // East
         ymax: 42.0,   // North
-        spatial_reference: None,
+        spatial_reference: Some(SpatialReference::wgs84()), // WGS84 (lat/lon)
     };
 
     let bbox_result = service
@@ -64,7 +65,7 @@ async fn main() -> anyhow::Result<()> {
             SpatialRel::Intersects,
         )
         .where_clause("POP > 100000") // Cities with pop > 100k
-        .out_fields(&["CITY_NAME", "POP", "ST"])
+        .out_fields(&["CITY_NAME", "POP"])
         .return_geometry(true)
         .execute()
         .await?;
@@ -87,13 +88,13 @@ async fn main() -> anyhow::Result<()> {
     // Define a polygon (simplified Pacific Northwest)
     let pacific_nw_polygon = ArcGISPolygon {
         rings: vec![vec![
-            [-125.0, 42.0], // NW corner
-            [-116.0, 42.0], // NE corner
-            [-116.0, 45.5], // SE corner
-            [-125.0, 49.0], // SW corner
-            [-125.0, 42.0], // Close the ring
+            [-125.0, 49.0], // NW corner (start)
+            [-116.0, 49.0], // NE corner
+            [-116.0, 42.0], // SE corner
+            [-125.0, 42.0], // SW corner
+            [-125.0, 49.0], // Close the ring back to start
         ]],
-        spatial_reference: None,
+        spatial_reference: Some(SpatialReference::wgs84()),
     };
 
     let polygon_result = service
@@ -101,10 +102,10 @@ async fn main() -> anyhow::Result<()> {
         .spatial_filter(
             ArcGISGeometry::Polygon(pacific_nw_polygon),
             GeometryType::Polygon,
-            SpatialRel::Within, // Cities WITHIN the polygon
+            SpatialRel::Intersects, // Cities that intersect the polygon
         )
         .where_clause("POP > 50000")
-        .out_fields(&["CITY_NAME", "POP", "ST"])
+        .out_fields(&["CITY_NAME", "POP", "CNTRY_NAME"])
         .return_geometry(false)
         .execute()
         .await?;
@@ -116,8 +117,8 @@ async fn main() -> anyhow::Result<()> {
 
     for feature in polygon_result.features() {
         let city = feature.attributes().get("CITY_NAME");
-        let state = feature.attributes().get("ST");
-        tracing::info!(city = ?city, state = ?state, "City in polygon");
+        let country = feature.attributes().get("CNTRY_NAME");
+        tracing::info!(city = ?city, country = ?country, "City in polygon");
     }
 
     // Example 3: Combining Spatial and Attribute Queries
@@ -129,7 +130,7 @@ async fn main() -> anyhow::Result<()> {
         ymin: 32.0,
         xmax: -114.0,
         ymax: 50.0,
-        spatial_reference: None,
+        spatial_reference: Some(SpatialReference::wgs84()),
     };
 
     let combined_result = service
@@ -140,7 +141,7 @@ async fn main() -> anyhow::Result<()> {
             SpatialRel::Intersects,
         )
         .where_clause("POP > 500000") // Large cities only
-        .out_fields(&["CITY_NAME", "POP", "ST", "CNTRY_NAME"])
+        .out_fields(&["CITY_NAME", "POP", "CNTRY_NAME"])
         .return_geometry(true)
         .limit(10)
         .execute()
@@ -154,13 +155,13 @@ async fn main() -> anyhow::Result<()> {
     for feature in combined_result.features() {
         let city = feature.attributes().get("CITY_NAME");
         let pop = feature.attributes().get("POP");
-        let state = feature.attributes().get("ST");
+        let country = feature.attributes().get("CNTRY_NAME");
         let has_geom = feature.geometry().is_some();
 
         tracing::info!(
             city = ?city,
             population = ?pop,
-            state = ?state,
+            country = ?country,
             has_geometry = has_geom,
             "Large West Coast city"
         );
@@ -175,7 +176,7 @@ async fn main() -> anyhow::Result<()> {
         ymin: 37.5,
         xmax: -122.0,
         ymax: 38.0,
-        spatial_reference: None,
+        spatial_reference: Some(SpatialReference::wgs84()),
     };
 
     // Test different spatial relationships
@@ -217,7 +218,7 @@ async fn main() -> anyhow::Result<()> {
         ymin: 24.0,
         xmax: -66.0,
         ymax: 50.0,
-        spatial_reference: None,
+        spatial_reference: Some(SpatialReference::wgs84()),
     };
 
     let us_result = service

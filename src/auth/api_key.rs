@@ -42,6 +42,50 @@ impl ApiKeyAuth {
             api_key: SecretString::new(api_key.into().into_boxed_str()),
         }
     }
+
+    /// Creates a new API Key authentication provider from environment variables.
+    ///
+    /// This method automatically loads `.env` file and reads the `ARCGIS_API_KEY`
+    /// environment variable.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the `ARCGIS_API_KEY` environment variable is not set.
+    /// The error preserves the original `std::env::VarError` in the error chain.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::ApiKeyAuth;
+    ///
+    /// // Reads ARCGIS_API_KEY from .env file
+    /// let auth = ApiKeyAuth::from_env()?;
+    /// # Ok::<(), arcgis::Error>(())
+    /// ```
+    #[instrument]
+    pub fn from_env() -> Result<Self> {
+        tracing::debug!("Loading API key from environment");
+
+        // Load .env file (ignoring errors if it doesn't exist)
+        let _ = dotenvy::dotenv();
+
+        // Read the API key - error chain: VarError → EnvError → ErrorKind → Error
+        let api_key = match std::env::var("ARCGIS_API_KEY") {
+            Ok(key) => {
+                tracing::debug!("Successfully loaded API key from environment");
+                key
+            }
+            Err(e) => {
+                tracing::error!(
+                    error = %e,
+                    "ARCGIS_API_KEY environment variable not set or invalid"
+                );
+                return Err(e.into()); // Automatic conversion through error chain
+            }
+        };
+
+        Ok(Self::new(api_key))
+    }
 }
 
 #[async_trait]

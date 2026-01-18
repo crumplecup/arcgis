@@ -59,7 +59,7 @@ pub use map::{
     GenerateRendererParamsBuilder, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse,
     IdentifyResult, ImageFormat, LayerDefinitions, LayerLegend, LayerOperation, LayerSelection,
     LegendResponse, LegendSymbol, LevelOfDetail, MapServiceClient, MapServiceMetadata,
-    RendererResponse, ServiceLayer, SpatialReference, TileCoordinate, TileInfo, TimeRelation,
+    RendererResponse, ServiceLayer, TileCoordinate, TileInfo, TimeRelation,
     UniqueValueInfo,
 };
 pub use places::{

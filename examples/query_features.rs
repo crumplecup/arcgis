@@ -202,37 +202,61 @@ async fn main() -> anyhow::Result<()> {
         "Auto-pagination completed"
     );
 
-    // Example 7: Using different response formats
-    tracing::info!("\n=== Example 7: Response Formats ===");
+    // Example 7: Test Alternative Formats
+    tracing::info!("\n=== Example 7: Alternative Response Formats ===");
+    tracing::info!("Testing GeoJSON and PBF format support");
 
-    // GeoJSON format
-    tracing::debug!("Requesting GeoJSON format");
-    let _geojson_result = service
+    // Test GeoJSON format
+    let geojson_result = service
         .query(layer_id)
         .where_clause("POP > 5000000")
+        .out_fields(&["CITY_NAME", "POP"])
+        .return_geometry(false)
         .limit(3)
         .geojson()
         .execute()
         .await?;
-    tracing::info!("✓ GeoJSON format works");
 
-    // PBF format (more efficient for large datasets)
-    tracing::debug!("Requesting PBF (Protocol Buffer) format");
-    let _pbf_result = service
+    tracing::info!(
+        feature_count = geojson_result.features().len(),
+        "GeoJSON query completed"
+    );
+
+    for feature in geojson_result.features() {
+        let city = feature.attributes().get("CITY_NAME");
+        let pop = feature.attributes().get("POP");
+        tracing::info!(city = ?city, population = ?pop, "City from GeoJSON");
+    }
+
+    // Test PBF format
+    let pbf_result = service
         .query(layer_id)
         .where_clause("POP > 5000000")
+        .out_fields(&["CITY_NAME", "POP"])
+        .return_geometry(false)
         .limit(3)
         .pbf()
         .execute()
         .await?;
-    tracing::info!("✓ PBF format works (3-5x faster for large datasets)");
+
+    tracing::info!(
+        feature_count = pbf_result.features().len(),
+        "PBF query completed"
+    );
+
+    for feature in pbf_result.features() {
+        let city = feature.attributes().get("CITY_NAME");
+        let pop = feature.attributes().get("POP");
+        tracing::info!(city = ?city, population = ?pop, "City from PBF");
+    }
 
     tracing::info!("\n✅ All query examples completed successfully!");
     tracing::info!("💡 Tips:");
     tracing::info!("   - Use return_geometry(false) for better performance when you don't need geometry");
     tracing::info!("   - Use count_only(true) to get counts without retrieving features");
     tracing::info!("   - Use execute_all() for automatic pagination");
-    tracing::info!("   - Use .pbf() for large datasets (3-5x faster than JSON)");
+    tracing::info!("   - Use .geojson() for GeoJSON format (standard for web mapping)");
+    tracing::info!("   - Use .pbf() for PBF format (3-5x faster for large datasets)");
 
     Ok(())
 }

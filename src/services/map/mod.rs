@@ -170,6 +170,6 @@ pub use types::{
     GenerateKmlParams, GenerateKmlParamsBuilder, GenerateRendererParams,
     GenerateRendererParamsBuilder, IdentifyParams, IdentifyParamsBuilder, IdentifyResponse,
     IdentifyResult, LayerDefinitions, LayerLegend, LegendResponse, LegendSymbol, LevelOfDetail,
-    MapServiceMetadata, RendererResponse, ServiceLayer, SpatialReference, TileCoordinate, TileInfo,
+    MapServiceMetadata, RendererResponse, ServiceLayer, TileCoordinate, TileInfo,
     UniqueValueInfo,
 };

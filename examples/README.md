@@ -75,7 +75,7 @@ cargo run --example client_credentials_flow
 - Object ID queries
 - Manual pagination (offset/limit)
 - Auto-pagination (`execute_all`)
-- Response formats (JSON, GeoJSON, PBF)
+- Response formats (GeoJSON, PBF)
 
 ```bash
 cargo run --example query_features

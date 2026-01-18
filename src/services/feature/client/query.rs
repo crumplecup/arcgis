@@ -79,8 +79,17 @@ impl<'a> FeatureServiceClient<'a> {
                 tracing::debug!(bytes_len = bytes.len(), "Received PBF response");
                 super::super::pbf::decode_feature_collection(&bytes)?
             }
-            _ => {
-                // JSON or GeoJSON format - use standard JSON parsing
+            crate::ResponseFormat::GeoJson => {
+                // GeoJSON format - convert from GeoJSON to FeatureSet
+                let geojson_fc: geojson::FeatureCollection = response.json().await?;
+                tracing::debug!(
+                    feature_count = geojson_fc.features.len(),
+                    "Received GeoJSON response"
+                );
+                super::super::geojson::from_geojson(geojson_fc)?
+            }
+            crate::ResponseFormat::Json => {
+                // Standard ArcGIS JSON format
                 response.json().await?
             }
         };

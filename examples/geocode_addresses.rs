@@ -44,12 +44,8 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("🗺️  Geocoding Service Examples");
 
-    // Load API key from environment (.env automatically loaded by library)
-    let api_key = std::env::var("ARCGIS_API_KEY")
-        .map_err(|_| anyhow::anyhow!("ARCGIS_API_KEY must be set in .env file"))?;
-
-    // Create authenticated client
-    let auth = ApiKeyAuth::new(api_key);
+    // Load API key from environment (.env file automatically loaded)
+    let auth = ApiKeyAuth::from_env()?;
     let client = ArcGISClient::new(auth);
     let geocoder = GeocodeServiceClient::new(WORLD_GEOCODE_SERVICE, &client);
 

@@ -160,6 +160,38 @@ impl From<serde_urlencoded::ser::Error> for UrlEncodedError {
     }
 }
 
+/// Environment variable error wrapper.
+#[derive(Debug, derive_more::Display, derive_more::Error, derive_getters::Getters)]
+#[display("Environment variable error: {}", source)]
+pub struct EnvError {
+    /// The underlying std::env::VarError.
+    source: std::env::VarError,
+    /// Line number where the error occurred.
+    line: u32,
+    /// File where the error occurred.
+    file: &'static str,
+}
+
+impl EnvError {
+    /// Creates a new environment variable error with caller location.
+    #[track_caller]
+    pub fn new(source: std::env::VarError) -> Self {
+        let loc = std::panic::Location::caller();
+        Self {
+            source,
+            line: loc.line(),
+            file: loc.file(),
+        }
+    }
+}
+
+impl From<std::env::VarError> for EnvError {
+    #[track_caller]
+    fn from(source: std::env::VarError) -> Self {
+        Self::new(source)
+    }
+}
+
 /// Builder error wrapper for derive_builder errors.
 #[derive(Debug, derive_more::Display, derive_more::Error, derive_getters::Getters)]
 #[display("Builder error: {}", message)]
@@ -233,6 +265,11 @@ pub enum ErrorKind {
     #[from]
     UrlEncoded(UrlEncodedError),
 
+    /// Environment variable error.
+    #[display("{}", _0)]
+    #[from]
+    Env(EnvError),
+
     /// Builder error from derive_builder.
     #[display("{}", _0)]
     #[from]
@@ -287,6 +324,7 @@ bridge_error!(serde_json::Error => JsonError);
 bridge_error!(url::ParseError => UrlError);
 bridge_error!(std::io::Error => IoError);
 bridge_error!(serde_urlencoded::ser::Error => UrlEncodedError);
+bridge_error!(std::env::VarError => EnvError);
 
 /// The main error type for the ArcGIS SDK.
 ///
@@ -304,6 +342,7 @@ impl std::error::Error for Error {
             ErrorKind::Url(e) => Some(e.source()),
             ErrorKind::Io(e) => Some(e.source()),
             ErrorKind::UrlEncoded(e) => Some(e.source()),
+            ErrorKind::Env(e) => Some(e.source()),
             _ => None,
         }
     }
@@ -362,4 +401,5 @@ error_from!(serde_json::Error);
 error_from!(url::ParseError);
 error_from!(std::io::Error);
 error_from!(serde_urlencoded::ser::Error);
+error_from!(std::env::VarError);
 error_from!(BuilderError);

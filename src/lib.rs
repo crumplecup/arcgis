@@ -65,10 +65,12 @@ mod util;
 pub use auth::{ApiKeyAuth, AuthProvider, ClientCredentialsAuth, NoAuth};
 pub use client::ArcGISClient;
 pub use error::{
-    BuilderError, Error, ErrorKind, HttpError, IoError, JsonError, UrlEncodedError, UrlError,
+    BuilderError, EnvError, Error, ErrorKind, HttpError, IoError, JsonError, UrlEncodedError,
+    UrlError,
 };
 pub use geometry::{
     ArcGISEnvelope, ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
+    SpatialReference,
 };
 pub use services::{
     AddAttachmentResult, AddItemParams, AddItemResult, AddressCandidate, AlterResponse,
@@ -117,7 +119,7 @@ pub use services::{
     SampleParametersBuilder, SampleResult, SearchParameters, SearchResult, ServiceAreaParameters,
     ServiceAreaParametersBuilder, ServiceAreaResult, ServiceLayer, SessionId, ShareItemResult,
     SharingParameters, SimplifyParameters, SimplifyParametersBuilder, SimplifyResult, SortOrder,
-    SpatialReference, StartEditingResponse, StartReadingResponse, StatisticDefinition,
+    StartEditingResponse, StartReadingResponse, StatisticDefinition,
     StatisticType, StopEditingResponse, StopReadingResponse, Subtype, SuggestResponse, Suggestion,
     SummarizeElevationParameters, SummarizeElevationParametersBuilder, SummarizeElevationResult,
     TileCoordinate, TileInfo, TimeRelation, TopFeaturesParams, TopFeaturesParamsBuilder, TopFilter,

@@ -37,21 +37,11 @@ fn main() -> anyhow::Result<()> {
 
     tracing::info!("Starting basic_client example");
 
-    // Load API key from environment
-    // The .env file is automatically loaded by ArcGISClient::new()
-    tracing::debug!("Loading API key from environment");
-    let api_key = std::env::var("ARCGIS_API_KEY").map_err(|_| {
-        anyhow::anyhow!(
-            "ARCGIS_API_KEY must be set in .env file or environment.\n\
-             Create a .env file with: ARCGIS_API_KEY=your_api_key_here"
-        )
-    })?;
+    // Load API key from environment (.env file automatically loaded)
+    tracing::info!("Creating API key authentication provider from environment");
+    let auth = ApiKeyAuth::from_env()?;
 
-    // Create an API Key authentication provider
-    tracing::info!("Creating API key authentication provider");
-    let auth = ApiKeyAuth::new(api_key);
-
-    // Create the ArcGIS client (automatically loads .env on first use)
+    // Create the ArcGIS client
     tracing::info!("Creating ArcGIS client");
     let client = ArcGISClient::new(auth);
 
