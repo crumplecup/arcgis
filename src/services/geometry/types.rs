@@ -39,17 +39,41 @@ impl ProjectParameters {
     }
 }
 
-/// Helper to serialize geometries as JSON array.
+/// Helper to serialize geometries with geometryType wrapper.
+///
+/// ArcGIS expects geometries in this format:
+/// ```json
+/// {
+///   "geometryType": "esriGeometryPoint",
+///   "geometries": [{...}, {...}]
+/// }
+/// ```
 fn serialize_geometries<S>(geoms: &[ArcGISGeometry], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
-    use serde::ser::SerializeSeq;
-    let mut seq = serializer.serialize_seq(Some(geoms.len()))?;
-    for geom in geoms {
-        seq.serialize_element(geom)?;
-    }
-    seq.end()
+    use serde::ser::SerializeStruct;
+
+    // Determine geometry type from first geometry
+    let geometry_type = match geoms.first() {
+        Some(ArcGISGeometry::Point(_)) => "esriGeometryPoint",
+        Some(ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
+        Some(ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
+        Some(ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
+        Some(ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
+        None => {
+            // If no geometries, serialize as empty array
+            use serde::ser::SerializeSeq;
+            let seq = serializer.serialize_seq(Some(0))?;
+            return seq.end();
+        }
+    };
+
+    // Serialize as wrapper object
+    let mut state = serializer.serialize_struct("GeometriesWrapper", 2)?;
+    state.serialize_field("geometryType", geometry_type)?;
+    state.serialize_field("geometries", geoms)?;
+    state.end()
 }
 
 /// Response from project operation.
@@ -82,14 +106,17 @@ pub struct BufferParameters {
 
     /// Whether to union results.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     union_results: Option<bool>,
 
     /// Whether to use geodesic buffers.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     geodesic: Option<bool>,
 
     /// Output spatial reference WKID.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     out_sr: Option<i32>,
 }
 
@@ -267,10 +294,12 @@ pub struct DistanceParameters {
 
     /// Distance unit for result.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     distance_unit: Option<LinearUnit>,
 
     /// Whether to use geodesic calculations.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     geodesic: Option<bool>,
 }
 

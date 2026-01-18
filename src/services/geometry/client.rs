@@ -169,19 +169,6 @@ impl<'a> GeometryServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending project request");
 
-        // Serialize geometries - ArcGIS expects array of individual geometry objects
-        // Format: [{"x":...,"y":...},{"x":...,"y":...}]
-        let geoms: Vec<String> = params
-            .geometries()
-            .iter()
-            .map(|g| serde_json::to_string(g))
-            .collect::<Result<Vec<_>, _>>()?;
-        let geometries_json = format!("[{}]", geoms.join(","));
-        tracing::debug!(geometries_json = %geometries_json, "Serialized geometries");
-
-        let in_sr_str = params.in_sr().to_string();
-        let out_sr_str = params.out_sr().to_string();
-
         // Determine geometry type from first geometry
         let geometry_type = match params.geometries().first() {
             Some(crate::ArcGISGeometry::Point(_)) => "esriGeometryPoint",
@@ -196,7 +183,26 @@ impl<'a> GeometryServiceClient<'a> {
             }
         };
 
-        // Try GET request with query parameters (like geocoding service)
+        // ArcGIS expects geometries parameter as JSON object with geometryType and geometries array
+        // Format: {"geometryType":"esriGeometryPoint","geometries":[{"x":...,"y":...}]}
+        #[derive(serde::Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct GeometriesWrapper<'a> {
+            geometry_type: &'a str,
+            geometries: &'a [crate::ArcGISGeometry],
+        }
+
+        let wrapper = GeometriesWrapper {
+            geometry_type,
+            geometries: params.geometries(),
+        };
+        let geometries_json = serde_json::to_string(&wrapper)?;
+        tracing::debug!(geometries_json = %geometries_json, "Serialized geometries wrapper");
+
+        let in_sr_str = params.in_sr().to_string();
+        let out_sr_str = params.out_sr().to_string();
+
+        // Use GET request with query parameters
         let mut request = self
             .client
             .http()
@@ -205,7 +211,6 @@ impl<'a> GeometryServiceClient<'a> {
                 ("geometries", geometries_json.as_str()),
                 ("inSR", in_sr_str.as_str()),
                 ("outSR", out_sr_str.as_str()),
-                ("geometryType", geometry_type),
                 ("f", "json"),
             ]);
 
@@ -320,21 +325,87 @@ impl<'a> GeometryServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending buffer request");
 
-        let params_json = serde_json::to_string(&params)?;
+        // Determine geometry type from first geometry
+        let geometry_type = match params.geometries().first() {
+            Some(crate::ArcGISGeometry::Point(_)) => "esriGeometryPoint",
+            Some(crate::ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
+            Some(crate::ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
+            Some(crate::ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
+            Some(crate::ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
+            None => {
+                return Err(crate::Error::from(crate::ErrorKind::Other(
+                    "No geometries to buffer".to_string(),
+                )));
+            }
+        };
+
+        // Build geometries wrapper
+        #[derive(serde::Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct GeometriesWrapper<'a> {
+            geometry_type: &'a str,
+            geometries: &'a [crate::ArcGISGeometry],
+        }
+
+        let wrapper = GeometriesWrapper {
+            geometry_type,
+            geometries: params.geometries(),
+        };
+        let geometries_json = serde_json::to_string(&wrapper)?;
+        tracing::debug!(geometries_json = %geometries_json, "Serialized geometries for buffer");
+
+        // Convert distances to comma-separated string
+        let distances_str: Vec<String> = params.distances().iter().map(|d| d.to_string()).collect();
+        let distances_param = distances_str.join(",");
+
+        // Convert unit to ArcGIS string
+        let unit_str = match params.unit() {
+            crate::LinearUnit::Meters => "esriMeters",
+            crate::LinearUnit::Kilometers => "esriKilometers",
+            crate::LinearUnit::Feet => "esriFeet",
+            crate::LinearUnit::Miles => "esriMiles",
+            crate::LinearUnit::NauticalMiles => "esriNauticalMiles",
+            crate::LinearUnit::Yards => "esriYards",
+        };
+
+        let in_sr_str = params.in_sr().to_string();
+
+        // Build request with form data (POST)
         let mut form = vec![
-            ("bufferParameters", params_json.as_str()),
+            ("geometries", geometries_json.as_str()),
+            ("inSR", in_sr_str.as_str()),
+            ("bufferSR", in_sr_str.as_str()), // Use same SR for buffering
+            ("distances", distances_param.as_str()),
+            ("unit", unit_str),
             ("f", "json"),
         ];
 
-        // Add token if required by auth provider
-        let token_opt = self.client.get_token_if_required().await?;
-        let token_str;
-        if let Some(token) = token_opt {
-            token_str = token;
-            form.push(("token", token_str.as_str()));
+        // Add optional parameters to form
+        let union_str;
+        if let Some(union) = params.union_results() {
+            union_str = union.to_string();
+            form.push(("unionResults", union_str.as_str()));
+        }
+        let geodesic_str;
+        if let Some(geodesic) = params.geodesic() {
+            geodesic_str = geodesic.to_string();
+            form.push(("geodesic", geodesic_str.as_str()));
+        }
+        let out_sr_str;
+        if let Some(out_sr) = params.out_sr() {
+            out_sr_str = out_sr.to_string();
+            form.push(("outSR", out_sr_str.as_str()));
         }
 
-        let response = self.client.http().post(&url).form(&form).send().await?;
+        // Build POST request
+        let mut request = self.client.http().post(&url).form(&form);
+
+        // Add token as query parameter if required
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token.as_str())]);
+        }
+
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {
@@ -349,7 +420,38 @@ impl<'a> GeometryServiceClient<'a> {
             }));
         }
 
-        let result: BufferResult = response.json().await?;
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "Buffer raw response");
+
+        // Check for ArcGIS error response (HTTP 200 but with error payload)
+        if response_text.contains("\"error\"") {
+            tracing::error!(response = %response_text, "API returned error in response body");
+
+            // Try to parse error details
+            #[derive(serde::Deserialize)]
+            struct ErrorResponse {
+                error: ErrorDetail,
+            }
+            #[derive(serde::Deserialize)]
+            struct ErrorDetail {
+                code: i32,
+                message: String,
+            }
+
+            if let Ok(err_resp) = serde_json::from_str::<ErrorResponse>(&response_text) {
+                return Err(crate::Error::from(crate::ErrorKind::Api {
+                    code: err_resp.error.code,
+                    message: err_resp.error.message,
+                }));
+            } else {
+                return Err(crate::Error::from(crate::ErrorKind::Api {
+                    code: 0,
+                    message: response_text,
+                }));
+            }
+        }
+
+        let result: BufferResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(result_count = result.geometries().len(), "buffer completed");
 
