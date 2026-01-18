@@ -297,106 +297,132 @@ pub struct RouteParameters {
 
     /// Point barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     barriers: Option<Vec<NALocation>>,
 
     /// Polyline barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     polyline_barriers: Option<Vec<ArcGISGeometry>>,
 
     /// Polygon barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     polygon_barriers: Option<Vec<ArcGISGeometry>>,
 
     /// Whether to return directions.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_directions: Option<bool>,
 
     /// Whether to return routes.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_routes: Option<bool>,
 
     /// Whether to return stops.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_stops: Option<bool>,
 
     /// Whether to return barriers.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_barriers: Option<bool>,
 
     /// Output spatial reference WKID.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     out_sr: Option<i32>,
 
     /// Impedance attribute for cost.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     impedance_attribute: Option<ImpedanceAttribute>,
 
     /// Restriction attributes.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     restriction_attribute_names: Option<Vec<RestrictionAttribute>>,
 
     /// Attribute parameter values (JSON object).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     attribute_parameter_values: Option<serde_json::Value>,
 
     /// Whether to use hierarchy in solving.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     use_hierarchy: Option<bool>,
 
     /// Time of day for traffic-aware routing (epoch milliseconds).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     start_time: Option<i64>,
 
     /// U-turn policy.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     uturn_policy: Option<UTurnPolicy>,
 
     /// Directions length units.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     directions_length_units: Option<DirectionsLength>,
 
     /// Directions time attribute.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     directions_time_attribute: Option<DirectionsTimeAttribute>,
 
     /// Directions style.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     directions_style: Option<DirectionsStyle>,
 
     /// Directions language (e.g., "en", "es", "fr").
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     directions_language: Option<String>,
 
     /// Whether to preserve first stop.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     preserve_first_stop: Option<bool>,
 
     /// Whether to preserve last stop.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     preserve_last_stop: Option<bool>,
 
     /// Whether to find best sequence.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     find_best_sequence: Option<bool>,
 
     /// Whether to return to start.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_to_start: Option<bool>,
 
     /// Whether to use time windows.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     use_time_windows: Option<bool>,
 
     /// Accumulate attributes.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     accumulate_attribute_names: Option<Vec<String>>,
 
     /// Output line type.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     output_lines: Option<OutputLine>,
 
     /// Travel mode.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     travel_mode: Option<TravelMode>,
 }
 
@@ -555,70 +581,87 @@ pub struct ServiceAreaParameters {
 
     /// Point barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     barriers: Option<Vec<NALocation>>,
 
     /// Polyline barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     polyline_barriers: Option<Vec<ArcGISGeometry>>,
 
     /// Polygon barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     polygon_barriers: Option<Vec<ArcGISGeometry>>,
 
     /// Travel direction (from or to facilities).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     travel_direction: Option<TravelDirection>,
 
     /// Output spatial reference WKID.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     out_sr: Option<i32>,
 
     /// Impedance attribute for cost.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     impedance_attribute: Option<ImpedanceAttribute>,
 
     /// Whether to merge similar polygons.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     merge_similar_polygon_ranges: Option<bool>,
 
     /// Whether to split polygons at breaks.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     split_polygons_at_breaks: Option<bool>,
 
     /// Whether to trim outer polygon.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     trim_outer_polygon: Option<bool>,
 
     /// Trim distance (in units matching impedance).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     trim_polygon_distance: Option<f64>,
 
     /// Time of day for traffic-aware analysis (epoch milliseconds).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     time_of_day: Option<i64>,
 
     /// Whether to use hierarchy.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     use_hierarchy: Option<bool>,
 
     /// U-turn policy.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     uturn_policy: Option<UTurnPolicy>,
 
     /// Restriction attributes.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     restriction_attribute_names: Option<Vec<RestrictionAttribute>>,
 
     /// Travel mode.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     travel_mode: Option<TravelMode>,
 
     /// Whether to return facilities.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_facilities: Option<bool>,
 
     /// Whether to return barriers.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_barriers: Option<bool>,
 }
 
@@ -707,78 +750,97 @@ pub struct ClosestFacilityParameters {
 
     /// Number of closest facilities to find per incident.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     default_target_facility_count: Option<i32>,
 
     /// Point barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     barriers: Option<Vec<NALocation>>,
 
     /// Polyline barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     polyline_barriers: Option<Vec<ArcGISGeometry>>,
 
     /// Polygon barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     polygon_barriers: Option<Vec<ArcGISGeometry>>,
 
     /// Travel direction (from incidents or to facilities).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     travel_direction: Option<TravelDirection>,
 
     /// Output spatial reference WKID.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     out_sr: Option<i32>,
 
     /// Impedance attribute for cost.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     impedance_attribute: Option<ImpedanceAttribute>,
 
     /// Accumulate attributes.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     accumulate_attribute_names: Option<Vec<String>>,
 
     /// Whether to return directions.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_directions: Option<bool>,
 
     /// Whether to return routes.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_routes: Option<bool>,
 
     /// Whether to return facilities.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_facilities: Option<bool>,
 
     /// Whether to return incidents.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_incidents: Option<bool>,
 
     /// Whether to return barriers.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_barriers: Option<bool>,
 
     /// Output line type.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     output_lines: Option<OutputLine>,
 
     /// Time of day for traffic-aware routing (epoch milliseconds).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     time_of_day: Option<i64>,
 
     /// Whether to use hierarchy.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     use_hierarchy: Option<bool>,
 
     /// U-turn policy.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     uturn_policy: Option<UTurnPolicy>,
 
     /// Restriction attributes.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     restriction_attribute_names: Option<Vec<RestrictionAttribute>>,
 
     /// Travel mode.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     travel_mode: Option<TravelMode>,
 }
 
@@ -825,50 +887,62 @@ pub struct ODCostMatrixParameters {
 
     /// Point barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     barriers: Option<Vec<NALocation>>,
 
     /// Polyline barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     polyline_barriers: Option<Vec<ArcGISGeometry>>,
 
     /// Polygon barriers to avoid.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     polygon_barriers: Option<Vec<ArcGISGeometry>>,
 
     /// Travel direction (origins to destinations or reverse).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     travel_direction: Option<TravelDirection>,
 
     /// Output spatial reference WKID.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     out_sr: Option<i32>,
 
     /// Impedance attribute for cost.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     impedance_attribute: Option<ImpedanceAttribute>,
 
     /// Accumulate attributes.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     accumulate_attribute_names: Option<Vec<String>>,
 
     /// Time of day for traffic-aware analysis (epoch milliseconds).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     time_of_day: Option<i64>,
 
     /// Whether to use hierarchy.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     use_hierarchy: Option<bool>,
 
     /// U-turn policy.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     uturn_policy: Option<UTurnPolicy>,
 
     /// Restriction attributes.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     restriction_attribute_names: Option<Vec<RestrictionAttribute>>,
 
     /// Travel mode.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     travel_mode: Option<TravelMode>,
 }
 
