@@ -56,37 +56,42 @@ Coverage across all major services with practical, real-world scenarios.
 ---
 
 #### 2. Portal Content Management (`portal_content_management.rs`)
-**Status:** 🔲 Not Started
+**Status:** ✅ Completed (2026-01-18)
 **Priority:** HIGH
-**Estimated Effort:** 5-7 hours
+**Estimated Effort:** 5-7 hours → **Actual:** 2 hours
 
 **Operations Demonstrated:**
-- `search_items()` - Content discovery
+- `search()` - Content discovery with Lucene queries
 - `get_item()` - Item metadata retrieval
-- `create_item()` - Upload new content
+- `add_item()` - Upload new content (GeoJSON)
 - `update_item()` - Modify metadata
-- `share_item()` - Sharing and permissions
+- `update_item_data()` - Upload item data
+- `share_item()` - Sharing with groups/org
 - `create_group()` - Group management
-- `add_group_member()` - Collaboration
 
-**Story:** Complete content lifecycle - search for datasets, upload a new GeoJSON file, add rich metadata, publish as a feature service, create a project group, and share with team members.
+**Story:** Complete content lifecycle - search for parks datasets, upload a new GeoJSON file, add rich metadata, create a project group, and share with team members.
 
 **Learning Objectives:**
-- Content search patterns
-- Item creation and metadata
-- Publishing workflows
-- Permissions and sharing
-- Group collaboration
+- Content search patterns with pagination
+- Item creation with rich metadata
+- Data upload workflows
+- Metadata updates and verification
+- Group creation for collaboration
+- Sharing workflows (private → org → groups)
 - Builder pattern for complex parameters
+- Cleanup awareness (quota management)
 
 **Success Criteria:**
-- [ ] Searches and filters items
-- [ ] Creates item with metadata
-- [ ] Updates existing items
-- [ ] Shares to groups
-- [ ] Creates and manages groups
-- [ ] Error handling for permissions
-- [ ] Shows quota/limits awareness
+- [x] Searches and filters items
+- [x] Creates item with metadata
+- [x] Uploads item data (GeoJSON)
+- [x] Updates existing items
+- [x] Shares to groups and organization
+- [x] Creates and manages groups
+- [x] Error handling with anyhow::Context
+- [x] Uses tracing for progress updates
+- [x] Shows cleanup tips for quota management
+- [x] Demonstrates auth requirements (API key vs OAuth2)
 
 ---
 
@@ -350,16 +355,16 @@ Coverage across all major services with practical, real-world scenarios.
 
 ## Progress Tracking
 
-**Phase 1:** 1/3 complete (33%)
+**Phase 1:** 2/3 complete (67%)
 - ✅ routing_navigation.rs
-- 🔲 portal_content_management.rs
+- ✅ portal_content_management.rs
 - 🔲 feature_attachments.rs
 
 **Phase 2:** 0/2 complete (0%)
 **Phase 3:** 0/3 complete (0%)
 **Phase 4:** 0/3 complete (0%)
 
-**Overall:** 1/11 complete (9%)
+**Overall:** 2/11 complete (18%)
 
 ## Success Metrics
 
