@@ -169,40 +169,52 @@ impl<'a> GeometryServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending project request");
 
-        // Serialize just the geometries array
-        let geometries_json = serde_json::to_string(params.geometries())?;
+        // Serialize geometries - ArcGIS expects array of individual geometry objects
+        // Format: [{"x":...,"y":...},{"x":...,"y":...}]
+        let geoms: Vec<String> = params
+            .geometries()
+            .iter()
+            .map(|g| serde_json::to_string(g))
+            .collect::<Result<Vec<_>, _>>()?;
+        let geometries_json = format!("[{}]", geoms.join(","));
+        tracing::debug!(geometries_json = %geometries_json, "Serialized geometries");
+
         let in_sr_str = params.in_sr().to_string();
         let out_sr_str = params.out_sr().to_string();
 
-        let mut form = vec![
-            ("geometries", geometries_json.as_str()),
-            ("inSR", in_sr_str.as_str()),
-            ("outSR", out_sr_str.as_str()),
-            ("f", "json"),
-        ];
+        // Determine geometry type from first geometry
+        let geometry_type = match params.geometries().first() {
+            Some(crate::ArcGISGeometry::Point(_)) => "esriGeometryPoint",
+            Some(crate::ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
+            Some(crate::ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
+            Some(crate::ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
+            Some(crate::ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
+            None => {
+                return Err(crate::Error::from(crate::ErrorKind::Other(
+                    "No geometries to project".to_string(),
+                )));
+            }
+        };
 
-        // Add optional transformation parameters
-        let transformation_str;
-        if let Some(transformation) = params.transformation() {
-            transformation_str = transformation.to_string();
-            form.push(("transformation", transformation_str.as_str()));
+        // Try GET request with query parameters (like geocoding service)
+        let mut request = self
+            .client
+            .http()
+            .get(&url)
+            .query(&[
+                ("geometries", geometries_json.as_str()),
+                ("inSR", in_sr_str.as_str()),
+                ("outSR", out_sr_str.as_str()),
+                ("geometryType", geometry_type),
+                ("f", "json"),
+            ]);
+
+        // Add token as query parameter if required
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token.as_str())]);
         }
 
-        let transform_forward_str;
-        if let Some(transform_forward) = params.transform_forward() {
-            transform_forward_str = transform_forward.to_string();
-            form.push(("transformForward", transform_forward_str.as_str()));
-        }
-
-        // Add token if required by auth provider
-        let token_opt = self.client.get_token_if_required().await?;
-        let token_str;
-        if let Some(token) = token_opt {
-            token_str = token;
-            form.push(("token", token_str.as_str()));
-        }
-
-        let response = self.client.http().post(&url).form(&form).send().await?;
+        let response = request.send().await?;
 
         let status = response.status();
         if !status.is_success() {

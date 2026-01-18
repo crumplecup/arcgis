@@ -9,14 +9,7 @@
 //!
 //! # Prerequisites
 //!
-//! - ArcGIS API key (required for geometry services)
-//!
-//! # Environment Variables
-//!
-//! Create a `.env` file with:
-//! ```env
-//! ARCGIS_API_KEY=your_api_key_here
-//! ```
+//! - None! The ArcGIS Geometry Service is a free public utility
 //!
 //! # Running
 //!
@@ -25,8 +18,8 @@
 //! ```
 
 use arcgis::{
-    ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, ArcGISPolyline, GeometryServiceClient,
-    LinearUnit,
+    ArcGISClient, ArcGISGeometry, ArcGISPoint, ArcGISPolyline, GeometryServiceClient,
+    LinearUnit, NoAuth,
 };
 
 /// ArcGIS Online Geometry Service URL
@@ -45,8 +38,8 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("📐 Geometry Service Examples");
 
-    // Load API key from environment (.env file automatically loaded)
-    let auth = ApiKeyAuth::from_env()?;
+    // ArcGIS Geometry Service is a free public utility - no auth required
+    let auth = NoAuth;
     let client = ArcGISClient::new(auth);
     let geom_service = GeometryServiceClient::new(GEOMETRY_SERVICE, &client);
 
