@@ -177,122 +177,144 @@ Go to [developers.arcgis.com/api-keys](https://developers.arcgis.com/api-keys/) 
 Public services work without authentication, but providing a key may increase rate limits.
 
 **Creating the key:**
-1. Click **"Create API Key"**
-2. Name: `SDK Testing - Public`
-3. **Privileges to enable:**
-   - ☐ **Basemap styles service** (for enhanced rate limits)
-   - ☐ **Geocoding (stored)** (optional, for rate limit testing)
+1. Sign in to [ArcGIS Location Platform](https://location.arcgis.com/) or [ArcGIS Online](https://arcgis.com)
+2. Go to **Content > My content > New item > Developer credentials > API key credentials**
+3. Name: `SDK Testing - Public`
+4. Set expiration date (up to 1 year)
+5. **Privileges:** None required (leave unchecked)
+   - _Optional:_ Enable `premium:user:basemaps` for enhanced rate limits
 
-**Note:** This key is optional - public services work without it.
+**Note:** This key is optional - public services work without authentication.
 
 #### Tier 2: Location Key (ARCGIS_LOCATION_KEY) - Required for test-location
 
 **Creating the key:**
-1. Click **"Create API Key"**
-2. Name: `SDK Testing - Location Services`
-3. **Privileges to enable (check these boxes):**
-   - ☑ **Basemap styles service**
-   - ☑ **Geocoding (stored)**
-   - ☑ **Geocoding**
-   - ☑ **Routing**
-   - ☑ **Geoenrichment**
-   - ☑ **Directions and route planner**
-   - ☑ **Origin destination cost matrix**
-   - ☑ **Service areas**
-   - ☑ **Closest facility**
-   - ☑ **Location allocation**
-   - ☑ **Vehicle routing**
-   - ☑ **Elevation**
-   - ☑ **Hydrology**
+1. Sign in to [ArcGIS Location Platform](https://location.arcgis.com/) or [ArcGIS Online](https://arcgis.com)
+2. Go to **Content > My content > New item > Developer credentials > API key credentials**
+3. Name: `SDK Testing - Location Services`
+4. Set expiration date (up to 1 year)
+5. **Configure privileges - Check these:**
 
-**Services this enables:**
-- Geocoding (forward/reverse address lookup)
-- Routing (find routes, directions)
-- Geometry operations (buffer, project, etc.)
-- Service area analysis
-- Network analysis
+**Location Services:**
+- ☑ `premium:user:basemaps` - Basemap styles service
+- ☑ `premium:user:geocode:stored` - Geocode (stored)
+- ☑ `premium:user:geocode:temporary` - Geocode (not stored)
+- ☑ `premium:user:elevation` - Elevation service
+- ☑ `premium:user:geoenrichment` - GeoEnrichment service
+- ☑ `premium:user:places` - Place finding
+- ☑ `premium:user:networkanalysis:routing` - Routing
+- ☑ `premium:user:networkanalysis:servicearea` - Service area
+- ☑ `premium:user:networkanalysis:closestfacility` - Closest facility
+- ☑ `premium:user:networkanalysis:origindestinationcostmatrix` - Origin/destination cost matrix
+- ☑ `premium:user:networkanalysis:optimizedrouting` - Optimized routing
+- ☑ `premium:user:networkanalysis:vehiclerouting` - Multi-vehicle routing
+- ☑ `premium:user:networkanalysis:locationallocation` - Location allocation
+- ☑ `premium:user:networkanalysis:lastmiledelivery` - Last mile delivery
+
+**Spatial Analysis:**
+- ☑ `premium:user:spatialanalysis` - Spatial analysis service
+
+**What this enables:**
+- Geocoding (address → coordinates, coordinates → address)
+- Routing (routes, directions, travel times)
+- Geometry operations (buffer, project, simplify)
+- Service area analysis (drive-time polygons)
+- Network analysis (closest facility, vehicle routing)
 
 **Credit consumption:**
-- Geocoding: ~0.004 credits per request
-- Routing: ~0.5 credits per route
-- Geometry operations: ~0.1 credits per operation
+- Geocoding: ~0.004 credits per geocode
+- Simple route: ~0.5 credits per route
+- Service area: ~0.5 credits per analysis
+- Geometry operations: Varies by complexity
 
 #### Tier 3: Portal Key (ARCGIS_PORTAL_KEY) - Required for test-portal
 
 **Creating the key:**
-1. Click **"Create API Key"**
-2. Name: `SDK Testing - Portal Operations`
-3. **Privileges to enable (check these boxes):**
-   - ☑ **Basemap styles service**
-   - ☑ **Premium content**
-   - ☑ **User authentication**
+1. Sign in to [ArcGIS Online](https://arcgis.com) (requires organizational account)
+2. Go to **Content > My content > New item > Developer credentials > API key credentials**
+3. Name: `SDK Testing - Portal Operations`
+4. Set expiration date (up to 1 year)
+5. **Configure privileges - Check these:**
 
-**Additional requirements:**
-- Must have an ArcGIS Online organizational account
-- User must have privileges to:
-  - Create content
-  - Share to groups
-  - Create groups
-  - Manage group content
+**Portal Content:**
+- ☑ `portal:user:createItem` - Create, update, and delete content
+- ☑ `portal:publisher:publishFeatures` - Publish hosted feature layers
+- ☑ `portal:user:shareToGroup` - Share with groups
+- ☑ `portal:user:shareToOrg` - Share with organization
+- ☑ `portal:user:shareToPublic` - Share with public (optional)
+- ☑ `portal:user:viewOrgUsers` - View organization members
+- ☑ `portal:user:viewOrgGroups` - View organizational groups
+- ☑ `portal:user:joinGroup` - Join organizational groups
 
-**To verify portal permissions:**
+**Additional Requirements:**
+Your ArcGIS Online account must have these user privileges (configured by your org administrator):
+
 1. Log in to [arcgis.com](https://arcgis.com)
-2. Go to **Organization** → **Members** → **Your Profile**
-3. Check **Privileges** tab
-4. Ensure these are enabled:
-   - ☑ Create, update, and delete
-   - ☑ Publish hosted feature layers
-   - ☑ Share with groups
-   - ☑ Create, update, and delete groups
+2. Go to **Organization → Members → Your Profile → Privileges**
+3. Verify you have:
+   - Content: Create, update, delete
+   - Publishing: Publish hosted feature layers
+   - Groups: Create, update, delete groups
+   - Sharing: Share content with groups and organization
 
-**Services this enables:**
-- Portal content search
-- Item creation/update/deletion
-- Group management
-- Sharing/permissions
-- Metadata operations
+**What this enables:**
+- Portal content search and discovery
+- Item creation/metadata management
+- Group creation and administration
+- Content sharing and permissions
+- Portal item operations
 
 **Credit consumption:**
 - Portal operations: ~0.001 credits per operation
-- Storage costs apply (check your organization quota)
+- Storage costs apply (check your organization's quota)
 
 #### Tier 3: Publishing Key (ARCGIS_PUBLISH_KEY) - Required for test-publishing
 
 **Creating the key:**
-1. Click **"Create API Key"**
-2. Name: `SDK Testing - Publishing`
-3. **Privileges to enable (check these boxes):**
-   - ☑ **Basemap styles service**
-   - ☑ **Premium content**
-   - ☑ **User authentication**
+1. Sign in to ArcGIS Enterprise portal (11.2+) or [ArcGIS Online](https://arcgis.com)
+2. Go to **Content > My content > New item > Developer credentials > API key credentials**
+3. Name: `SDK Testing - Publishing`
+4. Set expiration date (up to 1 year)
+5. **Configure privileges - Check these:**
 
-**Additional requirements:**
-- Must have an ArcGIS Enterprise account (11.2+)
-- User must have privileges to:
+**Publishing Privileges:**
+- ☑ `portal:user:createItem` - Create, update, and delete content
+- ☑ `portal:publisher:publishFeatures` - Publish hosted feature layers
+- ☑ `portal:publisher:publishTiles` - Publish hosted tile layers (optional)
+- ☑ `portal:publisher:publishScenes` - Publish hosted scene layers (optional)
+- ☑ `features:user:edit` - Edit features
+- ☑ `features:user:fullEdit` - Edit with full control
+- ☑ `portal:user:shareToGroup` - Share with groups
+- ☑ `portal:user:shareToOrg` - Share with organization
+
+**Additional Requirements for ArcGIS Enterprise:**
+- ArcGIS Enterprise 11.2 or later
+- Version Management Server configured
+- User account privileges (configured by org administrator):
   - Publish hosted feature layers
-  - Create and manage versions
-  - Use version management server
+  - Create and manage feature layer views
+  - Enable branch versioning on feature layers
+  - Manage versions
 
 **To verify publishing permissions:**
 1. Log in to your ArcGIS Enterprise portal
-2. Go to **Organization** → **Settings** → **Version Management**
-3. Ensure Version Management Server is configured
-4. Check user privileges:
-   - ☑ Publish hosted feature layers
-   - ☑ Create and manage feature layer views
-   - ☑ Enable branch versioning
+2. Go to **Organization → Members → Your Profile → Privileges**
+3. Verify you have:
+   - Publishing: Publish hosted layers
+   - Features: Full editing control
+   - Versioning: Create and manage versions
 
-**Services this enables:**
-- Feature service creation
-- Edit sessions
-- Branch-versioned editing
-- Version management
-- Transaction management
+**What this enables:**
+- Feature service creation and publishing
+- Edit sessions with transaction support
+- Branch-versioned editing workflows
+- Version management operations
+- Multi-user editing with conflict detection
 
 **Credit consumption:**
 - Publishing operations: ~0.001 credits per operation
-- Storage costs apply
-- Compute costs for edit sessions
+- Storage costs for hosted layers
+- Compute costs for edit sessions and version reconciliation
 
 ### 4. Verify Your Keys
 
