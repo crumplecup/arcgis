@@ -181,8 +181,8 @@ Public services work without authentication, but providing a key may increase ra
 2. Go to **Content > My content > New item > Developer credentials > API key credentials**
 3. Name: `SDK Testing - Public`
 4. Set expiration date (up to 1 year)
-5. **Privileges:** None required (leave unchecked)
-   - _Optional:_ Enable `premium:user:basemaps` for enhanced rate limits
+5. **Privileges:** None required (leave all unchecked)
+   - _Optional:_ Check "Basemap styles service" for enhanced rate limits
 
 **Note:** This key is optional - public services work without authentication.
 
@@ -195,24 +195,25 @@ Public services work without authentication, but providing a key may increase ra
 4. Set expiration date (up to 1 year)
 5. **Configure privileges - Check these:**
 
-**Location Services:**
-- ☑ `premium:user:basemaps` - Basemap styles service
-- ☑ `premium:user:geocode:stored` - Geocode (stored)
-- ☑ `premium:user:geocode:temporary` - Geocode (not stored)
-- ☑ `premium:user:elevation` - Elevation service
-- ☑ `premium:user:geoenrichment` - GeoEnrichment service
-- ☑ `premium:user:places` - Place finding
-- ☑ `premium:user:networkanalysis:routing` - Routing
-- ☑ `premium:user:networkanalysis:servicearea` - Service area
-- ☑ `premium:user:networkanalysis:closestfacility` - Closest facility
-- ☑ `premium:user:networkanalysis:origindestinationcostmatrix` - Origin/destination cost matrix
-- ☑ `premium:user:networkanalysis:optimizedrouting` - Optimized routing
-- ☑ `premium:user:networkanalysis:vehiclerouting` - Multi-vehicle routing
-- ☑ `premium:user:networkanalysis:locationallocation` - Location allocation
-- ☑ `premium:user:networkanalysis:lastmiledelivery` - Last mile delivery
+**Location Services** (check all that apply):
+- ☑ Basemap styles service
+- ☑ Static basemap tiles
+- ☑ Geocode (stored)
+- ☑ Geocode (not stored)
+- ☑ Elevation
+- ☑ GeoEnrichment
+- ☑ Place finding
+- ☑ Routing
+- ☑ Service area
+- ☑ Closest facility
+- ☑ Origin/destination cost matrix
+- ☑ Optimized routing
+- ☑ Multi-vehicle routing
+- ☑ Location allocation
+- ☑ Last mile
 
 **Spatial Analysis:**
-- ☑ `premium:user:spatialanalysis` - Spatial analysis service
+- ☑ Spatial analysis service
 
 **What this enables:**
 - Geocoding (address → coordinates, coordinates → address)
@@ -236,15 +237,19 @@ Public services work without authentication, but providing a key may increase ra
 4. Set expiration date (up to 1 year)
 5. **Configure privileges - Check these:**
 
-**Portal Content:**
-- ☑ `portal:user:createItem` - Create, update, and delete content
-- ☑ `portal:publisher:publishFeatures` - Publish hosted feature layers
-- ☑ `portal:user:shareToGroup` - Share with groups
-- ☑ `portal:user:shareToOrg` - Share with organization
-- ☑ `portal:user:shareToPublic` - Share with public (optional)
-- ☑ `portal:user:viewOrgUsers` - View organization members
-- ☑ `portal:user:viewOrgGroups` - View organizational groups
-- ☑ `portal:user:joinGroup` - Join organizational groups
+**Content:**
+- ☑ Create, update, and delete
+- ☑ Publish hosted feature layers
+
+**Sharing:**
+- ☑ Share with groups
+- ☑ Share with organization
+- ☑ Share with public (optional)
+
+**Groups:**
+- ☑ View organization members
+- ☑ View organization groups
+- ☑ Join organization groups
 
 **Additional Requirements:**
 Your ArcGIS Online account must have these user privileges (configured by your org administrator):
@@ -277,15 +282,19 @@ Your ArcGIS Online account must have these user privileges (configured by your o
 4. Set expiration date (up to 1 year)
 5. **Configure privileges - Check these:**
 
-**Publishing Privileges:**
-- ☑ `portal:user:createItem` - Create, update, and delete content
-- ☑ `portal:publisher:publishFeatures` - Publish hosted feature layers
-- ☑ `portal:publisher:publishTiles` - Publish hosted tile layers (optional)
-- ☑ `portal:publisher:publishScenes` - Publish hosted scene layers (optional)
-- ☑ `features:user:edit` - Edit features
-- ☑ `features:user:fullEdit` - Edit with full control
-- ☑ `portal:user:shareToGroup` - Share with groups
-- ☑ `portal:user:shareToOrg` - Share with organization
+**Content:**
+- ☑ Create, update, and delete
+- ☑ Publish hosted feature layers
+- ☑ Publish hosted tile layers (optional)
+- ☑ Publish hosted scene layers (optional)
+
+**Features:**
+- ☑ Edit
+- ☑ Edit with full control
+
+**Sharing:**
+- ☑ Share with groups
+- ☑ Share with organization
 
 **Additional Requirements for ArcGIS Enterprise:**
 - ArcGIS Enterprise 11.2 or later
