@@ -168,12 +168,151 @@ ARCGIS_PORTAL_KEY=       # For portal tests
 ARCGIS_PUBLISH_KEY=      # For publishing tests
 ```
 
-### 3. Get Keys
+### 3. Create API Keys with Correct Permissions
 
-- **Free tier keys:** [developers.arcgis.com/api-keys](https://developers.arcgis.com/api-keys/)
-- **OAuth credentials:** [developers.arcgis.com/applications](https://developers.arcgis.com/applications/)
+Go to [developers.arcgis.com/api-keys](https://developers.arcgis.com/api-keys/) and create keys with the following permissions:
 
-### 4. Run Tests
+#### Tier 1: Public Key (ARCGIS_PUBLIC_KEY) - Optional
+
+Public services work without authentication, but providing a key may increase rate limits.
+
+**Creating the key:**
+1. Click **"Create API Key"**
+2. Name: `SDK Testing - Public`
+3. **Privileges to enable:**
+   - ☐ **Basemap styles service** (for enhanced rate limits)
+   - ☐ **Geocoding (stored)** (optional, for rate limit testing)
+
+**Note:** This key is optional - public services work without it.
+
+#### Tier 2: Location Key (ARCGIS_LOCATION_KEY) - Required for test-location
+
+**Creating the key:**
+1. Click **"Create API Key"**
+2. Name: `SDK Testing - Location Services`
+3. **Privileges to enable (check these boxes):**
+   - ☑ **Basemap styles service**
+   - ☑ **Geocoding (stored)**
+   - ☑ **Geocoding**
+   - ☑ **Routing**
+   - ☑ **Geoenrichment**
+   - ☑ **Directions and route planner**
+   - ☑ **Origin destination cost matrix**
+   - ☑ **Service areas**
+   - ☑ **Closest facility**
+   - ☑ **Location allocation**
+   - ☑ **Vehicle routing**
+   - ☑ **Elevation**
+   - ☑ **Hydrology**
+
+**Services this enables:**
+- Geocoding (forward/reverse address lookup)
+- Routing (find routes, directions)
+- Geometry operations (buffer, project, etc.)
+- Service area analysis
+- Network analysis
+
+**Credit consumption:**
+- Geocoding: ~0.004 credits per request
+- Routing: ~0.5 credits per route
+- Geometry operations: ~0.1 credits per operation
+
+#### Tier 3: Portal Key (ARCGIS_PORTAL_KEY) - Required for test-portal
+
+**Creating the key:**
+1. Click **"Create API Key"**
+2. Name: `SDK Testing - Portal Operations`
+3. **Privileges to enable (check these boxes):**
+   - ☑ **Basemap styles service**
+   - ☑ **Premium content**
+   - ☑ **User authentication**
+
+**Additional requirements:**
+- Must have an ArcGIS Online organizational account
+- User must have privileges to:
+  - Create content
+  - Share to groups
+  - Create groups
+  - Manage group content
+
+**To verify portal permissions:**
+1. Log in to [arcgis.com](https://arcgis.com)
+2. Go to **Organization** → **Members** → **Your Profile**
+3. Check **Privileges** tab
+4. Ensure these are enabled:
+   - ☑ Create, update, and delete
+   - ☑ Publish hosted feature layers
+   - ☑ Share with groups
+   - ☑ Create, update, and delete groups
+
+**Services this enables:**
+- Portal content search
+- Item creation/update/deletion
+- Group management
+- Sharing/permissions
+- Metadata operations
+
+**Credit consumption:**
+- Portal operations: ~0.001 credits per operation
+- Storage costs apply (check your organization quota)
+
+#### Tier 3: Publishing Key (ARCGIS_PUBLISH_KEY) - Required for test-publishing
+
+**Creating the key:**
+1. Click **"Create API Key"**
+2. Name: `SDK Testing - Publishing`
+3. **Privileges to enable (check these boxes):**
+   - ☑ **Basemap styles service**
+   - ☑ **Premium content**
+   - ☑ **User authentication**
+
+**Additional requirements:**
+- Must have an ArcGIS Enterprise account (11.2+)
+- User must have privileges to:
+  - Publish hosted feature layers
+  - Create and manage versions
+  - Use version management server
+
+**To verify publishing permissions:**
+1. Log in to your ArcGIS Enterprise portal
+2. Go to **Organization** → **Settings** → **Version Management**
+3. Ensure Version Management Server is configured
+4. Check user privileges:
+   - ☑ Publish hosted feature layers
+   - ☑ Create and manage feature layer views
+   - ☑ Enable branch versioning
+
+**Services this enables:**
+- Feature service creation
+- Edit sessions
+- Branch-versioned editing
+- Version management
+- Transaction management
+
+**Credit consumption:**
+- Publishing operations: ~0.001 credits per operation
+- Storage costs apply
+- Compute costs for edit sessions
+
+### 4. Verify Your Keys
+
+After creating keys, verify they work:
+
+```bash
+# Test public key (optional)
+ARCGIS_PUBLIC_KEY=your_key cargo test --features test-public test_credentials_available
+
+# Test location key
+ARCGIS_LOCATION_KEY=your_key cargo test --features test-location test_credentials_available
+
+# Test portal key (requires org account)
+ARCGIS_PORTAL_KEY=your_key cargo test --features test-portal test_credentials_available
+
+# Test publishing key (requires enterprise)
+ARCGIS_PUBLISH_KEY=your_key cargo test --features test-publishing test_credentials_available
+```
+
+### 5. Run Tests
 
 ```bash
 # Run tests for the tier you have keys for
