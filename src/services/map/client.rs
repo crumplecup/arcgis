@@ -546,14 +546,29 @@ impl<'a> MapServiceClient<'a> {
             "Received export response, fetching image"
         );
 
+        // Build absolute URL from href (might be relative)
+        let image_url = if export_response.href().starts_with("http://")
+            || export_response.href().starts_with("https://")
+        {
+            // Already absolute
+            export_response.href().to_string()
+        } else {
+            // Relative URL - combine with base service URL
+            let base_url = url::Url::parse(&self.base_url)?;
+            let image_url = base_url.join(export_response.href())?;
+            image_url.to_string()
+        };
+
+        tracing::debug!(resolved_url = %image_url, "Fetching image from URL");
+
         // Fetch the actual image from href
-        let image_response = self
-            .client
-            .http()
-            .get(export_response.href())
-            .query(&[("token", token)])
-            .send()
-            .await?;
+        let mut image_request = self.client.http().get(&image_url);
+
+        if let Some(token) = token {
+            image_request = image_request.query(&[("token", token)]);
+        }
+
+        let image_response = image_request.send().await?;
 
         let status = image_response.status();
         if !status.is_success() {

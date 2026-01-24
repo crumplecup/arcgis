@@ -779,30 +779,37 @@ pub struct FindParams {
     /// Comma-separated list of layer IDs to search.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(serialize_with = "serialize_opt_vec_as_comma")]
+    #[builder(default)]
     layers: Option<Vec<i32>>,
 
     /// Whether the search text should match the exact whole value.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     contains: Option<bool>,
 
     /// Whether to return geometry with results.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_geometry: Option<bool>,
 
     /// Output spatial reference WKID.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     sr: Option<i32>,
 
     /// Layer definitions (WHERE clauses for layers).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     layer_defs: Option<String>,
 
     /// Whether to return Z-values.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_z: Option<bool>,
 
     /// Whether to return M-values.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_m: Option<bool>,
 }
 

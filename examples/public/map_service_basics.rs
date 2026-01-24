@@ -17,6 +17,18 @@
 //!
 //! - No authentication required (uses public ESRI World Street Map service)
 //!
+//! # Service Capabilities
+//!
+//! **World Street Map** is a cached basemap service that supports:
+//! - ✅ Map export (static images)
+//! - ✅ Transparent backgrounds
+//! - ✅ Custom DPI
+//!
+//! **Note**: Identify, Find, and Legend operations require dynamic map services
+//! or feature services. This example demonstrates the API calls, but they will
+//! fail gracefully on cached basemaps. For a working identify/find example,
+//! use a dynamic MapServer or FeatureServer URL.
+//!
 //! # Running
 //!
 //! ```bash
@@ -72,9 +84,26 @@ async fn main() -> Result<()> {
     demonstrate_basic_map_export(&map_service).await?;
     demonstrate_transparent_export(&map_service).await?;
     demonstrate_high_dpi_export(&map_service).await?;
-    demonstrate_identify_features(&map_service).await?;
-    demonstrate_find_by_text(&map_service).await?;
-    demonstrate_legend_retrieval(&map_service).await?;
+
+    // Note: World Street Map is a cached basemap - identify/find/legend require dynamic services
+    tracing::info!("\n⚠️  Note: Remaining examples (identify, find, legend) require");
+    tracing::info!("   a dynamic map service. World Street Map is a cached basemap.");
+    tracing::info!("   For these operations, use a FeatureServer or dynamic MapServer.");
+
+    // Attempt identify with graceful error handling
+    if let Err(e) = demonstrate_identify_features(&map_service).await {
+        tracing::warn!("Identify not supported on this service: {}", e);
+    }
+
+    // Attempt find with graceful error handling
+    if let Err(e) = demonstrate_find_by_text(&map_service).await {
+        tracing::warn!("Find not supported on this service: {}", e);
+    }
+
+    // Attempt legend with graceful error handling
+    if let Err(e) = demonstrate_legend_retrieval(&map_service).await {
+        tracing::warn!("Legend not supported on this service: {}", e);
+    }
 
     tracing::info!("\n✅ All map service examples completed successfully!");
     print_best_practices();
@@ -238,6 +267,9 @@ async fn demonstrate_find_by_text(service: &MapServiceClient<'_>) -> Result<()> 
 
     let params = arcgis::FindParams::builder()
         .search_text("Park")
+        .layers(vec![0]) // Search in layer 0
+        .search_fields(vec!["NAME".to_string()]) // Search in NAME field
+        .sr(4326) // WGS84 spatial reference
         .contains(true) // Match partial text
         .return_geometry(false) // Don't need geometry for this example
         .build()
