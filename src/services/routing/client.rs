@@ -264,6 +264,13 @@ impl<'a> RoutingServiceClient<'a> {
             form.push(("outSR", out_sr.as_str()));
         }
 
+        if let Some(return_polygons) = params.return_polygons() {
+            form.push((
+                "returnPolygons",
+                if *return_polygons { "true" } else { "false" },
+            ));
+        }
+
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;
         let token_str;
@@ -404,6 +411,14 @@ impl<'a> RoutingServiceClient<'a> {
                 "returnRoutes",
                 if *return_routes { "true" } else { "false" },
             ));
+        }
+
+        if let Some(travel_direction) = params.travel_direction() {
+            let direction_str = match travel_direction {
+                crate::TravelDirection::FromFacility => "esriNATravelDirectionFromFacility",
+                crate::TravelDirection::ToFacility => "esriNATravelDirectionToFacility",
+            };
+            form.push(("travelDirection", direction_str));
         }
 
         // Add token if required by auth provider

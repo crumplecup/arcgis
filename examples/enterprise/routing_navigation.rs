@@ -42,7 +42,7 @@
 use anyhow::Result;
 use arcgis::{
     ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, ClosestFacilityParameters, NALocation,
-    RouteParameters, RoutingServiceClient, ServiceAreaParameters,
+    RouteParameters, RoutingServiceClient, ServiceAreaParameters, TravelDirection,
 };
 
 /// World Routing Service endpoints
@@ -150,6 +150,7 @@ async fn demonstrate_service_area(client: &ArcGISClient) -> Result<()> {
     let service_area_params = ServiceAreaParameters::builder()
         .facilities(vec![san_francisco])
         .default_breaks(vec![15.0, 30.0, 45.0]) // Minutes
+        .return_polygons(true) // Request polygon output
         .build()?;
 
     tracing::debug!("Calculating service area polygons");
@@ -205,6 +206,7 @@ async fn demonstrate_closest_facility(client: &ArcGISClient) -> Result<()> {
         .facilities(vec![gas_station_1, gas_station_2, gas_station_3])
         .default_target_facility_count(1) // Find closest 1
         .return_routes(true)
+        .travel_direction(TravelDirection::ToFacility) // From incident to facility
         .build()?;
 
     tracing::debug!("Finding nearest gas station");
@@ -279,7 +281,7 @@ fn create_stop(lon: f64, lat: f64, name: &str) -> NALocation {
         y: lat,
         z: None,
         m: None,
-        spatial_reference: None,
+        spatial_reference: Some(arcgis::SpatialReference::wkid(4326)),
     }))
     .with_name(name.to_string())
 }
@@ -291,7 +293,7 @@ fn create_location(lon: f64, lat: f64, name: &str) -> NALocation {
         y: lat,
         z: None,
         m: None,
-        spatial_reference: None,
+        spatial_reference: Some(arcgis::SpatialReference::wkid(4326)),
     }))
     .with_name(name.to_string())
 }

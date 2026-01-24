@@ -843,6 +843,11 @@ pub struct ServiceAreaParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[builder(default)]
     return_barriers: Option<bool>,
+
+    /// Whether to return service area polygons.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    return_polygons: Option<bool>,
 }
 
 impl ServiceAreaParameters {
@@ -852,17 +857,33 @@ impl ServiceAreaParameters {
     }
 }
 
+/// Helper to deserialize service area feature sets.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(bound(deserialize = "T: serde::Deserialize<'de>"))]
+struct ServiceAreaFeatureSet<T> {
+    #[serde(default)]
+    features: Vec<T>,
+}
+
+impl<T> Default for ServiceAreaFeatureSet<T> {
+    fn default() -> Self {
+        Self {
+            features: Vec::new(),
+        }
+    }
+}
+
 /// Result from service area calculation.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServiceAreaResult {
     /// Service area polygons.
-    #[serde(default)]
-    service_area_polygons: Vec<ServiceAreaPolygon>,
+    #[serde(default, rename = "saPolygons")]
+    sapolygons_raw: ServiceAreaFeatureSet<ServiceAreaPolygon>,
 
     /// Service area polylines (network edges).
-    #[serde(default)]
-    service_area_polylines: Vec<ServiceAreaPolyline>,
+    #[serde(default, rename = "saPolylines")]
+    sapolylines_raw: ServiceAreaFeatureSet<ServiceAreaPolyline>,
 
     /// Facilities that were used.
     #[serde(default)]
@@ -871,6 +892,28 @@ pub struct ServiceAreaResult {
     /// Messages from the solve operation.
     #[serde(default)]
     messages: Vec<NAMessage>,
+}
+
+impl ServiceAreaResult {
+    /// Gets the service area polygons.
+    pub fn service_area_polygons(&self) -> &[ServiceAreaPolygon] {
+        &self.sapolygons_raw.features
+    }
+
+    /// Gets the service area polylines.
+    pub fn service_area_polylines(&self) -> &[ServiceAreaPolyline] {
+        &self.sapolylines_raw.features
+    }
+
+    /// Gets the facilities.
+    pub fn facilities(&self) -> &[NALocation] {
+        &self.facilities
+    }
+
+    /// Gets the messages.
+    pub fn messages(&self) -> &[NAMessage] {
+        &self.messages
+    }
 }
 
 /// A service area polygon.
@@ -1031,13 +1074,29 @@ impl ClosestFacilityParameters {
     }
 }
 
+/// Helper to deserialize closest facility feature sets.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(bound(deserialize = "T: serde::Deserialize<'de>"))]
+struct ClosestFacilityFeatureSet<T> {
+    #[serde(default)]
+    features: Vec<T>,
+}
+
+impl<T> Default for ClosestFacilityFeatureSet<T> {
+    fn default() -> Self {
+        Self {
+            features: Vec::new(),
+        }
+    }
+}
+
 /// Result from closest facility calculation.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClosestFacilityResult {
     /// Routes from incidents to facilities.
-    #[serde(default)]
-    routes: Vec<Route>,
+    #[serde(default, rename = "cfRoutes")]
+    cfroutes_raw: ClosestFacilityFeatureSet<Route>,
 
     /// Facilities that were analyzed.
     #[serde(default)]
@@ -1050,6 +1109,28 @@ pub struct ClosestFacilityResult {
     /// Messages from the solve operation.
     #[serde(default)]
     messages: Vec<NAMessage>,
+}
+
+impl ClosestFacilityResult {
+    /// Gets the routes.
+    pub fn routes(&self) -> &[Route] {
+        &self.cfroutes_raw.features
+    }
+
+    /// Gets the facilities.
+    pub fn facilities(&self) -> &[NALocation] {
+        &self.facilities
+    }
+
+    /// Gets the incidents.
+    pub fn incidents(&self) -> &[NALocation] {
+        &self.incidents
+    }
+
+    /// Gets the messages.
+    pub fn messages(&self) -> &[NAMessage] {
+        &self.messages
+    }
 }
 
 /// Parameters for origin-destination cost matrix calculation.
