@@ -194,40 +194,31 @@ impl ClientCredentialsAuth {
     pub fn from_env() -> Result<Self> {
         tracing::debug!("Loading OAuth credentials from environment");
 
-        // Load .env file (ignoring errors if it doesn't exist)
-        let _ = dotenvy::dotenv();
+        // Get global configuration (automatically loads .env on first access)
+        let config = crate::EnvConfig::global();
 
-        // Read ARCGIS_CLIENT_ID - error chain: VarError → EnvError → ErrorKind → Error
-        let client_id = match std::env::var("ARCGIS_CLIENT_ID") {
-            Ok(id) => {
-                tracing::debug!("Successfully loaded ARCGIS_CLIENT_ID from environment");
-                id
-            }
-            Err(e) => {
-                tracing::error!(
-                    error = %e,
-                    "ARCGIS_CLIENT_ID environment variable not set or invalid"
-                );
-                return Err(e.into()); // Automatic conversion through error chain
-            }
-        };
+        // Read ARCGIS_CLIENT_ID from config
+        let client_id = config.arcgis_client_id.as_ref().ok_or_else(|| {
+            tracing::error!("ARCGIS_CLIENT_ID environment variable not set or invalid");
+            crate::Error::from(crate::ErrorKind::Env(crate::EnvError::new(
+                std::env::VarError::NotPresent,
+            )))
+        })?;
 
-        // Read ARCGIS_CLIENT_SECRET - error chain: VarError → EnvError → ErrorKind → Error
-        let client_secret = match std::env::var("ARCGIS_CLIENT_SECRET") {
-            Ok(secret) => {
-                tracing::debug!("Successfully loaded ARCGIS_CLIENT_SECRET from environment");
-                secret
-            }
-            Err(e) => {
-                tracing::error!(
-                    error = %e,
-                    "ARCGIS_CLIENT_SECRET environment variable not set or invalid"
-                );
-                return Err(e.into()); // Automatic conversion through error chain
-            }
-        };
+        // Read ARCGIS_CLIENT_SECRET from config
+        let client_secret = config.arcgis_client_secret.as_ref().ok_or_else(|| {
+            tracing::error!("ARCGIS_CLIENT_SECRET environment variable not set or invalid");
+            crate::Error::from(crate::ErrorKind::Env(crate::EnvError::new(
+                std::env::VarError::NotPresent,
+            )))
+        })?;
 
-        Self::new(client_id, client_secret)
+        tracing::debug!("Successfully loaded OAuth credentials from environment");
+
+        Self::new(
+            client_id.expose_secret().to_string(),
+            client_secret.expose_secret().to_string(),
+        )
     }
 
     /// Fetches a new access token from the ArcGIS token endpoint.

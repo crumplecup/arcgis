@@ -3,7 +3,7 @@
 use crate::AuthProvider;
 use derive_getters::Getters;
 use reqwest::Client as ReqwestClient;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 use tracing::instrument;
 
 /// Initialize environment variables from .env file.
@@ -17,15 +17,6 @@ use tracing::instrument;
 /// - Store API keys and credentials securely in `.env` (gitignored)
 /// - Use system environment variables instead
 /// - Deploy with different env management systems
-fn init_env() {
-    static INIT: OnceLock<()> = OnceLock::new();
-    INIT.get_or_init(|| {
-        // Silently load .env if it exists
-        // Users can override with system environment variables
-        dotenvy::dotenv().ok();
-        tracing::debug!("Environment initialization complete");
-    });
-}
 
 /// The main client for interacting with ArcGIS services.
 ///
@@ -51,9 +42,10 @@ pub struct ArcGISClient {
 impl ArcGISClient {
     /// Creates a new ArcGIS client with the given authentication provider.
     ///
-    /// This function automatically loads environment variables from a `.env` file
-    /// on first use. This means you can store your API keys and credentials in a
-    /// `.env` file (which should be in `.gitignore`):
+    /// # Using Environment Variables
+    ///
+    /// The SDK automatically loads `.env` files when using `from_env()` methods.
+    /// Store your credentials in a `.env` file (add to `.gitignore`):
     ///
     /// ```text
     /// ARCGIS_API_KEY=your_api_key_here
@@ -61,21 +53,20 @@ impl ArcGISClient {
     /// ARCGIS_CLIENT_SECRET=your_client_secret
     /// ```
     ///
-    /// Then use them in your code:
+    /// Then use `from_env()` - no manual `dotenvy::dotenv()` call needed:
     ///
     /// ```no_run
     /// use arcgis::{ApiKeyAuth, ArcGISClient};
     ///
-    /// let api_key = std::env::var("ARCGIS_API_KEY")
-    ///     .expect("ARCGIS_API_KEY must be set in .env or environment");
-    /// let auth = ApiKeyAuth::new(api_key);
+    /// # fn example() -> arcgis::Result<()> {
+    /// // Automatically loads .env and reads ARCGIS_API_KEY
+    /// let auth = ApiKeyAuth::from_env()?;
     /// let client = ArcGISClient::new(auth);
+    /// # Ok(())
+    /// # }
     /// ```
     #[instrument(skip(auth))]
     pub fn new(auth: impl AuthProvider + 'static) -> Self {
-        // Initialize environment on first client creation
-        init_env();
-
         tracing::debug!("Creating new ArcGIS client");
         Self {
             http: ReqwestClient::new(),

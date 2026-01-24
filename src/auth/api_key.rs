@@ -74,26 +74,29 @@ impl ApiKeyAuth {
     pub fn from_env() -> Result<Self> {
         tracing::debug!("Loading API key from environment");
 
-        // Load .env file (ignoring errors if it doesn't exist)
-        let _ = dotenvy::dotenv();
+        // Get global configuration (automatically loads .env on first access)
+        let config = crate::EnvConfig::global();
 
         // Try tier-specific keys first, then fall back to skeleton key
-        let api_key = std::env::var("ARCGIS_LOCATION_KEY")
-            .or_else(|_| std::env::var("ARCGIS_CONTENT_KEY"))
-            .or_else(|_| std::env::var("ARCGIS_FEATURES_KEY"))
-            .or_else(|_| std::env::var("ARCGIS_PUBLIC_KEY"))
-            .or_else(|_| std::env::var("ARCGIS_API_KEY"))
-            .map_err(|e| {
+        let api_key = config
+            .arcgis_location_key
+            .as_ref()
+            .or(config.arcgis_content_key.as_ref())
+            .or(config.arcgis_features_key.as_ref())
+            .or(config.arcgis_public_key.as_ref())
+            .or(config.arcgis_api_key.as_ref())
+            .ok_or_else(|| {
                 tracing::error!(
-                    error = %e,
                     "No API key found in environment. Set one of: ARCGIS_LOCATION_KEY, \
                      ARCGIS_CONTENT_KEY, ARCGIS_FEATURES_KEY, ARCGIS_PUBLIC_KEY, or ARCGIS_API_KEY"
                 );
-                e
+                crate::Error::from(crate::ErrorKind::Env(crate::EnvError::new(
+                    std::env::VarError::NotPresent,
+                )))
             })?;
 
         tracing::debug!("Successfully loaded API key from environment");
-        Ok(Self::new(api_key))
+        Ok(Self::new(api_key.expose_secret().to_string()))
     }
 }
 

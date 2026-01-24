@@ -55,6 +55,7 @@ pub use geojson;
 // Core modules
 mod auth;
 mod client;
+mod config;
 mod error;
 mod geometry;
 mod services;
@@ -64,6 +65,7 @@ mod util;
 // Re-exports
 pub use auth::{ApiKeyAuth, AuthProvider, ClientCredentialsAuth, NoAuth};
 pub use client::ArcGISClient;
+pub use config::EnvConfig;
 pub use error::{
     BuilderError, EnvError, Error, ErrorKind, HttpError, IoError, JsonError, UrlEncodedError,
     UrlError,
