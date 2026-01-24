@@ -27,6 +27,14 @@
 //! RUST_LOG=debug cargo run --example portal_content_management
 //! ```
 //!
+//! # Real-World Use Cases
+//!
+//! - **Data discovery**: Find public datasets for analysis or integration
+//! - **Content inventory**: Catalog organizational assets and resources
+//! - **Group management**: Discover and join collaborative workspaces
+//! - **Metadata exploration**: Understand dataset characteristics before use
+//! - **Search interfaces**: Build custom portals with advanced filtering
+//!
 //! # Note on Content Creation
 //!
 //! Creating, updating, and managing content requires **user authentication**
@@ -34,7 +42,7 @@
 //! This example focuses on discovery and read-only operations that work with
 //! all authentication methods.
 
-use anyhow::Context;
+use anyhow::{Context, Result};
 use arcgis::{
     ArcGISClient, ClientCredentialsAuth, GroupSearchParameters, PortalClient, SearchParameters,
     SortOrder,
@@ -44,7 +52,7 @@ use arcgis::{
 const PORTAL_URL: &str = "https://www.arcgis.com/sharing/rest";
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<()> {
     // Initialize tracing for structured logging
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -56,21 +64,28 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("📦 ArcGIS Portal Content Discovery Examples");
     tracing::info!("Demonstrating search and exploration workflows");
 
-    // Load environment variables from .env
-    dotenvy::dotenv().ok();
-
-    // Create authenticated client with OAuth2 client credentials
-    let client_id =
-        std::env::var("ARCGIS_CLIENT_ID").context("ARCGIS_CLIENT_ID not found in environment")?;
-    let client_secret = std::env::var("ARCGIS_CLIENT_SECRET")
-        .context("ARCGIS_CLIENT_SECRET not found in environment")?;
-
-    let auth = ClientCredentialsAuth::new(client_id, client_secret)
-        .context("Failed to create OAuth2 authentication")?;
+    // Create authenticated client (automatically loads .env)
+    tracing::debug!("Creating authenticated client");
+    let auth = ClientCredentialsAuth::from_env()
+        .context("Failed to load OAuth credentials from environment")?;
     let client = ArcGISClient::new(auth);
     let portal = PortalClient::new(PORTAL_URL, &client);
 
-    // Example 1: Basic Content Search
+    // Demonstrate portal content discovery operations
+    demonstrate_basic_search(&portal).await?;
+    demonstrate_advanced_query(&portal).await?;
+    demonstrate_item_details(&portal).await?;
+    demonstrate_group_discovery(&portal).await?;
+    demonstrate_pagination(&portal).await?;
+
+    tracing::info!("\n✅ Portal content discovery examples completed!");
+    print_best_practices();
+
+    Ok(())
+}
+
+/// Demonstrates basic content search using Lucene query syntax.
+async fn demonstrate_basic_search(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 1: Basic Content Search ===");
     tracing::info!("Find feature services related to 'parks'");
 
@@ -95,7 +110,11 @@ async fn main() -> anyhow::Result<()> {
         tracing::debug!(item_id = %item.id(), item_type = %item.item_type(), "Item details");
     }
 
-    // Example 2: Advanced Query with Sorting
+    Ok(())
+}
+
+/// Demonstrates advanced search with sorting by modification date.
+async fn demonstrate_advanced_query(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 2: Advanced Query with Sorting ===");
     tracing::info!("Find recent web maps, sorted by modification date");
 
@@ -123,9 +142,22 @@ async fn main() -> anyhow::Result<()> {
         );
     }
 
-    // Example 3: Retrieve Item Details
+    Ok(())
+}
+
+/// Demonstrates retrieving detailed item metadata.
+async fn demonstrate_item_details(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 3: Retrieve Item Metadata ===");
     tracing::info!("Get detailed information about a specific item");
+
+    // First, find an item to get details for
+    let search_params =
+        SearchParameters::new("type:\"Feature Service\" AND tags:parks").with_pagination(1, 1);
+
+    let search_results = portal
+        .search(search_params)
+        .await
+        .context("Failed to search portal items")?;
 
     if let Some(first_item) = search_results.results().first() {
         let item_id = first_item.id();
@@ -161,7 +193,11 @@ async fn main() -> anyhow::Result<()> {
         );
     }
 
-    // Example 4: Search Groups
+    Ok(())
+}
+
+/// Demonstrates finding and exploring public groups.
+async fn demonstrate_group_discovery(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 4: Group Discovery ===");
     tracing::info!("Find public groups related to 'open data'");
 
@@ -191,7 +227,11 @@ async fn main() -> anyhow::Result<()> {
         tracing::debug!(group_id = %group.id(), access = %group.access(), "Group details");
     }
 
-    // Example 5: Pagination Pattern
+    Ok(())
+}
+
+/// Demonstrates pagination for handling large result sets.
+async fn demonstrate_pagination(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 5: Pagination Pattern ===");
     tracing::info!("Retrieve multiple pages of search results");
 
@@ -228,21 +268,37 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    // Summary and Best Practices
-    tracing::info!("\n✅ Portal content discovery examples completed!");
-    tracing::info!("💡 Search Best Practices:");
+    Ok(())
+}
+
+/// Prints best practices for portal content search and discovery.
+fn print_best_practices() {
+    tracing::info!("\n💡 Search Best Practices:");
     tracing::info!("   - Use Lucene query syntax for powerful filtering");
     tracing::info!("   - Combine type filters: type:\"Feature Service\" AND tags:parks");
     tracing::info!("   - Sort by 'modified', 'created', 'title', 'owner', or 'numviews'");
     tracing::info!("   - Paginate large result sets (max 100 per page)");
     tracing::info!("   - Cache item metadata to reduce API calls");
     tracing::info!("   - Search is case-insensitive by default");
-    tracing::info!("\n📚 Common search patterns:");
+    tracing::info!("");
+    tracing::info!("📚 Common Search Patterns:");
     tracing::info!("   - By owner: owner:username");
     tracing::info!("   - By org: orgid:abc123");
     tracing::info!("   - Public only: access:public");
     tracing::info!("   - Date range: modified:[NOW-7DAYS TO NOW]");
     tracing::info!("   - Multiple tags: tags:(transportation AND roads)");
-
-    Ok(())
+    tracing::info!("");
+    tracing::info!("🎯 Item Types:");
+    tracing::info!("   - Feature Service: Editable vector data layers");
+    tracing::info!("   - Map Service: Cached map tiles (fast display)");
+    tracing::info!("   - Image Service: Raster imagery and elevation");
+    tracing::info!("   - Web Map: Configured map with layers and symbology");
+    tracing::info!("   - Web Scene: 3D map configurations");
+    tracing::info!("");
+    tracing::info!("⚡ Performance Tips:");
+    tracing::info!("   - Request only needed fields to reduce payload size");
+    tracing::info!("   - Use pagination (don't fetch all results at once)");
+    tracing::info!("   - Implement client-side caching for frequently accessed items");
+    tracing::info!("   - Narrow searches with specific type and tag filters");
+    tracing::info!("   - Consider rate limits when building batch operations");
 }
