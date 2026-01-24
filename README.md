@@ -225,8 +225,8 @@ use arcgis::{ClientCredentialsAuth, ArcGISClient, AuthProvider};
 async fn main() -> arcgis::Result<()> {
     // Create authenticator with client credentials
     let auth = ClientCredentialsAuth::new(
-        std::env::var("CLIENT_ID")?,
-        std::env::var("CLIENT_SECRET")?,
+        std::env::var("ARCGIS_CLIENT_ID")?,
+        std::env::var("ARCGIS_CLIENT_SECRET")?,
     )?;
 
     // Token is fetched automatically on first use
@@ -277,7 +277,7 @@ Integration tests require ArcGIS credentials and the `api` feature flag.
 1. **Set up credentials**:
    ```bash
    cp .env.example .env
-   # Edit .env and add your ARCGIS_API_KEY or CLIENT_ID/CLIENT_SECRET
+   # Edit .env and add your ARCGIS_API_KEY or ARCGIS_CLIENT_ID/ARCGIS_CLIENT_SECRET
    ```
 
 2. **Run integration tests**:

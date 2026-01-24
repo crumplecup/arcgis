@@ -25,8 +25,8 @@ Get an API key from: https://developers.arcgis.com/dashboard
 
 **Option B: OAuth Credentials** (for full read/write testing):
 ```bash
-CLIENT_ID=your_client_id_here
-CLIENT_SECRET=your_client_secret_here
+ARCGIS_CLIENT_ID=your_client_id_here
+ARCGIS_CLIENT_SECRET=your_client_secret_here
 ```
 
 ### 3. Run integration tests

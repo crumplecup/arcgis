@@ -57,8 +57,8 @@ impl ArcGISClient {
     ///
     /// ```text
     /// ARCGIS_API_KEY=your_api_key_here
-    /// CLIENT_ID=your_client_id
-    /// CLIENT_SECRET=your_client_secret
+    /// ARCGIS_CLIENT_ID=your_client_id
+    /// ARCGIS_CLIENT_SECRET=your_client_secret
     /// ```
     ///
     /// Then use them in your code:

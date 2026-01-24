@@ -24,7 +24,7 @@
 //! use arcgis::ClientCredentialsAuth;
 //!
 //! # async fn example() -> arcgis::Result<()> {
-//! // Load credentials from .env file (CLIENT_ID and CLIENT_SECRET)
+//! // Load credentials from .env file (ARCGIS_CLIENT_ID and ARCGIS_CLIENT_SECRET)
 //! let auth = ClientCredentialsAuth::from_env()?;
 //!
 //! // Token is fetched automatically on first use
@@ -135,8 +135,8 @@ impl ClientCredentialsAuth {
     ///
     /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let auth = ClientCredentialsAuth::new(
-    ///     std::env::var("CLIENT_ID")?,
-    ///     std::env::var("CLIENT_SECRET")?,
+    ///     std::env::var("ARCGIS_CLIENT_ID")?,
+    ///     std::env::var("ARCGIS_CLIENT_SECRET")?,
     /// )?;
     /// # Ok(())
     /// # }
@@ -162,19 +162,19 @@ impl ClientCredentialsAuth {
 
     /// Creates a new OAuth Client Credentials authenticator from environment variables.
     ///
-    /// This method automatically loads `.env` file and reads the `CLIENT_ID` and
-    /// `CLIENT_SECRET` environment variables.
+    /// This method automatically loads `.env` file and reads the `ARCGIS_CLIENT_ID` and
+    /// `ARCGIS_CLIENT_SECRET` environment variables.
     ///
     /// # Environment Variables
     ///
-    /// - `CLIENT_ID` - Application client ID from ArcGIS Developer dashboard
-    /// - `CLIENT_SECRET` - Application client secret (keep confidential)
+    /// - `ARCGIS_CLIENT_ID` - Application client ID from ArcGIS Developer dashboard
+    /// - `ARCGIS_CLIENT_SECRET` - Application client secret (keep confidential)
     ///
     /// # Errors
     ///
     /// Returns an error if:
-    /// - The `CLIENT_ID` environment variable is not set
-    /// - The `CLIENT_SECRET` environment variable is not set
+    /// - The `ARCGIS_CLIENT_ID` environment variable is not set
+    /// - The `ARCGIS_CLIENT_SECRET` environment variable is not set
     /// - The HTTP client cannot be created
     ///
     /// The error preserves the original `std::env::VarError` in the error chain.
@@ -185,7 +185,7 @@ impl ClientCredentialsAuth {
     /// use arcgis::ClientCredentialsAuth;
     ///
     /// # fn example() -> arcgis::Result<()> {
-    /// // Reads CLIENT_ID and CLIENT_SECRET from .env file
+    /// // Reads ARCGIS_CLIENT_ID and ARCGIS_CLIENT_SECRET from .env file
     /// let auth = ClientCredentialsAuth::from_env()?;
     /// # Ok(())
     /// # }
@@ -197,31 +197,31 @@ impl ClientCredentialsAuth {
         // Load .env file (ignoring errors if it doesn't exist)
         let _ = dotenvy::dotenv();
 
-        // Read CLIENT_ID - error chain: VarError → EnvError → ErrorKind → Error
-        let client_id = match std::env::var("CLIENT_ID") {
+        // Read ARCGIS_CLIENT_ID - error chain: VarError → EnvError → ErrorKind → Error
+        let client_id = match std::env::var("ARCGIS_CLIENT_ID") {
             Ok(id) => {
-                tracing::debug!("Successfully loaded CLIENT_ID from environment");
+                tracing::debug!("Successfully loaded ARCGIS_CLIENT_ID from environment");
                 id
             }
             Err(e) => {
                 tracing::error!(
                     error = %e,
-                    "CLIENT_ID environment variable not set or invalid"
+                    "ARCGIS_CLIENT_ID environment variable not set or invalid"
                 );
                 return Err(e.into()); // Automatic conversion through error chain
             }
         };
 
-        // Read CLIENT_SECRET - error chain: VarError → EnvError → ErrorKind → Error
-        let client_secret = match std::env::var("CLIENT_SECRET") {
+        // Read ARCGIS_CLIENT_SECRET - error chain: VarError → EnvError → ErrorKind → Error
+        let client_secret = match std::env::var("ARCGIS_CLIENT_SECRET") {
             Ok(secret) => {
-                tracing::debug!("Successfully loaded CLIENT_SECRET from environment");
+                tracing::debug!("Successfully loaded ARCGIS_CLIENT_SECRET from environment");
                 secret
             }
             Err(e) => {
                 tracing::error!(
                     error = %e,
-                    "CLIENT_SECRET environment variable not set or invalid"
+                    "ARCGIS_CLIENT_SECRET environment variable not set or invalid"
                 );
                 return Err(e.into()); // Automatic conversion through error chain
             }

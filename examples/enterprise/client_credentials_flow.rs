@@ -15,8 +15,8 @@
 //!
 //! 1. Create a `.env` file in the project root with:
 //!    ```env
-//!    CLIENT_ID=your_client_id
-//!    CLIENT_SECRET=your_client_secret
+//!    ARCGIS_CLIENT_ID=your_client_id
+//!    ARCGIS_CLIENT_SECRET=your_client_secret
 //!    ```
 //!
 //! 2. Obtain credentials from ArcGIS Developer dashboard:
@@ -48,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("🔐 ArcGIS OAuth 2.0 Client Credentials Flow Example");
     tracing::info!("✨ Fully automated - no browser interaction required!");
 
-    // Load credentials from .env file (CLIENT_ID and CLIENT_SECRET automatically loaded)
+    // Load credentials from .env file (ARCGIS_CLIENT_ID and ARCGIS_CLIENT_SECRET automatically loaded)
     tracing::info!("📋 Creating OAuth Client Credentials authenticator from environment");
     let auth = ClientCredentialsAuth::from_env()?;
     tracing::info!("✅ Authenticator created");

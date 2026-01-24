@@ -166,8 +166,8 @@ impl AuthProvider for ClientCredentialsAuth {
 **Configuration**:
 ```bash
 # .env
-CLIENT_ID=your_client_id
-CLIENT_SECRET=your_client_secret
+ARCGIS_CLIENT_ID=your_client_id
+ARCGIS_CLIENT_SECRET=your_client_secret
 ```
 
 **API Request Details**:
@@ -180,8 +180,8 @@ Headers: `Content-Type: application/x-www-form-urlencoded`
 
 Body:
 ```
-client_id=YOUR_CLIENT_ID
-client_secret=YOUR_CLIENT_SECRET
+client_id=YOUR_ARCGIS_CLIENT_ID
+client_secret=YOUR_ARCGIS_CLIENT_SECRET
 grant_type=client_credentials
 ```
 
@@ -255,8 +255,8 @@ use arcgis::{ClientCredentialsAuth, ArcGISClient, AuthProvider};
 async fn main() -> arcgis::Result<()> {
     dotenvy::dotenv().ok();
 
-    let client_id = std::env::var("CLIENT_ID")?;
-    let client_secret = std::env::var("CLIENT_SECRET")?;
+    let client_id = std::env::var("ARCGIS_CLIENT_ID")?;
+    let client_secret = std::env::var("ARCGIS_CLIENT_SECRET")?;
 
     println!("Creating OAuth client credentials authenticator...");
     let auth = ClientCredentialsAuth::new(client_id, client_secret)?;
@@ -313,7 +313,7 @@ async fn main() -> arcgis::Result<()> {
 - ⚠️ Avoid embedding in client-side code
 
 ### Client Credentials
-- ✅ Store `CLIENT_SECRET` securely (environment variable, secrets manager)
+- ✅ Store `ARCGIS_CLIENT_SECRET` securely (environment variable, secrets manager)
 - ✅ Never log or expose client secret
 - ✅ Use HTTPS only (enforced by ArcGIS)
 - ✅ Rotate credentials periodically
@@ -336,8 +336,8 @@ async fn main() -> arcgis::Result<()> {
 #[ignore] // Requires real credentials
 async fn test_client_credentials_flow() -> arcgis::Result<()> {
     let auth = ClientCredentialsAuth::new(
-        std::env::var("CLIENT_ID")?,
-        std::env::var("CLIENT_SECRET")?,
+        std::env::var("ARCGIS_CLIENT_ID")?,
+        std::env::var("ARCGIS_CLIENT_SECRET")?,
     )?;
 
     // First token fetch
@@ -380,8 +380,8 @@ let (url, session) = oauth.authorize_url();
 **After** (fully automated):
 ```rust
 let auth = ClientCredentialsAuth::new(
-    env::var("CLIENT_ID")?,
-    env::var("CLIENT_SECRET")?,
+    env::var("ARCGIS_CLIENT_ID")?,
+    env::var("ARCGIS_CLIENT_SECRET")?,
 )?;
 // ✅ No user interaction required
 let client = ArcGISClient::new(auth);

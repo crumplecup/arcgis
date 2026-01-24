@@ -11,8 +11,8 @@ These examples use **Tier 2+ (Location/Portal/Publishing)** services that requir
 ```env
 ARCGIS_API_KEY=your_api_key_here
 # Or for OAuth:
-CLIENT_ID=your_client_id
-CLIENT_SECRET=your_client_secret
+ARCGIS_CLIENT_ID=your_client_id
+ARCGIS_CLIENT_SECRET=your_client_secret
 ```
 
 ## Credit Usage
@@ -42,7 +42,7 @@ For enterprise users with credit pools, this cost is typically negligible compar
 # Basic authentication setup
 cargo run --example basic_client
 
-# OAuth flow (requires CLIENT_ID/CLIENT_SECRET)
+# OAuth flow (requires ARCGIS_CLIENT_ID/ARCGIS_CLIENT_SECRET)
 cargo run --example client_credentials_flow
 
 # Location services (Tier 2)

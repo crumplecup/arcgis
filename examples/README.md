@@ -30,8 +30,8 @@ See [public/README.md](./public/README.md) for details.
 
 ```env
 ARCGIS_API_KEY=your_api_key_here
-CLIENT_ID=your_client_id           # For OAuth examples
-CLIENT_SECRET=your_client_secret   # For OAuth examples
+ARCGIS_CLIENT_ID=your_client_id           # For OAuth examples
+ARCGIS_CLIENT_SECRET=your_client_secret   # For OAuth examples
 ```
 
 2. Run examples:
