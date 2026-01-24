@@ -43,7 +43,24 @@ async fn main() -> anyhow::Result<()> {
     let service = FeatureServiceClient::new(WORLD_CITIES_SERVICE, &client);
     let layer_id = LayerId::new(0);
 
-    // Example 1: Bounding Box Query (Envelope)
+    // Demonstrate spatial query operations
+    demonstrate_bounding_box_query(&service, layer_id).await?;
+    demonstrate_polygon_query(&service, layer_id).await?;
+    demonstrate_combined_spatial_attribute(&service, layer_id).await?;
+    demonstrate_spatial_relationships(&service, layer_id).await?;
+    demonstrate_large_area_pagination(&service, layer_id).await?;
+
+    tracing::info!("\n✅ All spatial query examples completed successfully!");
+    print_best_practices();
+
+    Ok(())
+}
+
+/// Demonstrates bounding box (envelope) queries.
+async fn demonstrate_bounding_box_query(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 1: Bounding Box Query ===");
     tracing::info!("Find cities within a geographic extent (California)");
 
@@ -81,7 +98,14 @@ async fn main() -> anyhow::Result<()> {
         tracing::info!(city = ?city, population = ?pop, "City in bbox");
     }
 
-    // Example 2: Polygon Query (Complex Shape)
+    Ok(())
+}
+
+/// Demonstrates polygon queries with complex shapes.
+async fn demonstrate_polygon_query(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 2: Polygon Query ===");
     tracing::info!("Find cities within a custom polygon");
 
@@ -121,7 +145,14 @@ async fn main() -> anyhow::Result<()> {
         tracing::info!(city = ?city, country = ?country, "City in polygon");
     }
 
-    // Example 3: Combining Spatial and Attribute Queries
+    Ok(())
+}
+
+/// Demonstrates combining spatial and attribute queries.
+async fn demonstrate_combined_spatial_attribute(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 3: Combined Spatial + Attribute Query ===");
     tracing::info!("Large cities on the West Coast");
 
@@ -167,7 +198,14 @@ async fn main() -> anyhow::Result<()> {
         );
     }
 
-    // Example 4: Spatial Relationship Types
+    Ok(())
+}
+
+/// Demonstrates different spatial relationship types.
+async fn demonstrate_spatial_relationships(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 4: Different Spatial Relationships ===");
     tracing::info!("Demonstrating various spatial relationship types");
 
@@ -209,7 +247,14 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    // Example 5: Large Area Query with Pagination
+    Ok(())
+}
+
+/// Demonstrates large area queries with automatic pagination.
+async fn demonstrate_large_area_pagination(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 5: Large Area with Auto-Pagination ===");
     tracing::info!("Query entire US with automatic pagination");
 
@@ -241,13 +286,27 @@ async fn main() -> anyhow::Result<()> {
         "US cities with population > 100,000"
     );
 
-    tracing::info!("\n✅ All spatial query examples completed successfully!");
-    tracing::info!("💡 Tips:");
-    tracing::info!("   - Use Intersects for 'overlaps or touches' queries");
+    Ok(())
+}
+
+/// Prints best practices for spatial queries.
+fn print_best_practices() {
+    tracing::info!("\n💡 Spatial Query Best Practices:");
+    tracing::info!("   - Always specify spatial_reference on geometries (typically WGS84)");
+    tracing::info!("   - Use Intersects for 'overlaps or touches' queries (most common)");
     tracing::info!("   - Use Contains for 'completely inside' queries");
     tracing::info!("   - Use Within for 'feature is inside geometry' queries");
     tracing::info!("   - Combine spatial filters with WHERE clauses for powerful queries");
+    tracing::info!("");
+    tracing::info!("🎯 Geometry Types:");
+    tracing::info!("   - Envelope: Fast bounding box queries (rectangular areas)");
+    tracing::info!("   - Polygon: Complex shapes, irregular boundaries");
+    tracing::info!("   - Point: Distance-based queries, nearest neighbor");
+    tracing::info!("   - Polyline: Route analysis, corridor queries");
+    tracing::info!("");
+    tracing::info!("⚡ Performance Tips:");
+    tracing::info!("   - Use envelopes instead of polygons when possible (faster)");
+    tracing::info!("   - Limit result set with WHERE clauses to reduce data transfer");
     tracing::info!("   - Use execute_all() for large spatial queries with pagination");
-
-    Ok(())
+    tracing::info!("   - Skip geometry in results (return_geometry(false)) if not needed");
 }

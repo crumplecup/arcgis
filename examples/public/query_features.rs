@@ -52,7 +52,26 @@ async fn main() -> anyhow::Result<()> {
     let service = FeatureServiceClient::new(WORLD_CITIES_SERVICE, &client);
     let layer_id = LayerId::new(0);
 
-    // Example 1: Basic WHERE clause query
+    // Demonstrate Feature Service query operations
+    demonstrate_basic_where_query(&service, layer_id).await?;
+    demonstrate_field_filtering(&service, layer_id).await?;
+    demonstrate_count_only(&service, layer_id).await?;
+    demonstrate_object_id_query(&service, layer_id).await?;
+    demonstrate_manual_pagination(&service, layer_id).await?;
+    demonstrate_auto_pagination(&service, layer_id).await?;
+    demonstrate_alternative_formats(&service, layer_id).await?;
+
+    tracing::info!("\n✅ All query examples completed successfully!");
+    print_best_practices();
+
+    Ok(())
+}
+
+/// Demonstrates basic WHERE clause queries.
+async fn demonstrate_basic_where_query(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 1: Basic WHERE Clause Query ===");
     tracing::info!("Query cities with population > 5 million");
 
@@ -83,7 +102,14 @@ async fn main() -> anyhow::Result<()> {
         );
     }
 
-    // Example 2: Field filtering (attributes only, no geometry)
+    Ok(())
+}
+
+/// Demonstrates field filtering without geometry for better performance.
+async fn demonstrate_field_filtering(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 2: Field Filtering (No Geometry) ===");
     tracing::info!("Query specific fields without geometry for faster response");
 
@@ -110,7 +136,14 @@ async fn main() -> anyhow::Result<()> {
         );
     }
 
-    // Example 3: Count-only query (no features returned)
+    Ok(())
+}
+
+/// Demonstrates count-only queries without returning features.
+async fn demonstrate_count_only(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 3: Count-Only Query ===");
     tracing::info!("Get count of features without retrieving data");
 
@@ -129,7 +162,14 @@ async fn main() -> anyhow::Result<()> {
         );
     }
 
-    // Example 4: Query by specific Object IDs
+    Ok(())
+}
+
+/// Demonstrates querying by specific Object IDs.
+async fn demonstrate_object_id_query(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 4: Query by Object IDs ===");
     tracing::info!("Retrieve specific features by their ObjectID");
 
@@ -146,7 +186,14 @@ async fn main() -> anyhow::Result<()> {
         "Retrieved features by ObjectID"
     );
 
-    // Example 5: Manual pagination
+    Ok(())
+}
+
+/// Demonstrates manual pagination using offset and limit.
+async fn demonstrate_manual_pagination(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 5: Manual Pagination ===");
     tracing::info!("Fetch results in pages using offset/limit");
 
@@ -183,7 +230,14 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    // Example 6: Auto-pagination (execute_all)
+    Ok(())
+}
+
+/// Demonstrates automatic pagination using execute_all().
+async fn demonstrate_auto_pagination(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 6: Auto-Pagination ===");
     tracing::info!("Let the SDK handle pagination automatically");
 
@@ -202,7 +256,14 @@ async fn main() -> anyhow::Result<()> {
         "Auto-pagination completed"
     );
 
-    // Example 7: Test Alternative Formats
+    Ok(())
+}
+
+/// Demonstrates alternative response formats (GeoJSON and PBF).
+async fn demonstrate_alternative_formats(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> anyhow::Result<()> {
     tracing::info!("\n=== Example 7: Alternative Response Formats ===");
     tracing::info!("Testing GeoJSON and PBF format support");
 
@@ -250,15 +311,28 @@ async fn main() -> anyhow::Result<()> {
         tracing::info!(city = ?city, population = ?pop, "City from PBF");
     }
 
-    tracing::info!("\n✅ All query examples completed successfully!");
-    tracing::info!("💡 Tips:");
+    Ok(())
+}
+
+/// Prints best practices for Feature Service queries.
+fn print_best_practices() {
+    tracing::info!("\n💡 Query Best Practices:");
     tracing::info!(
         "   - Use return_geometry(false) for better performance when you don't need geometry"
     );
     tracing::info!("   - Use count_only(true) to get counts without retrieving features");
     tracing::info!("   - Use execute_all() for automatic pagination");
-    tracing::info!("   - Use .geojson() for GeoJSON format (standard for web mapping)");
-    tracing::info!("   - Use .pbf() for PBF format (3-5x faster for large datasets)");
-
-    Ok(())
+    tracing::info!("   - Narrow queries with specific WHERE clauses to reduce data transfer");
+    tracing::info!("   - Request only needed fields with out_fields() instead of all fields");
+    tracing::info!("");
+    tracing::info!("🎯 Format Selection:");
+    tracing::info!("   - Default JSON: Universal compatibility, moderate performance");
+    tracing::info!("   - GeoJSON: Standard for web mapping libraries (Leaflet, Mapbox, etc.)");
+    tracing::info!("   - PBF: 3-5x faster for large datasets, binary format");
+    tracing::info!("");
+    tracing::info!("⚡ Performance Tips:");
+    tracing::info!("   - Skip geometry when doing attribute-only analysis");
+    tracing::info!("   - Use count_only for checking dataset size before full query");
+    tracing::info!("   - Paginate large result sets instead of fetching all at once");
+    tracing::info!("   - Consider spatial queries (bounding box) to limit results geographically");
 }
