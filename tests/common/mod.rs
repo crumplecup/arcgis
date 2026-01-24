@@ -22,8 +22,8 @@ pub fn load_env() {
 /// Reads the appropriate environment variable based on the active test feature flag:
 /// - `test-public` → `ARCGIS_PUBLIC_KEY`
 /// - `test-location` → `ARCGIS_LOCATION_KEY`
-/// - `test-portal` → `ARCGIS_PORTAL_KEY`
-/// - `test-publishing` → `ARCGIS_PUBLISH_KEY`
+/// - `test-content` → `ARCGIS_CONTENT_KEY`
+/// - `test-features` → `ARCGIS_FEATURES_KEY`
 /// - (no feature) → `ARCGIS_API_KEY` (default)
 ///
 /// The mapping is defined in `config/test-tiers.toml`.
@@ -90,10 +90,10 @@ fn active_tier() -> &'static str {
         "public"
     } else if cfg!(feature = "test-location") {
         "location"
-    } else if cfg!(feature = "test-portal") {
-        "portal"
-    } else if cfg!(feature = "test-publishing") {
-        "publishing"
+    } else if cfg!(feature = "test-content") {
+        "content"
+    } else if cfg!(feature = "test-features") {
+        "features"
     } else {
         "public" // Default tier for unit tests and examples
     }

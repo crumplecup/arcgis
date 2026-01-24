@@ -45,20 +45,28 @@ impl ApiKeyAuth {
 
     /// Creates a new API Key authentication provider from environment variables.
     ///
-    /// This method automatically loads `.env` file and reads the `ARCGIS_API_KEY`
-    /// environment variable.
+    /// This method automatically loads `.env` file and intelligently searches for API keys:
+    /// 1. First checks tier-specific keys (privilege separation):
+    ///    - `ARCGIS_LOCATION_KEY` - Location services
+    ///    - `ARCGIS_CONTENT_KEY` - Content management
+    ///    - `ARCGIS_FEATURES_KEY` - Feature editing
+    ///    - `ARCGIS_PUBLIC_KEY` - Public services
+    /// 2. Falls back to `ARCGIS_API_KEY` (skeleton key with all privileges)
+    ///
+    /// This allows examples and user code to work seamlessly with the multi-tier system.
+    /// Users can provide tier-specific keys for privilege separation, or a skeleton key
+    /// for simplicity.
     ///
     /// # Errors
     ///
-    /// Returns an error if the `ARCGIS_API_KEY` environment variable is not set.
-    /// The error preserves the original `std::env::VarError` in the error chain.
+    /// Returns an error if no API key environment variable is found.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use arcgis::ApiKeyAuth;
     ///
-    /// // Reads ARCGIS_API_KEY from .env file
+    /// // Automatically finds and uses any available API key
     /// let auth = ApiKeyAuth::from_env()?;
     /// # Ok::<(), arcgis::Error>(())
     /// ```
@@ -69,21 +77,22 @@ impl ApiKeyAuth {
         // Load .env file (ignoring errors if it doesn't exist)
         let _ = dotenvy::dotenv();
 
-        // Read the API key - error chain: VarError → EnvError → ErrorKind → Error
-        let api_key = match std::env::var("ARCGIS_API_KEY") {
-            Ok(key) => {
-                tracing::debug!("Successfully loaded API key from environment");
-                key
-            }
-            Err(e) => {
+        // Try tier-specific keys first, then fall back to skeleton key
+        let api_key = std::env::var("ARCGIS_LOCATION_KEY")
+            .or_else(|_| std::env::var("ARCGIS_CONTENT_KEY"))
+            .or_else(|_| std::env::var("ARCGIS_FEATURES_KEY"))
+            .or_else(|_| std::env::var("ARCGIS_PUBLIC_KEY"))
+            .or_else(|_| std::env::var("ARCGIS_API_KEY"))
+            .map_err(|e| {
                 tracing::error!(
                     error = %e,
-                    "ARCGIS_API_KEY environment variable not set or invalid"
+                    "No API key found in environment. Set one of: ARCGIS_LOCATION_KEY, \
+                     ARCGIS_CONTENT_KEY, ARCGIS_FEATURES_KEY, ARCGIS_PUBLIC_KEY, or ARCGIS_API_KEY"
                 );
-                return Err(e.into()); // Automatic conversion through error chain
-            }
-        };
+                e
+            })?;
 
+        tracing::debug!("Successfully loaded API key from environment");
         Ok(Self::new(api_key))
     }
 }

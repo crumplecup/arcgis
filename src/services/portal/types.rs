@@ -98,9 +98,9 @@ pub struct GroupMembership {
     /// Group title.
     title: String,
 
-    /// User's role in the group (owner, admin, member).
+    /// User's membership information in the group (can be string or object depending on API response).
     #[serde(default)]
-    user_membership: Option<GroupMembershipType>,
+    user_membership: Option<serde_json::Value>,
 
     /// Whether the group is invitation only.
     #[serde(default)]
@@ -108,8 +108,9 @@ pub struct GroupMembership {
 }
 
 /// User's membership type in a group.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[serde(untagged)]
 pub enum GroupMembershipType {
     /// Group owner.
     Owner,
@@ -117,6 +118,8 @@ pub enum GroupMembershipType {
     Admin,
     /// Regular member.
     Member,
+    /// Unknown membership type (captures any other string value from API).
+    Unknown(String),
 }
 
 /// Portal item information.
@@ -380,6 +383,14 @@ pub struct AddItemParams {
     /// Item properties (type-specific JSON).
     #[setters(skip)]
     properties: Option<serde_json::Value>,
+
+    /// Folder ID where the item should be created.
+    #[setters(skip)]
+    folder: Option<String>,
+
+    /// Text content for the item (for types like GeoJSON, CSV, etc.).
+    #[setters(skip)]
+    text: Option<String>,
 }
 
 impl AddItemParams {
@@ -455,6 +466,18 @@ impl AddItemParams {
     /// Sets item properties.
     pub fn with_properties(mut self, properties: serde_json::Value) -> Self {
         self.properties = Some(properties);
+        self
+    }
+
+    /// Sets the folder ID where the item should be created.
+    pub fn with_folder(mut self, folder_id: impl Into<String>) -> Self {
+        self.folder = Some(folder_id.into());
+        self
+    }
+
+    /// Sets the text content for the item (for GeoJSON, CSV, etc.).
+    pub fn with_text(mut self, text: impl Into<String>) -> Self {
+        self.text = Some(text.into());
         self
     }
 }
@@ -574,7 +597,8 @@ impl UpdateItemParams {
 /// Result from adding an item.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
 pub struct AddItemResult {
-    /// Whether the operation succeeded.
+    /// Whether the operation succeeded (defaults to true if not present).
+    #[serde(default = "default_true")]
     success: bool,
 
     /// ID of the newly created item.
@@ -583,6 +607,11 @@ pub struct AddItemResult {
     /// Folder where the item was created.
     #[serde(default)]
     folder: Option<String>,
+}
+
+/// Helper function to provide default value of true for success field.
+fn default_true() -> bool {
+    true
 }
 
 /// Result from updating an item.
@@ -1204,7 +1233,8 @@ impl PublishParameters {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct PublishResult {
-    /// Whether the operation succeeded.
+    /// Whether the operation succeeded (defaults to true if not present).
+    #[serde(default = "default_true")]
     success: bool,
 
     /// Service item ID.
@@ -1315,6 +1345,114 @@ pub struct UpdateServiceDefinitionResult {
     /// Service item ID.
     #[serde(default)]
     service_item_id: Option<String>,
+}
+
+/// Parameters for creating a new hosted feature service.
+#[derive(Debug, Clone, derive_getters::Getters, derive_setters::Setters)]
+#[setters(prefix = "with_")]
+pub struct CreateServiceParams {
+    /// Service name.
+    name: String,
+
+    /// Service description.
+    #[setters(skip)]
+    description: Option<String>,
+
+    /// Has static data (default: false for editable services).
+    #[setters(skip)]
+    has_static_data: Option<bool>,
+
+    /// Max record count per query.
+    #[setters(skip)]
+    max_record_count: Option<i32>,
+
+    /// Supported query formats (default: "JSON").
+    #[setters(skip)]
+    supported_query_formats: Option<String>,
+
+    /// Capabilities (e.g., "Query,Create,Update,Delete,Editing").
+    #[setters(skip)]
+    capabilities: Option<String>,
+
+    /// Service definition as JSON (contains layers, tables, etc.).
+    #[setters(skip)]
+    service_definition: Option<serde_json::Value>,
+}
+
+impl CreateServiceParams {
+    /// Creates a new CreateServiceParams with the service name.
+    pub fn new(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            description: None,
+            has_static_data: None,
+            max_record_count: None,
+            supported_query_formats: None,
+            capabilities: None,
+            service_definition: None,
+        }
+    }
+
+    /// Sets the description.
+    pub fn with_description(mut self, description: impl Into<String>) -> Self {
+        self.description = Some(description.into());
+        self
+    }
+
+    /// Sets whether the service has static data.
+    pub fn with_has_static_data(mut self, has_static: bool) -> Self {
+        self.has_static_data = Some(has_static);
+        self
+    }
+
+    /// Sets the max record count.
+    pub fn with_max_record_count(mut self, count: i32) -> Self {
+        self.max_record_count = Some(count);
+        self
+    }
+
+    /// Sets the supported query formats.
+    pub fn with_supported_query_formats(mut self, formats: impl Into<String>) -> Self {
+        self.supported_query_formats = Some(formats.into());
+        self
+    }
+
+    /// Sets the capabilities.
+    pub fn with_capabilities(mut self, capabilities: impl Into<String>) -> Self {
+        self.capabilities = Some(capabilities.into());
+        self
+    }
+
+    /// Sets the full service definition.
+    pub fn with_service_definition(mut self, definition: serde_json::Value) -> Self {
+        self.service_definition = Some(definition);
+        self
+    }
+}
+
+/// Result from creating a service.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateServiceResult {
+    /// Whether the operation succeeded (defaults to true if not present).
+    #[serde(default = "default_true")]
+    success: bool,
+
+    /// Service item ID.
+    #[serde(default)]
+    service_item_id: Option<String>,
+
+    /// Service URL.
+    #[serde(default, alias = "encodedServiceURL")]
+    service_url: Option<String>,
+
+    /// Service name.
+    #[serde(default)]
+    name: Option<String>,
+
+    /// Whether the service is a view.
+    #[serde(default)]
+    is_view: Option<bool>,
 }
 
 /// Result from deleting a service.

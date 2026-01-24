@@ -356,11 +356,17 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let result: AddAttachmentResult = response.json().await?;
+        // Get raw response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "addAttachment raw response");
+
+        let response_wrapper: crate::services::feature::attachment::AddAttachmentResponse =
+            serde_json::from_str(&response_text)?;
+        let result = response_wrapper.add_attachment_result;
 
         tracing::info!(
             success = result.success(),
-            object_id = %result.object_id(),
+            object_id = ?result.object_id(),
             "addAttachment completed"
         );
 
@@ -531,7 +537,12 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let result: crate::UpdateAttachmentResult = response.json().await?;
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "updateAttachment raw response");
+
+        let response_wrapper: crate::services::feature::attachment::UpdateAttachmentResponse =
+            serde_json::from_str(&response_text)?;
+        let result = response_wrapper.update_attachment_result;
 
         tracing::info!(
             success = result.success(),

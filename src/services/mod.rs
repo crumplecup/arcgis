@@ -67,13 +67,13 @@ pub use places::{
     PlaceSearchParametersBuilder, PlaceSearchResult, PlacesClient,
 };
 pub use portal::{
-    AddItemParams, AddItemResult, CreateGroupParams, DeleteItemResult, DeleteServiceResult,
-    GroupInfo, GroupMembership, GroupMembershipType, GroupResult, GroupSearchParameters,
-    GroupSearchResult, ItemInfo, OverwriteParameters, OverwriteResult, PortalClient,
-    PublishParameters, PublishResult, PublishStatus, SearchParameters, SearchResult,
-    ShareItemResult, SharingParameters, SortOrder, UnshareItemResult, UpdateGroupParams,
-    UpdateItemParams, UpdateItemResult, UpdateServiceDefinitionParams,
-    UpdateServiceDefinitionResult, UserInfo,
+    AddItemParams, AddItemResult, CreateGroupParams, CreateServiceParams, CreateServiceResult,
+    DeleteItemResult, DeleteServiceResult, GroupInfo, GroupMembership, GroupMembershipType,
+    GroupResult, GroupSearchParameters, GroupSearchResult, ItemInfo, OverwriteParameters,
+    OverwriteResult, PortalClient, PublishParameters, PublishResult, PublishStatus,
+    SearchParameters, SearchResult, ShareItemResult, SharingParameters, SortOrder,
+    UnshareItemResult, UpdateGroupParams, UpdateItemParams, UpdateItemResult,
+    UpdateServiceDefinitionParams, UpdateServiceDefinitionResult, UserInfo,
 };
 pub use routing::{
     BarrierType, ClosestFacilityParameters, ClosestFacilityParametersBuilder,

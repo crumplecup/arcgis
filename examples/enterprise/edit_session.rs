@@ -15,8 +15,8 @@
 //!
 //! Set these in a `.env` file:
 //! ```text
-//! CLIENT_ID=your_client_id
-//! CLIENT_SECRET=your_client_secret
+//! ARCGIS_CLIENT_ID=your_client_id
+//! ARCGIS_CLIENT_SECRET=your_client_secret
 //! VERSION_MGMT_URL=https://services.arcgis.com/.../VersionManagementServer
 //! FEATURE_SERVICE_URL=https://services.arcgis.com/.../FeatureServer
 //! VERSION_GUID=550e8400-e29b-41d4-a716-446655440000
@@ -52,10 +52,10 @@ async fn main() -> anyhow::Result<()> {
 
     // Load environment variables (.env automatically loaded by library)
     tracing::debug!("Loading configuration from environment");
-    let client_id =
-        env::var("CLIENT_ID").map_err(|_| anyhow::anyhow!("CLIENT_ID not set in .env"))?;
-    let client_secret =
-        env::var("CLIENT_SECRET").map_err(|_| anyhow::anyhow!("CLIENT_SECRET not set in .env"))?;
+    let client_id = env::var("ARCGIS_CLIENT_ID")
+        .map_err(|_| anyhow::anyhow!("ARCGIS_CLIENT_ID not set in .env"))?;
+    let client_secret = env::var("ARCGIS_CLIENT_SECRET")
+        .map_err(|_| anyhow::anyhow!("ARCGIS_CLIENT_SECRET not set in .env"))?;
     let version_mgmt_url = env::var("VERSION_MGMT_URL")
         .map_err(|_| anyhow::anyhow!("VERSION_MGMT_URL not set in .env"))?;
     let feature_service_url = env::var("FEATURE_SERVICE_URL")

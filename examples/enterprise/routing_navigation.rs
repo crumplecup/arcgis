@@ -31,7 +31,6 @@
 //! ⚠️ This example uses the World Routing Service which consumes routing credits.
 //! Check your ArcGIS Online quota before running multiple times.
 
-use anyhow::Context;
 use arcgis::{
     ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, ClosestFacilityParameters, NALocation,
     RouteParameters, RoutingServiceClient, ServiceAreaParameters,
@@ -57,7 +56,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Pacific Coast Road Trip: San Francisco → Seattle");
 
     // Create authenticated client
-    let auth = ApiKeyAuth::from_env().context("Failed to load API key from environment")?;
+    let auth = ApiKeyAuth::from_env()?;
     let client = ArcGISClient::new(auth);
 
     // Example 1: Multi-Stop Route
@@ -81,13 +80,13 @@ async fn main() -> anyhow::Result<()> {
         .return_routes(true)
         .return_stops(true)
         .build()
-        .context("Failed to build route parameters")?;
+        ?;
 
     tracing::debug!("Sending route request to ArcGIS");
     let route_result = route_service
         .solve_route(route_params)
         .await
-        .context("Failed to solve route")?;
+        ?;
 
     if let Some(route) = route_result.routes().first() {
         let distance_miles = route.total_length().unwrap_or(0.0);
@@ -130,13 +129,13 @@ async fn main() -> anyhow::Result<()> {
         .facilities(vec![sf_facility])
         .default_breaks(vec![15.0, 30.0, 45.0]) // Minutes
         .build()
-        .context("Failed to build service area parameters")?;
+        ?;
 
     tracing::debug!("Calculating service area polygons");
     let service_area_result = service_area_client
         .solve_service_area(service_area_params)
         .await
-        .context("Failed to solve service area")?;
+        ?;
 
     tracing::info!(
         polygon_count = service_area_result.service_area_polygons().len(),
@@ -183,13 +182,13 @@ async fn main() -> anyhow::Result<()> {
         .default_target_facility_count(1) // Find closest 1
         .return_routes(true)
         .build()
-        .context("Failed to build closest facility parameters")?;
+        ?;
 
     tracing::debug!("Finding nearest gas station");
     let closest_result = closest_facility_client
         .solve_closest_facility(closest_facility_params)
         .await
-        .context("Failed to solve closest facility")?;
+        ?;
 
     tracing::info!(
         route_count = closest_result.routes().len(),

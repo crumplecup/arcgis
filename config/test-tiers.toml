@@ -16,19 +16,19 @@ credits_per_request = 0.004
 description = "Location services - geocoding, routing, geometry operations"
 requires_auth = true
 
-[tiers.portal]
-env_var = "ARCGIS_PORTAL_KEY"
+[tiers.content]
+env_var = "ARCGIS_CONTENT_KEY"
 credits_per_request = 0.001
-description = "Portal operations - content management, groups, sharing"
+description = "Content management - create/publish/share content, manage groups"
 requires_auth = true
 
-[tiers.publishing]
-env_var = "ARCGIS_PUBLISH_KEY"
+[tiers.features]
+env_var = "ARCGIS_FEATURES_KEY"
 credits_per_request = 0.001
-description = "Publishing operations - feature service creation, versioning"
+description = "Feature editing - edit features in hosted layers"
 requires_auth = true
 
 # Default tier when no test feature is active
+# Points to public tier which uses ARCGIS_PUBLIC_KEY
 [default]
 tier = "public"
-env_var = "ARCGIS_API_KEY"

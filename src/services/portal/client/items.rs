@@ -148,6 +148,15 @@ impl<'a> PortalClient<'a> {
             form = form.text("properties", props_str);
         }
 
+        if let Some(folder) = params.folder() {
+            form = form.text("folder", folder.to_string());
+        }
+
+        if let Some(text) = params.text() {
+            // Add text content as a text parameter (not as a file)
+            form = form.text("text", text.to_string());
+        }
+
         // Build request
         // Add token if required by auth provider
 
@@ -171,8 +180,12 @@ impl<'a> PortalClient<'a> {
             }));
         }
 
+        // Get response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "addItem raw response");
+
         // Parse response
-        let result: AddItemResult = response.json().await?;
+        let result: AddItemResult = serde_json::from_str(&response_text)?;
 
         tracing::debug!(item_id = %result.id(), success = result.success(), "Item added");
 

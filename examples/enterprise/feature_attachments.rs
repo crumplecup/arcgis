@@ -16,15 +16,31 @@
 //!
 //! # Prerequisites
 //!
-//! - Feature service with attachments enabled
-//! - Write access to the feature service
-//! - OAuth2 client credentials or API key with edit permissions
-//! - Set `ARCGIS_CLIENT_ID` + `ARCGIS_CLIENT_SECRET` in `.env`
+//! ## Configure Environment Variables
+//!
+//! Set these in your `.env` file:
+//!
+//! ```env
+//! # API keys for different privilege levels
+//! ARCGIS_CONTENT_KEY=key_with_content_create_privileges    # For creating/deleting services
+//! ARCGIS_FEATURES_KEY=key_with_feature_edit_privileges      # For editing features
+//! ```
+//!
+//! ## How This Example Works
+//!
+//! This example is fully automated - zero manual setup required:
+//! 1. **Creates** a hosted feature service with attachments enabled (ARCGIS_CONTENT_KEY)
+//! 2. **Adds** layer definition with proper attachment configuration (ARCGIS_CONTENT_KEY)
+//! 3. **Creates** a test feature (ARCGIS_FEATURES_KEY)
+//! 4. **Demonstrates** all attachment operations (ARCGIS_FEATURES_KEY)
+//! 5. **Deletes** the test feature (ARCGIS_FEATURES_KEY)
+//! 6. **Deletes** the entire service (ARCGIS_CONTENT_KEY)
+//!
+//! Run it multiple times - it creates and cleans up everything each time!
 //!
 //! # Running
 //!
 //! ```bash
-//! # Note: Requires a writable feature service URL
 //! cargo run --example feature_attachments
 //!
 //! # With debug logging:
@@ -39,31 +55,16 @@
 //! - Office staff downloads attachments for reports
 //! - Old/duplicate attachments are cleaned up periodically
 
-use anyhow::Context;
-use arcgis::{ArcGISClient, ClientCredentialsAuth, FeatureServiceClient, LayerId, ObjectId};
-
-/// Example Feature Service URL (replace with your own writable service)
-///
-/// Your feature service must:
-/// - Have attachments enabled (`hasAttachments: true`)
-/// - Allow updates/edits
-/// - Have at least one feature to attach files to
-///
-/// To enable attachments on a hosted feature layer:
-/// 1. Go to item details page
-/// 2. Settings tab → Enable "Allow attachments"
-const FEATURE_SERVICE_URL: &str =
-    "https://services.arcgis.com/YOUR_ORG/arcgis/rest/services/YOUR_SERVICE/FeatureServer";
-
-/// Layer ID containing features with attachment support
-const LAYER_ID: u32 = 0;
-
-/// Feature object ID to attach files to
-/// Replace with an actual feature ID from your service
-const FEATURE_OBJECT_ID: u32 = 1;
+use anyhow::{Context, Result};
+use arcgis::{
+    ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, AttachmentId, AttachmentSource,
+    CreateServiceParams, DownloadTarget, EditOptions, Feature, FeatureServiceClient, PortalClient,
+};
+use std::collections::HashMap;
+use std::env;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<()> {
     // Initialize tracing for structured logging
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -75,183 +76,347 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("📎 ArcGIS Feature Attachments Examples");
     tracing::info!("Demonstrating file attachment management workflows");
 
-    // Check if using placeholder URL
-    if FEATURE_SERVICE_URL.contains("YOUR_ORG") || FEATURE_SERVICE_URL.contains("YOUR_SERVICE") {
-        tracing::warn!("⚠️  Using placeholder feature service URL");
-        tracing::warn!(
-            "⚠️  Replace FEATURE_SERVICE_URL with your actual service to run this example"
-        );
-        tracing::info!("\n📚 This example demonstrates the API usage patterns:");
-        tracing::info!("   To run it successfully, you need:");
-        tracing::info!("   1. A feature service with attachments enabled");
-        tracing::info!("   2. Edit permissions on that service");
-        tracing::info!("   3. Update the constants at the top of this file");
-        tracing::info!("\nShowing example code patterns below:\n");
-    }
-
     // Load environment variables from .env
     dotenvy::dotenv().ok();
 
-    // Create authenticated client with OAuth2 client credentials
-    let client_id =
-        std::env::var("ARCGIS_CLIENT_ID").context("ARCGIS_CLIENT_ID not found in environment")?;
-    let client_secret = std::env::var("ARCGIS_CLIENT_SECRET")
-        .context("ARCGIS_CLIENT_SECRET not found in environment")?;
+    // Load configuration
+    let config = load_config()?;
 
-    let auth = ClientCredentialsAuth::new(client_id, client_secret)
-        .context("Failed to create OAuth2 authentication")?;
-    let client = ArcGISClient::new(auth);
-    let _feature_service = FeatureServiceClient::new(FEATURE_SERVICE_URL, &client);
+    tracing::info!("\n=== Step 1: Creating Feature Service ===");
+    tracing::info!("Creating hosted feature service with attachments enabled");
 
-    let _layer_id = LayerId::new(LAYER_ID);
-    let _object_id = ObjectId::new(FEATURE_OBJECT_ID);
+    // Create portal client with content management key
+    let content_auth = ApiKeyAuth::new(&config.content_key);
+    let content_client = ArcGISClient::new(content_auth);
+    let portal = PortalClient::new("https://www.arcgis.com/sharing/rest", &content_client);
+
+    // Create unique service name to avoid conflicts
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let service_name = format!("AttachmentTest_{}", timestamp);
+
+    // Create the empty hosted feature service
+    let create_params = CreateServiceParams::new(&service_name)
+        .with_description("Temporary service for testing attachments - will be deleted")
+        .with_capabilities("Query,Create,Update,Delete,Editing")
+        .with_max_record_count(1000);
+
+    let create_result = portal.create_service(create_params).await?;
+
+    let service_item_id = create_result
+        .service_item_id()
+        .clone()
+        .context("Created service should have item ID")?;
+    let service_url = create_result
+        .service_url()
+        .clone()
+        .context("Created service should have URL")?;
+
+    tracing::info!(
+        service_item_id = %service_item_id,
+        service_url = %service_url,
+        "✅ Empty feature service created"
+    );
+
+    // Add layer definition to the service using admin endpoint
+    tracing::info!("Adding layer with attachments to the service");
+    let admin_url = service_url.replace("/rest/services/", "/rest/admin/services/");
+    let add_def_url = format!("{}/addToDefinition", admin_url);
+
+    let layer_definition = create_layer_definition_for_add();
+
+    let mut form = reqwest::multipart::Form::new()
+        .text("f", "json")
+        .text("addToDefinition", layer_definition.to_string());
+
+    // Get token if required
+    if let Some(token) = content_client.get_token_if_required().await? {
+        form = form.text("token", token);
+    }
+
+    let response = content_client
+        .http()
+        .post(&add_def_url)
+        .multipart(form)
+        .send()
+        .await?;
+
+    let response_text = response.text().await?;
+    tracing::debug!(response = %response_text, "addToDefinition response");
+
+    // Parse response to check for errors
+    let add_result: serde_json::Value = serde_json::from_str(&response_text)?;
+    if let Some(error) = add_result.get("error") {
+        anyhow::bail!("Failed to add layer: {}", error);
+    }
+
+    tracing::info!("✅ Layer with attachments enabled added to service");
+
+    tracing::info!("\n=== Step 2: Creating Test Feature ===");
+    tracing::info!("Creating a test feature to demonstrate attachments");
+
+    // Create feature service client with editing key
+    let features_auth = ApiKeyAuth::new(&config.features_key);
+    let features_client = ArcGISClient::new(features_auth);
+    let feature_service = FeatureServiceClient::new(&service_url, &features_client);
+
+    let layer_id = arcgis::LayerId::new(0); // First layer
+
+    let mut attributes = HashMap::new();
+    attributes.insert(
+        "Name".to_string(),
+        serde_json::json!("Attachment Test Feature"),
+    );
+
+    let geometry = ArcGISGeometry::Point(ArcGISPoint {
+        x: -122.4194,
+        y: 37.7749,
+        z: None,
+        m: None,
+        spatial_reference: None,
+    });
+
+    let test_feature = Feature::new(attributes, Some(geometry));
+
+    let add_result = feature_service
+        .add_features(layer_id, vec![test_feature], EditOptions::new())
+        .await?;
+
+    let object_id = if let Some(result) = add_result.add_results().first() {
+        if *result.success() {
+            let oid = result
+                .object_id()
+                .context("Added feature should have ObjectID")?
+                .clone();
+            tracing::info!(object_id = oid.0, "✅ Test feature created");
+            oid
+        } else {
+            anyhow::bail!("Failed to create test feature: {:?}", result.error());
+        }
+    } else {
+        anyhow::bail!("No results from add_features operation");
+    };
 
     tracing::info!("\n=== Example 1: Listing Existing Attachments ===");
-    tracing::info!("Query attachments for feature {}", FEATURE_OBJECT_ID);
+    tracing::info!("Query attachments for feature {}", object_id);
 
-    // This pattern would work with a real service:
-    tracing::info!("📋 Code pattern:");
-    tracing::info!(r#"    let attachments = feature_service"#);
-    tracing::info!(r#"        .query_attachments(layer_id, object_id)"#);
-    tracing::info!(r#"        .await?;"#);
-    tracing::info!(r#""#);
-    tracing::info!(r#"    for attachment in &attachments {{"#);
+    let initial_attachments = feature_service
+        .query_attachments(layer_id, object_id)
+        .await?;
+
     tracing::info!(
-        r#"        println!("{{}} ({{}} bytes)", attachment.name(), attachment.size());"#
+        attachment_count = initial_attachments.len(),
+        "Found existing attachments"
     );
-    tracing::info!(r#"    }}"#);
+
+    for attachment in &initial_attachments {
+        tracing::info!(
+            id = attachment.id().0,
+            name = attachment.name(),
+            size = attachment.size(),
+            content_type = attachment.content_type(),
+            "Existing attachment"
+        );
+    }
 
     tracing::info!("\n=== Example 2: Adding Photo Attachment ===");
     tracing::info!("Upload an inspection photo to the feature");
 
     // Create a mock JPEG image (minimal valid JPEG header + data)
-    let _mock_jpeg_data = create_mock_jpeg();
+    let mock_jpeg_data = create_mock_jpeg();
 
-    tracing::info!("📤 Code pattern - Upload from bytes:");
-    tracing::info!(r#"    let source = AttachmentSource::from_bytes("#);
-    tracing::info!(r#"        "inspection_photo.jpg","#);
-    tracing::info!(r#"        jpeg_data,"#);
-    tracing::info!(r#"    );"#);
-    tracing::info!(r#""#);
-    tracing::info!(r#"    let result = feature_service"#);
-    tracing::info!(r#"        .add_attachment(layer_id, object_id, source)"#);
-    tracing::info!(r#"        .await?;"#);
-    tracing::info!(r#""#);
-    tracing::info!(r#"    if *result.success() {{"#);
-    tracing::info!(r#"        println!("Photo attached successfully!");"#);
-    tracing::info!(r#"    }}"#);
+    let source = AttachmentSource::from_bytes("inspection_photo.jpg", mock_jpeg_data.clone());
 
-    tracing::info!("\n💡 Alternative: Upload from file path:");
-    tracing::info!(r#"    let source = AttachmentSource::from_path("/path/to/photo.jpg");"#);
-    tracing::info!(r#"    feature_service.add_attachment(layer_id, object_id, source).await?;"#);
+    let add_result = feature_service
+        .add_attachment(layer_id, object_id, source)
+        .await?;
+
+    if *add_result.success() {
+        tracing::info!(
+            object_id = ?add_result.object_id().as_ref().map(|id| id.0),
+            global_id = ?add_result.global_id(),
+            "✅ Photo attached successfully"
+        );
+    } else {
+        tracing::warn!("Failed to attach photo");
+    }
+
+    tracing::info!("💡 Tip: Use AttachmentSource::from_path() for large files to stream from disk");
 
     tracing::info!("\n=== Example 3: Adding PDF Document ===");
     tracing::info!("Attach an inspection report document");
 
-    let _mock_pdf_data = create_mock_pdf();
+    let mock_pdf_data = create_mock_pdf();
 
-    tracing::info!("📄 Code pattern - Upload PDF:");
-    tracing::info!(r#"    let source = AttachmentSource::from_bytes("#);
-    tracing::info!(r#"        "inspection_report.pdf","#);
-    tracing::info!(r#"        pdf_data,"#);
-    tracing::info!(r#"    );"#);
-    tracing::info!(r#""#);
-    tracing::info!(r#"    let result = feature_service"#);
-    tracing::info!(r#"        .add_attachment(layer_id, object_id, source)"#);
-    tracing::info!(r#"        .await?;"#);
+    let source = AttachmentSource::from_bytes("inspection_report.pdf", mock_pdf_data.clone());
+
+    let pdf_result = feature_service
+        .add_attachment(layer_id, object_id, source)
+        .await?;
+
+    if *pdf_result.success() {
+        tracing::info!(
+            object_id = ?pdf_result.object_id().as_ref().map(|id| id.0),
+            global_id = ?pdf_result.global_id(),
+            "✅ PDF attached successfully"
+        );
+    } else {
+        tracing::warn!("Failed to attach PDF");
+    }
 
     tracing::info!("\n=== Example 4: Downloading Attachments ===");
     tracing::info!("Retrieve attachment files for reporting");
 
-    tracing::info!("💾 Code pattern - Download to file:");
-    tracing::info!(r#"    let attachment_id = AttachmentId::new(1);"#);
-    tracing::info!(r#"    let target = DownloadTarget::to_path("/tmp/downloaded_photo.jpg");"#);
-    tracing::info!(r#""#);
-    tracing::info!(r#"    let result = feature_service"#);
-    tracing::info!(r#"        .download_attachment(layer_id, object_id, attachment_id, target)"#);
-    tracing::info!(r#"        .await?;"#);
-    tracing::info!(r#""#);
-    tracing::info!(r#"    if let Some(path) = result.path() {{"#);
-    tracing::info!(r#"        println!("Downloaded to {{:?}}", path);"#);
-    tracing::info!(r#"    }}"#);
+    // Query current attachments to get IDs
+    let attachments = feature_service
+        .query_attachments(layer_id, object_id)
+        .await?;
 
-    tracing::info!("\n💡 Alternative: Download to memory:");
-    tracing::info!(r#"    let target = DownloadTarget::to_bytes();"#);
-    tracing::info!(r#"    let result = feature_service"#);
-    tracing::info!(r#"        .download_attachment(layer_id, object_id, attachment_id, target)"#);
-    tracing::info!(r#"        .await?;"#);
-    tracing::info!(r#""#);
-    tracing::info!(r#"    if let Some(bytes) = result.bytes() {{"#);
-    tracing::info!(r#"        println!("Downloaded {{}} bytes to memory", bytes.len());"#);
-    tracing::info!(r#"    }}"#);
+    if let Some(attachment) = attachments.first() {
+        let attachment_id = *attachment.id();
+
+        // Download to file
+        let target = DownloadTarget::to_path("/tmp/downloaded_attachment.dat");
+
+        let download_result = feature_service
+            .download_attachment(layer_id, object_id, attachment_id, target)
+            .await?;
+
+        if let Some(path) = download_result.path() {
+            tracing::info!(path = ?path, "✅ Downloaded to file");
+        }
+
+        // Download to memory
+        let target = DownloadTarget::to_bytes();
+
+        let download_result = feature_service
+            .download_attachment(layer_id, object_id, attachment_id, target)
+            .await?;
+
+        if let Some(bytes) = download_result.bytes() {
+            tracing::info!(
+                size = bytes.len(),
+                "✅ Downloaded to memory ({} bytes)",
+                bytes.len()
+            );
+        }
+    } else {
+        tracing::info!("No attachments available to download");
+    }
+
+    tracing::info!("💡 Tip: Use to_path() for large files to avoid loading into memory");
 
     tracing::info!("\n=== Example 5: Updating an Attachment ===");
     tracing::info!("Replace an outdated photo with a new one");
 
-    tracing::info!("🔄 Code pattern - Update existing attachment:");
-    tracing::info!(r#"    let attachment_id = AttachmentId::new(1);"#);
-    tracing::info!(
-        r#"    let source = AttachmentSource::from_path("/path/to/updated_photo.jpg");"#
-    );
-    tracing::info!(r#""#);
-    tracing::info!(r#"    let result = feature_service"#);
-    tracing::info!(r#"        .update_attachment(layer_id, object_id, attachment_id, source)"#);
-    tracing::info!(r#"        .await?;"#);
-    tracing::info!(r#""#);
-    tracing::info!(r#"    if *result.success() {{"#);
-    tracing::info!(r#"        println!("Attachment updated!");"#);
-    tracing::info!(r#"    }}"#);
+    // Update the first attachment if it exists
+    let attachments = feature_service
+        .query_attachments(layer_id, object_id)
+        .await?;
+
+    if let Some(attachment) = attachments.first() {
+        let attachment_id = *attachment.id();
+
+        // Create updated JPEG content
+        let updated_jpeg = create_mock_jpeg();
+        let source = AttachmentSource::from_bytes("updated_photo.jpg", updated_jpeg);
+
+        let update_result = feature_service
+            .update_attachment(layer_id, object_id, attachment_id, source)
+            .await?;
+
+        if *update_result.success() {
+            tracing::info!(
+                attachment_id = attachment.id().0,
+                "✅ Attachment updated successfully"
+            );
+        } else {
+            tracing::warn!("Failed to update attachment");
+        }
+    } else {
+        tracing::info!("No attachments available to update");
+    }
 
     tracing::info!("\n=== Example 6: Deleting Attachments ===");
-    tracing::info!("Clean up old or duplicate attachments");
+    tracing::info!("Clean up test attachments created in this example");
 
-    tracing::info!("🗑️  Code pattern - Delete attachments:");
-    tracing::info!(r#"    let ids_to_delete = vec!["#);
-    tracing::info!(r#"        AttachmentId::new(2),"#);
-    tracing::info!(r#"        AttachmentId::new(3),"#);
-    tracing::info!(r#"    ];"#);
-    tracing::info!(r#""#);
-    tracing::info!(r#"    let result = feature_service"#);
-    tracing::info!(r#"        .delete_attachments(layer_id, object_id, ids_to_delete)"#);
-    tracing::info!(r#"        .await?;"#);
-    tracing::info!(r#""#);
-    tracing::info!(r#"    for item in &result.delete_attachment_results {{"#);
-    tracing::info!(r#"        if *item.success() {{"#);
-    tracing::info!(
-        r#"            println!("Deleted attachment from feature {{}}", item.object_id());"#
-    );
-    tracing::info!(r#"        }}"#);
-    tracing::info!(r#"    }}"#);
+    // Query all current attachments
+    let final_attachments = feature_service
+        .query_attachments(layer_id, object_id)
+        .await?;
 
-    // Complete workflow example
-    tracing::info!("\n=== Complete Workflow Example ===");
-    tracing::info!("Field inspection workflow from start to finish:");
-    tracing::info!("");
-    tracing::info!("// 1. Inspector captures photo in the field");
-    tracing::info!(r#"let photo = AttachmentSource::from_path("damaged_pipe.jpg");"#);
-    tracing::info!(r#"service.add_attachment(layer_id, feature_id, photo).await?;"#);
-    tracing::info!("");
-    tracing::info!("// 2. Office staff lists attachments for the asset");
-    tracing::info!(r#"let attachments = service.query_attachments(layer_id, feature_id).await?;"#);
-    tracing::info!(r#"for att in &attachments {{"#);
-    tracing::info!(r#"    println!("{{}} - {{}} bytes", att.name(), att.size());"#);
-    tracing::info!(r#"}}"#);
-    tracing::info!("");
-    tracing::info!("// 3. Download attachment for report generation");
-    tracing::info!(r#"let target = DownloadTarget::to_path("/reports/damaged_pipe.jpg");"#);
-    tracing::info!(r#"service.download_attachment(layer_id, feature_id, att_id, target).await?;"#);
-    tracing::info!("");
-    tracing::info!("// 4. After repair, replace with 'after' photo");
-    tracing::info!(r#"let after_photo = AttachmentSource::from_path("repaired_pipe.jpg");"#);
-    tracing::info!(
-        r#"service.update_attachment(layer_id, feature_id, att_id, after_photo).await?;"#
-    );
-    tracing::info!("");
-    tracing::info!("// 5. Cleanup: Delete old duplicate attachments");
-    tracing::info!(r#"service.delete_attachments(layer_id, feature_id, old_ids).await?;"#);
+    if !final_attachments.is_empty() {
+        // Delete attachments we created (filter by name to avoid deleting user's existing data)
+        let test_attachment_ids: Vec<AttachmentId> = final_attachments
+            .iter()
+            .filter(|att| {
+                att.name() == "inspection_photo.jpg"
+                    || att.name() == "inspection_report.pdf"
+                    || att.name() == "updated_photo.jpg"
+            })
+            .map(|att| *att.id())
+            .collect();
 
-    // Summary and Best Practices
-    tracing::info!("\n✅ Feature attachment examples completed!");
+        if !test_attachment_ids.is_empty() {
+            tracing::info!(
+                count = test_attachment_ids.len(),
+                "Deleting test attachments"
+            );
+
+            let delete_result = feature_service
+                .delete_attachments(layer_id, object_id, test_attachment_ids)
+                .await?;
+
+            for item in &delete_result.delete_attachment_results {
+                if *item.success() {
+                    tracing::info!(
+                        object_id = item.object_id().0,
+                        "✅ Deleted attachment from feature"
+                    );
+                } else {
+                    tracing::warn!(
+                        object_id = item.object_id().0,
+                        "Failed to delete attachment"
+                    );
+                }
+            }
+        } else {
+            tracing::info!("No test attachments to clean up");
+        }
+    } else {
+        tracing::info!("No attachments found");
+    }
+
+    // Cleanup Step 1: Delete the test feature
+    tracing::info!("\n=== Step 7: Cleanup - Deleting Test Feature ===");
+
+    let delete_result = feature_service
+        .delete_features(layer_id, vec![object_id], EditOptions::new())
+        .await?;
+
+    if let Some(result) = delete_result.delete_results().first() {
+        if *result.success() {
+            tracing::info!(object_id = object_id.0, "✅ Test feature deleted");
+        } else {
+            tracing::warn!(
+                object_id = object_id.0,
+                error = ?result.error(),
+                "Failed to delete test feature"
+            );
+        }
+    }
+
+
+    // Cleanup Step 2: Delete the feature service
+    tracing::info!("\n=== Step 8: Cleanup - Deleting Feature Service ===");
+
+    portal.delete_service(&service_item_id).await?;
+    tracing::info!(service_item_id = %service_item_id, "✅ Feature service deleted");
+
+    tracing::info!("\n✅ All attachment operations completed successfully!");
     tracing::info!("💡 Attachment Best Practices:");
     tracing::info!("   - Enable attachments when creating hosted feature layers");
     tracing::info!("   - Use descriptive filenames (e.g., 'site_123_north_view.jpg')");
@@ -268,11 +433,41 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("   - Other: ZIP, CSV, KML, GPX");
     tracing::info!("");
     tracing::info!("⚠️  Storage considerations:");
-    tracing::info!("   - Attachments count toward your ArcGIS Online storage quota");
+    tracing::info!("   - Attachments count toward your ArcGIS storage quota");
     tracing::info!("   - Each attachment typically limited to 10MB");
     tracing::info!("   - Monitor total storage usage in organization settings");
 
     Ok(())
+}
+
+/// Configuration loaded from environment variables.
+struct Config {
+    content_key: String,
+    features_key: String,
+}
+
+/// Loads configuration from environment variables with helpful error messages.
+fn load_config() -> Result<Config> {
+    let content_key = env::var("ARCGIS_CONTENT_KEY").context(
+        "ARCGIS_CONTENT_KEY not set. Add to .env:\n\
+         ARCGIS_CONTENT_KEY=your_api_key_here\n\
+         \n\
+         This key is used to create and delete services.",
+    )?;
+
+    let features_key = env::var("ARCGIS_FEATURES_KEY").context(
+        "ARCGIS_FEATURES_KEY not set. Add to .env:\n\
+         ARCGIS_FEATURES_KEY=your_api_key_here\n\
+         \n\
+         This key is used to create/edit features and attachments.",
+    )?;
+
+    tracing::debug!("Configuration loaded");
+
+    Ok(Config {
+        content_key,
+        features_key,
+    })
 }
 
 /// Creates a minimal valid JPEG file for demonstration purposes.
@@ -300,4 +495,77 @@ fn create_mock_jpeg() -> Vec<u8> {
 fn create_mock_pdf() -> Vec<u8> {
     b"%PDF-1.0\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj 3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000056 00000 n\n0000000115 00000 n\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n220\n%%EOF"
         .to_vec()
+}
+
+/// Creates a proper layer definition for addToDefinition operation.
+///
+/// This creates a point layer with attachments enabled, following the ArcGIS REST API spec:
+/// - objectIdField is required
+/// - hasAttachments must be true
+/// - attachmentProperties defines metadata captured with attachments
+/// - templates provide editing support
+/// - fields define the layer schema
+fn create_layer_definition_for_add() -> serde_json::Value {
+    serde_json::json!({
+        "layers": [{
+            "id": 0,
+            "name": "AttachmentTestPoints",
+            "type": "Feature Layer",
+            "description": "Layer for testing attachments",
+            "geometryType": "esriGeometryPoint",
+            "hasAttachments": true,
+            "attachmentProperties": [
+                {"name": "name", "isEnabled": true},
+                {"name": "size", "isEnabled": true},
+                {"name": "contentType", "isEnabled": true},
+                {"name": "keywords", "isEnabled": true}
+            ],
+            "objectIdField": "OBJECTID",
+            "globalIdField": "GlobalID",
+            "displayField": "Name",
+            "fields": [
+                {
+                    "name": "OBJECTID",
+                    "type": "esriFieldTypeOID",
+                    "alias": "Object ID",
+                    "editable": false,
+                    "nullable": false
+                },
+                {
+                    "name": "GlobalID",
+                    "type": "esriFieldTypeGlobalID",
+                    "alias": "Global ID",
+                    "editable": false,
+                    "nullable": false
+                },
+                {
+                    "name": "Name",
+                    "type": "esriFieldTypeString",
+                    "alias": "Name",
+                    "length": 256,
+                    "editable": true,
+                    "nullable": true
+                },
+                {
+                    "name": "Description",
+                    "type": "esriFieldTypeString",
+                    "alias": "Description",
+                    "length": 1024,
+                    "editable": true,
+                    "nullable": true
+                }
+            ],
+            "templates": [{
+                "name": "New Feature",
+                "description": "",
+                "drawingTool": "esriFeatureEditToolPoint",
+                "prototype": {
+                    "attributes": {
+                        "Name": null,
+                        "Description": null
+                    }
+                }
+            }]
+        }]
+    })
 }

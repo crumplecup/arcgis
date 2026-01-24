@@ -95,8 +95,9 @@ pub struct AttachmentInfosResponse {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct AddAttachmentResult {
-    /// ObjectID of the feature the attachment was added to.
-    object_id: crate::ObjectId,
+    /// ObjectID of the feature the attachment was added to (optional in some API responses).
+    #[serde(default)]
+    object_id: Option<crate::ObjectId>,
 
     /// GlobalID of the newly created attachment (if enabled).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -104,6 +105,14 @@ pub struct AddAttachmentResult {
 
     /// Whether the operation succeeded.
     success: bool,
+}
+
+/// Wrapper for addAttachment API response.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AddAttachmentResponse {
+    /// The nested result object.
+    pub(crate) add_attachment_result: AddAttachmentResult,
 }
 
 /// Result of updating an attachment.
@@ -115,6 +124,14 @@ pub struct UpdateAttachmentResult {
 
     /// Whether the operation succeeded.
     success: bool,
+}
+
+/// Wrapper for updateAttachment API response.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct UpdateAttachmentResponse {
+    /// The nested result object.
+    pub(crate) update_attachment_result: UpdateAttachmentResult,
 }
 
 /// Response from deleting attachments.

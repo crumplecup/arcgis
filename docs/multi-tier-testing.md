@@ -13,8 +13,8 @@ The SDK supports multiple privilege tiers for API keys, each providing access to
 │  Test Feature   │ (compile-time)
 │  test-public    │
 │  test-location  │
-│  test-portal    │
-│  test-publishing│
+│  test-content   │
+│  test-features  │
 └────────┬────────┘
          │
          ▼
@@ -31,8 +31,8 @@ The SDK supports multiple privilege tiers for API keys, each providing access to
 │                     │
 │ ARCGIS_PUBLIC_KEY   │
 │ ARCGIS_LOCATION_KEY │
-│ ARCGIS_PORTAL_KEY   │
-│ ARCGIS_PUBLISH_KEY  │
+│ ARCGIS_CONTENT_KEY  │
+│ ARCGIS_FEATURES_KEY │
 └─────────────────────┘
 ```
 
@@ -69,8 +69,8 @@ Contains all your API keys:
 # Single .env file with multiple keys
 ARCGIS_PUBLIC_KEY=your_public_key_here
 ARCGIS_LOCATION_KEY=your_location_key_here
-ARCGIS_PORTAL_KEY=your_portal_key_here
-ARCGIS_PUBLISH_KEY=your_publishing_key_here
+ARCGIS_CONTENT_KEY=your_content_key_here
+ARCGIS_FEATURES_KEY=your_features_key_here
 ```
 
 This file is:
@@ -102,26 +102,28 @@ cargo test --features test-public
 cargo test --features test-location
 ```
 
-### Tier 3: Portal
+### Tier 3: Content Management
 
-**Feature flag:** `test-portal`
-**Environment variable:** `ARCGIS_PORTAL_KEY`
-**Services:** Portal content management, groups, sharing
+**Feature flag:** `test-content`
+**Environment variable:** `ARCGIS_CONTENT_KEY`
+**Role:** Content Manager - create, publish, and share portal content
+**Services:** Portal content management, item publishing, group management, sharing
 **Credit cost:** ~0.001 per operation (storage costs)
 
 ```bash
-cargo test --features test-portal
+cargo test --features test-content
 ```
 
-### Tier 3: Publishing
+### Tier 3: Feature Editing
 
-**Feature flag:** `test-publishing`
-**Environment variable:** `ARCGIS_PUBLISH_KEY`
-**Services:** Feature service creation, versioning, edit sessions
-**Credit cost:** ~0.001 per operation (storage costs)
+**Feature flag:** `test-features`
+**Environment variable:** `ARCGIS_FEATURES_KEY`
+**Role:** Editor - edit features in existing hosted layers
+**Services:** Feature editing, edit sessions, versioned editing workflows
+**Credit cost:** ~0.001 per operation (compute costs)
 
 ```bash
-cargo test --features test-publishing
+cargo test --features test-features
 ```
 
 ## Usage in Tests
@@ -164,8 +166,8 @@ Edit `.env` and fill in the keys you have:
 # You don't need all keys - only add the ones you have
 ARCGIS_PUBLIC_KEY=       # Optional (public services work without auth)
 ARCGIS_LOCATION_KEY=     # For geocoding/routing tests
-ARCGIS_PORTAL_KEY=       # For portal tests
-ARCGIS_PUBLISH_KEY=      # For publishing tests
+ARCGIS_CONTENT_KEY=      # For content management tests
+ARCGIS_FEATURES_KEY=     # For feature editing tests
 ```
 
 ### 3. Create API Keys with Correct Permissions
@@ -228,18 +230,22 @@ Public services work without authentication, but providing a key may increase ra
 - Service area: ~0.5 credits per analysis
 - Geometry operations: Varies by complexity
 
-#### Tier 3: Portal Key (ARCGIS_PORTAL_KEY) - Required for test-portal
+#### Tier 3: Content Key (ARCGIS_CONTENT_KEY) - Required for test-content
+
+**Role:** Content Manager - create, publish, and share portal content
 
 **Creating the key:**
 1. Sign in to [ArcGIS Online](https://arcgis.com) (requires organizational account)
 2. Go to **Content > My content > New item > Developer credentials > API key credentials**
-3. Name: `SDK Testing - Portal Operations`
+3. Name: `SDK Testing - Content Management`
 4. Set expiration date (up to 1 year)
 5. **Configure privileges - Check these:**
 
 **Content:**
 - ☑ Create, update, and delete
 - ☑ Publish hosted feature layers
+- ☑ Publish hosted tile layers (optional)
+- ☑ Publish hosted scene layers (optional)
 
 **Sharing:**
 - ☑ Share with groups
@@ -264,66 +270,64 @@ Your ArcGIS Online account must have these user privileges (configured by your o
 
 **What this enables:**
 - Portal content search and discovery
-- Item creation/metadata management
+- Item creation and metadata management
+- Publishing hosted feature/tile/scene layers
 - Group creation and administration
 - Content sharing and permissions
-- Portal item operations
 
 **Credit consumption:**
-- Portal operations: ~0.001 credits per operation
+- Content operations: ~0.001 credits per operation
 - Storage costs apply (check your organization's quota)
 
-#### Tier 3: Publishing Key (ARCGIS_PUBLISH_KEY) - Required for test-publishing
+#### Tier 3: Features Key (ARCGIS_FEATURES_KEY) - Required for test-features
+
+**Role:** Editor - edit features in existing hosted layers
 
 **Creating the key:**
-1. Sign in to ArcGIS Enterprise portal (11.2+) or [ArcGIS Online](https://arcgis.com)
+1. Sign in to [ArcGIS Online](https://arcgis.com) or ArcGIS Enterprise portal
 2. Go to **Content > My content > New item > Developer credentials > API key credentials**
-3. Name: `SDK Testing - Publishing`
+3. Name: `SDK Testing - Feature Editing`
 4. Set expiration date (up to 1 year)
 5. **Configure privileges - Check these:**
-
-**Content:**
-- ☑ Create, update, and delete
-- ☑ Publish hosted feature layers
-- ☑ Publish hosted tile layers (optional)
-- ☑ Publish hosted scene layers (optional)
 
 **Features:**
 - ☑ Edit
 - ☑ Edit with full control
 
-**Sharing:**
-- ☑ Share with groups
-- ☑ Share with organization
+**Note:** This key ONLY grants editing privileges. To create the hosted feature services you'll edit, you need the Content key (test-content) to publish them first.
 
-**Additional Requirements for ArcGIS Enterprise:**
+**Additional Requirements:**
+Your ArcGIS account must have these user privileges (configured by your org administrator):
+
+1. Log in to your portal
+2. Go to **Organization → Members → Your Profile → Privileges**
+3. Verify you have:
+   - Features: Edit features
+   - Features: Full editing control (for versioned editing)
+
+**For ArcGIS Enterprise (versioned editing):**
 - ArcGIS Enterprise 11.2 or later
 - Version Management Server configured
-- User account privileges (configured by org administrator):
-  - Publish hosted feature layers
-  - Create and manage feature layer views
+- Additional privileges:
   - Enable branch versioning on feature layers
   - Manage versions
 
-**To verify publishing permissions:**
-1. Log in to your ArcGIS Enterprise portal
-2. Go to **Organization → Members → Your Profile → Privileges**
-3. Verify you have:
-   - Publishing: Publish hosted layers
-   - Features: Full editing control
-   - Versioning: Create and manage versions
-
 **What this enables:**
-- Feature service creation and publishing
+- Edit features in existing hosted feature layers
+- Add, update, delete features
 - Edit sessions with transaction support
-- Branch-versioned editing workflows
-- Version management operations
-- Multi-user editing with conflict detection
+- Branch-versioned editing workflows (Enterprise)
+- Version management operations (Enterprise)
+- Multi-user editing with conflict detection (Enterprise)
 
 **Credit consumption:**
-- Publishing operations: ~0.001 credits per operation
-- Storage costs for hosted layers
-- Compute costs for edit sessions and version reconciliation
+- Edit operations: ~0.001 credits per operation
+- Compute costs for edit sessions and version reconciliation (Enterprise)
+
+**Typical workflow:**
+1. Use Content key to create/publish hosted feature service
+2. Use Features key to edit features in that service
+3. Content managers and editors have separate, minimal privileges
 
 ### 4. Verify Your Keys
 
@@ -336,11 +340,11 @@ ARCGIS_PUBLIC_KEY=your_key cargo test --features test-public test_credentials_av
 # Test location key
 ARCGIS_LOCATION_KEY=your_key cargo test --features test-location test_credentials_available
 
-# Test portal key (requires org account)
-ARCGIS_PORTAL_KEY=your_key cargo test --features test-portal test_credentials_available
+# Test content key (requires org account)
+ARCGIS_CONTENT_KEY=your_key cargo test --features test-content test_credentials_available
 
-# Test publishing key (requires enterprise)
-ARCGIS_PUBLISH_KEY=your_key cargo test --features test-publishing test_credentials_available
+# Test features key (requires hosted feature services)
+ARCGIS_FEATURES_KEY=your_key cargo test --features test-features test_credentials_available
 ```
 
 ### 5. Run Tests

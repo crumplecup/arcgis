@@ -86,7 +86,7 @@ pub struct Feature {
 }
 
 /// A set of features returned from a query.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters, Default)]
 pub struct FeatureSet {
     /// Geometry type of features in this set.
     #[serde(rename = "geometryType", skip_serializing_if = "Option::is_none")]

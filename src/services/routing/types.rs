@@ -434,7 +434,7 @@ impl RouteParameters {
 }
 
 /// Result from route calculation.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[derive(Debug, Clone, PartialEq, Serialize, Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct RouteResult {
     /// Calculated routes.
@@ -452,6 +452,93 @@ pub struct RouteResult {
     /// Messages from the solve operation.
     #[serde(default)]
     messages: Vec<NAMessage>,
+}
+
+impl<'de> serde::Deserialize<'de> for RouteResult {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::{MapAccess, Visitor};
+        use std::fmt;
+
+        struct RouteResultVisitor;
+
+        impl<'de> Visitor<'de> for RouteResultVisitor {
+            type Value = RouteResult;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a RouteResult with FeatureSet routes and stops")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: MapAccess<'de>,
+            {
+                let mut routes_fs: Option<crate::FeatureSet> = None;
+                let mut stops_fs: Option<crate::FeatureSet> = None;
+                let mut barriers: Option<Vec<NALocation>> = None;
+                let mut messages: Option<Vec<NAMessage>> = None;
+
+                while let Some(key) = map.next_key::<String>()? {
+                    match key.as_str() {
+                        "routes" => {
+                            routes_fs = Some(map.next_value()?);
+                        }
+                        "stops" => {
+                            stops_fs = Some(map.next_value()?);
+                        }
+                        "barriers" => {
+                            barriers = Some(map.next_value()?);
+                        }
+                        "messages" => {
+                            messages = Some(map.next_value()?);
+                        }
+                        _ => {
+                            // Skip unknown fields
+                            let _: serde::de::IgnoredAny = map.next_value()?;
+                        }
+                    }
+                }
+
+                let routes_fs = routes_fs.unwrap_or_default();
+                let stops_fs = stops_fs.unwrap_or_default();
+                let barriers = barriers.unwrap_or_default();
+                let messages = messages.unwrap_or_default();
+
+                tracing::debug!(
+                    route_feature_count = routes_fs.features().len(),
+                    stop_feature_count = stops_fs.features().len(),
+                    "Deserializing RouteResult from FeatureSets"
+                );
+
+                // Convert FeatureSet features to Route objects (infallible)
+                let routes: Vec<Route> = routes_fs
+                    .features()
+                    .iter()
+                    .map(Route::from_feature)
+                    .collect();
+
+                // Convert FeatureSet features to Stop objects (infallible)
+                let stops: Vec<Stop> = stops_fs.features().iter().map(Stop::from_feature).collect();
+
+                tracing::debug!(
+                    route_count = routes.len(),
+                    stop_count = stops.len(),
+                    "Successfully deserialized RouteResult"
+                );
+
+                Ok(RouteResult {
+                    routes,
+                    stops,
+                    barriers,
+                    messages,
+                })
+            }
+        }
+
+        deserializer.deserialize_map(RouteResultVisitor)
+    }
 }
 
 /// A calculated route.
@@ -495,6 +582,51 @@ pub struct Route {
     end_time: Option<i64>,
 }
 
+impl Route {
+    /// Extracts a Route from a FeatureSet Feature.
+    ///
+    /// Infallible - missing fields are represented as None.
+    fn from_feature(feature: &crate::Feature) -> Self {
+        tracing::debug!("Converting FeatureSet feature to Route");
+
+        let attrs = feature.attributes();
+
+        let name = attrs
+            .get("Name")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        let total_length = attrs.get("Total_Miles").and_then(|v| v.as_f64());
+
+        let total_time = attrs.get("Total_TravelTime").and_then(|v| v.as_f64());
+
+        let total_drive_time = attrs.get("Total_DriveTime").and_then(|v| v.as_f64());
+
+        let total_wait_time = attrs.get("Total_WaitTime").and_then(|v| v.as_f64());
+
+        let geometry = feature.geometry().clone();
+
+        tracing::debug!(
+            name = ?name,
+            total_miles = ?total_length,
+            total_time_minutes = ?total_time,
+            "Extracted route data from feature"
+        );
+
+        Route {
+            name,
+            total_length,
+            total_time,
+            total_drive_time,
+            total_wait_time,
+            geometry,
+            directions: Vec::new(), // Directions come from separate array in response
+            start_time: None,        // Not in route attributes
+            end_time: None,          // Not in route attributes
+        }
+    }
+}
+
 /// A stop on a route.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
 #[serde(rename_all = "camelCase")]
@@ -526,6 +658,54 @@ pub struct Stop {
     /// Sequence number in optimized route.
     #[serde(skip_serializing_if = "Option::is_none")]
     sequence: Option<i32>,
+}
+
+impl Stop {
+    /// Extracts a Stop from a FeatureSet Feature.
+    ///
+    /// Infallible - missing fields are represented as None.
+    fn from_feature(feature: &crate::Feature) -> Self {
+        tracing::debug!("Converting FeatureSet feature to Stop");
+
+        let attrs = feature.attributes();
+
+        let name = attrs
+            .get("Name")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        let geometry = feature.geometry().clone();
+
+        let arrival_time = None; // Not directly in attributes
+
+        let departure_time = None; // Not directly in attributes
+
+        let wait_time = None; // Not directly in attributes
+
+        let cumulative_length = attrs.get("Cumul_Miles").and_then(|v| v.as_f64());
+
+        let sequence = attrs
+            .get("Sequence")
+            .and_then(|v| v.as_i64())
+            .map(|i| i as i32);
+
+        tracing::debug!(
+            name = ?name,
+            sequence = ?sequence,
+            cumul_miles = ?cumulative_length,
+            "Extracted stop data from feature"
+        );
+
+        Stop {
+            name,
+            geometry,
+            arrival_time,
+            departure_time,
+            wait_time,
+            cumulative_length,
+            sequence,
+        }
+    }
 }
 
 /// A direction instruction.

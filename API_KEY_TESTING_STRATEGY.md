@@ -112,15 +112,24 @@ We organize tests into three tiers based on authentication requirements:
 - **Coverage**: ~50% of test suite
 - **CI/CD**: Run on PR merge to main
 
-**Tier 3: Personal Scope Tests** (API key with personal privileges)
+**Tier 3: Content Management Tests** (API key with content/sharing/groups privileges)
 - Portal item CRUD operations
 - Content publishing
 - Group management
 - Sharing operations
-- **Implementation**: Separate API key with minimal personal privileges
-- **Coverage**: ~10% of test suite
-- **CI/CD**: Run manually or on release branches only
+- **Implementation**: Separate API key with content management privileges (ARCGIS_CONTENT_KEY)
+- **Coverage**: ~7% of test suite
+- **CI/CD**: Run manually only
 - **⚠️ Warning**: Uses real portal resources, may incur costs
+
+**Tier 3: Feature Editing Tests** (API key with editing privileges)
+- Feature editing operations
+- Edit sessions with transactions
+- Branch-versioned editing workflows
+- **Implementation**: Separate API key with feature editing privileges (ARCGIS_FEATURES_KEY)
+- **Coverage**: ~3% of test suite
+- **CI/CD**: Run manually only
+- **⚠️ Warning**: Requires hosted feature services to edit
 
 ### API Key Strategy
 
@@ -156,37 +165,45 @@ Rotation: Monthly
 Cost: Consumes credits (track usage)
 ```
 
-#### Key 3: Portal Testing (Minimal Personal Scope)
+#### Key 3: Content Management Testing (Content/Sharing/Groups Privileges)
 ```
-Name: ARCGIS_PORTAL_KEY
+Name: ARCGIS_CONTENT_KEY
+Role: Content Manager - create, publish, and share portal content
 Scope:
   ✅ portal:user:createItem
   ✅ portal:user:viewOrgItems
-  ✅ portal:user:createGroup
-  ✅ portal:user:joinGroup
-  ✅ portal:user:shareToGroup
-  ❌ NO shareToPublic (prevent public leaks)
-  ❌ NO admin privileges
-  ❌ NO publishing privileges (separate key)
-Used for: Portal item/group CRUD, search, sharing
-Environment: Manual testing only
-Rotation: Monthly
-Cost: May create portal items (cleanup required)
-```
-
-#### Key 4: Publishing Testing (Restricted Personal Scope)
-```
-Name: ARCGIS_PUBLISH_KEY
-Scope:
-  ✅ portal:user:createItem
   ✅ portal:publisher:publishFeatures
   ✅ portal:publisher:publishTiles
+  ✅ portal:publisher:publishScenes
+  ✅ portal:user:createGroup
+  ✅ portal:user:joinGroup
+  ✅ portal:user:viewOrgGroups
+  ✅ portal:user:shareToGroup
+  ✅ portal:user:shareToOrg
+  ❌ NO shareToPublic (prevent public leaks)
   ❌ NO admin privileges
-  ❌ NO shareToPublic
-Used for: Service publishing tests
+  ❌ NO feature editing privileges (separate key)
+Used for: Portal item/group CRUD, publishing, sharing
 Environment: Manual testing only
 Rotation: Monthly
-Cost: Creates hosted services (cleanup critical!)
+Cost: May create portal items and hosted services (cleanup required)
+```
+
+#### Key 4: Feature Editing Testing (Editing Privileges Only)
+```
+Name: ARCGIS_FEATURES_KEY
+Role: Editor - edit features in existing hosted layers
+Scope:
+  ✅ portal:user:features:edit
+  ✅ portal:user:features:fullEdit
+  ❌ NO content creation/publishing (use ARCGIS_CONTENT_KEY for that)
+  ❌ NO admin privileges
+  ❌ NO shareToPublic
+Used for: Feature editing, edit sessions, versioned editing
+Environment: Manual testing only
+Rotation: Monthly
+Cost: Edit operations (compute costs)
+Note: Requires hosted feature services created with ARCGIS_CONTENT_KEY
 ```
 
 ### Key Management Best Practices
@@ -195,11 +212,12 @@ Cost: Creates hosted services (cleanup critical!)
 ```bash
 # Development (.env.development)
 ARCGIS_LOCATION_KEY=dev_location_key_...
-ARCGIS_PORTAL_KEY=dev_portal_key_...
+ARCGIS_CONTENT_KEY=dev_content_key_...
+ARCGIS_FEATURES_KEY=dev_features_key_...
 
 # CI/CD (GitHub Secrets)
 ARCGIS_LOCATION_KEY=ci_location_key_...
-# Note: No portal key in CI
+# Note: No content or features keys in CI (manual testing only)
 
 # Production (never commit)
 # Production keys should never exist for testing
@@ -259,7 +277,7 @@ arcgis_credentials.json
 #[cfg(test)]
 fn validate_api_key_scope() {
     // Ensure test keys don't have dangerous privileges
-    let key = env::var("ARCGIS_PORTAL_KEY").ok();
+    let key = env::var("ARCGIS_CONTENT_KEY").ok();
     if let Some(key) = key {
         // Key should be scoped appropriately
         assert!(key.starts_with("AAPK"), "Invalid API key format");
@@ -290,16 +308,19 @@ tests/
 │   ├── geocode_stored_test.rs  # Geocoding with storage
 │   └── spatial_analysis_test.rs
 │
-├── portal/                      # Tier 3: Personal scope (ARCGIS_PORTAL_KEY)
+├── content/                     # Tier 3: Content management (ARCGIS_CONTENT_KEY)
 │   ├── item_crud_test.rs       # Item create/update/delete
 │   ├── group_crud_test.rs      # Group management
 │   ├── search_test.rs          # Portal search
-│   └── sharing_test.rs         # Sharing operations
+│   ├── sharing_test.rs         # Sharing operations
+│   ├── publish_features_test.rs # Publishing hosted feature services
+│   ├── publish_tiles_test.rs   # Publishing hosted tile services
+│   └── cleanup.rs               # Critical: Delete test items/services after run
 │
-└── publishing/                  # Tier 3: Publishing scope (ARCGIS_PUBLISH_KEY)
-    ├── publish_features_test.rs
-    ├── publish_tiles_test.rs
-    └── cleanup.rs               # Critical: Delete test services after run
+└── features/                    # Tier 3: Feature editing (ARCGIS_FEATURES_KEY)
+    ├── edit_features_test.rs   # Feature editing operations
+    ├── edit_session_test.rs    # Edit sessions with transactions
+    └── versioned_editing_test.rs # Branch-versioned editing (Enterprise)
 ```
 
 ### Feature Flags
@@ -312,8 +333,8 @@ default = []
 # Test tiers
 test-public = []         # Tier 1: No key required
 test-location = []       # Tier 2: ARCGIS_LOCATION_KEY
-test-portal = []         # Tier 3: ARCGIS_PORTAL_KEY (manual only)
-test-publishing = []     # Tier 3: ARCGIS_PUBLISH_KEY (manual only)
+test-content = []        # Tier 3: ARCGIS_CONTENT_KEY (manual only)
+test-features = []       # Tier 3: ARCGIS_FEATURES_KEY (manual only)
 
 # Legacy (deprecated)
 api = ["test-public", "test-location"]  # Backward compatibility
@@ -328,14 +349,16 @@ cargo test --features test-public
 # Run location service tests (requires ARCGIS_LOCATION_KEY)
 ARCGIS_LOCATION_KEY=your_key cargo test --features test-location
 
-# Run portal tests (manual only, requires ARCGIS_PORTAL_KEY)
-ARCGIS_PORTAL_KEY=your_key cargo test --features test-portal
+# Run content management tests (manual only, requires ARCGIS_CONTENT_KEY)
+ARCGIS_CONTENT_KEY=your_key cargo test --features test-content
 
-# Run all non-publishing tests
-cargo test --features test-public,test-location,test-portal
+# Run feature editing tests (manual only, requires ARCGIS_FEATURES_KEY)
+ARCGIS_FEATURES_KEY=your_key cargo test --features test-features
 
-# DANGEROUS: Run publishing tests (creates hosted services!)
-ARCGIS_PUBLISH_KEY=your_key cargo test --features test-publishing
+# Run all tests (requires all keys)
+cargo test --features test-public,test-location,test-content,test-features
+
+# ⚠️ WARNING: Content/features tests create real portal resources - cleanup required!
 ```
 
 ### Test Annotations
@@ -357,14 +380,24 @@ async fn test_routing_service() {
     // Test routing with standard scope key
 }
 
-// Tier 3: Portal - manual only
+// Tier 3: Content management - manual only
 #[tokio::test]
-#[cfg(feature = "test-portal")]
+#[cfg(feature = "test-content")]
 #[ignore] // Ignored by default - run with --ignored
 async fn test_create_portal_item() {
-    let key = env::var("ARCGIS_PORTAL_KEY")
-        .expect("ARCGIS_PORTAL_KEY required for portal tests");
+    let key = env::var("ARCGIS_CONTENT_KEY")
+        .expect("ARCGIS_CONTENT_KEY required for content tests");
     // Creates real portal items - cleanup required!
+}
+
+// Tier 3: Feature editing - manual only
+#[tokio::test]
+#[cfg(feature = "test-features")]
+#[ignore] // Ignored by default - run with --ignored
+async fn test_edit_features() {
+    let key = env::var("ARCGIS_FEATURES_KEY")
+        .expect("ARCGIS_FEATURES_KEY required for feature editing tests");
+    // Edits features in hosted service - requires ARCGIS_CONTENT_KEY to create service first!
 }
 ```
 
@@ -601,8 +634,8 @@ async fn test_with_credit_tracking() {
 - [ ] Document key rotation schedule
 
 ### Phase 2: Test Organization (Week 2)
-- [ ] Reorganize tests into `public/`, `location/`, `portal/`, `publishing/` dirs
-- [ ] Add feature flags: `test-public`, `test-location`, `test-portal`, `test-publishing`
+- [ ] Reorganize tests into `public/`, `location/`, `content/`, `features/` dirs
+- [ ] Add feature flags: `test-public`, `test-location`, `test-content`, `test-features`
 - [ ] Annotate existing tests with appropriate feature flags
 - [ ] Add `#[ignore]` to all personal-scope tests
 
@@ -711,19 +744,43 @@ Referrers: *.github.com/* (restrict to GitHub Actions)
 Expiration: 1 year
 ```
 
-For **ARCGIS_PORTAL_KEY** (Manual Testing Only):
+For **ARCGIS_CONTENT_KEY** (Manual Testing Only):
 ```
-Name: SDK Portal Testing (Manual)
-Description: Rust SDK manual testing - Portal operations only
+Name: SDK Content Management Testing (Manual)
+Description: Rust SDK manual testing - Content management, publishing, sharing
 
-Privileges (Personal Scope - MINIMAL):
+Role: Content Manager - create, publish, and share portal content
+
+Privileges (Personal Scope - Content/Sharing/Groups):
   ☑ Create, update, and delete content
+  ☑ Publish hosted feature layers
+  ☑ Publish hosted tile layers
+  ☑ Publish hosted scene layers
   ☑ View items shared with the organization
   ☑ Create groups
   ☑ Join groups
+  ☑ View organization groups
   ☑ Share content to groups
-  ☐ Share content to organization (disabled)
+  ☑ Share content to organization
   ☐ Share content publicly (disabled - security)
+
+Referrers: localhost:* (local testing only)
+Expiration: 3 months
+```
+
+For **ARCGIS_FEATURES_KEY** (Manual Testing Only):
+```
+Name: SDK Feature Editing Testing (Manual)
+Description: Rust SDK manual testing - Feature editing only
+
+Role: Editor - edit features in existing hosted layers
+
+Privileges (Personal Scope - Features Only):
+  ☑ Edit features
+  ☑ Edit features with full control
+
+Note: This key ONLY grants editing privileges. To create hosted feature services
+to edit, use ARCGIS_CONTENT_KEY to publish them first.
 
 Referrers: localhost:* (local testing only)
 Expiration: 3 months

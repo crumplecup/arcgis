@@ -1,14 +1,146 @@
 //! Service publishing operations for the Portal client.
 
 use super::super::{
-    DeleteServiceResult, OverwriteParameters, OverwriteResult, PublishParameters, PublishResult,
-    PublishStatus, UpdateServiceDefinitionParams, UpdateServiceDefinitionResult,
+    CreateServiceParams, CreateServiceResult, DeleteServiceResult, OverwriteParameters,
+    OverwriteResult, PublishParameters, PublishResult, PublishStatus,
+    UpdateServiceDefinitionParams, UpdateServiceDefinitionResult,
 };
 use super::PortalClient;
 use crate::Result;
 use tracing::instrument;
 
 impl<'a> PortalClient<'a> {
+    /// Creates a new hosted feature service.
+    ///
+    /// Directly creates a new hosted feature service with the specified configuration.
+    /// Unlike `publish()` which requires an existing item, this creates a service from scratch.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient, CreateServiceParams};
+    /// # async fn example(portal: &PortalClient<'_>) -> arcgis::Result<()> {
+    /// // Create a simple feature service with a point layer
+    /// let service_def = serde_json::json!({
+    ///     "layers": [{
+    ///         "name": "MyPoints",
+    ///         "type": "Feature Layer",
+    ///         "geometryType": "esriGeometryPoint",
+    ///         "hasAttachments": true,
+    ///         "fields": [
+    ///             {
+    ///                 "name": "OBJECTID",
+    ///                 "type": "esriFieldTypeOID",
+    ///                 "alias": "Object ID"
+    ///             },
+    ///             {
+    ///                 "name": "Name",
+    ///                 "type": "esriFieldTypeString",
+    ///                 "alias": "Name",
+    ///                 "length": 256
+    ///             }
+    ///         ]
+    ///     }]
+    /// });
+    ///
+    /// let params = CreateServiceParams::new("MyFeatureService")
+    ///     .with_description("A hosted feature service")
+    ///     .with_capabilities("Query,Create,Update,Delete,Editing")
+    ///     .with_service_definition(service_def);
+    ///
+    /// let result = portal.create_service(params).await?;
+    /// if let Some(service_url) = result.service_url() {
+    ///     println!("Created service: {}", service_url);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, params))]
+    pub async fn create_service(&self, params: CreateServiceParams) -> Result<CreateServiceResult> {
+        tracing::debug!(name = %params.name(), "Creating hosted feature service");
+
+        let url = format!("{}/content/users/{{username}}/createService", self.base_url);
+
+        // Get authentication token and user info
+        let user = self.get_self().await?;
+        let url = url.replace("{username}", user.username());
+
+        tracing::debug!(url = %url, "Sending createService request");
+
+        // Build the create parameters with full service definition
+        let mut create_params_obj = serde_json::json!({
+            "name": params.name(),
+        });
+
+        if let Some(desc) = params.description() {
+            create_params_obj["description"] = serde_json::json!(desc);
+        }
+
+        if let Some(has_static) = params.has_static_data() {
+            create_params_obj["hasStaticData"] = serde_json::json!(has_static);
+        }
+
+        if let Some(max_records) = params.max_record_count() {
+            create_params_obj["maxRecordCount"] = serde_json::json!(max_records);
+        }
+
+        if let Some(formats) = params.supported_query_formats() {
+            create_params_obj["supportedQueryFormats"] = serde_json::json!(formats);
+        }
+
+        if let Some(caps) = params.capabilities() {
+            create_params_obj["capabilities"] = serde_json::json!(caps);
+        }
+
+        // Add layer definitions if provided
+        if let Some(layers) = params.service_definition() {
+            create_params_obj["layers"] = layers.clone();
+        }
+
+        // Build form data
+        let mut form = reqwest::multipart::Form::new()
+            .text("f", "json")
+            .text("outputType", "featureService")
+            .text("createParameters", create_params_obj.to_string());
+
+        // Add token if required
+        if let Some(token) = self.client.get_token_if_required().await? {
+            form = form.text("token", token);
+        }
+
+        let response = self.client.http().post(&url).multipart(form).send().await?;
+
+        // Check for HTTP errors
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error response: {}", e));
+            tracing::error!(status = %status, error = %error_text, "createService request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        // Get response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "createService raw response");
+
+        // Parse response
+        let result: CreateServiceResult = serde_json::from_str(&response_text)?;
+
+        tracing::debug!(
+            success = result.success(),
+            service_item_id = ?result.service_item_id(),
+            service_url = ?result.service_url(),
+            "Service created"
+        );
+
+        Ok(result)
+    }
+
     /// Publishes a hosted service from an item.
     ///
     /// Creates a new hosted feature layer or other service from a source item
@@ -139,8 +271,12 @@ impl<'a> PortalClient<'a> {
             }));
         }
 
+        // Get response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "publish raw response");
+
         // Parse response
-        let result: PublishResult = response.json().await?;
+        let result: PublishResult = serde_json::from_str(&response_text)?;
 
         tracing::debug!(
             success = result.success(),
