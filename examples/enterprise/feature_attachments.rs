@@ -58,10 +58,17 @@
 use anyhow::{Context, Result};
 use arcgis::{
     ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, AttachmentId, AttachmentSource,
-    CreateServiceParams, DownloadTarget, EditOptions, Feature, FeatureServiceClient, PortalClient,
+    CreateServiceParams, DownloadTarget, EditOptions, EnvConfig, Feature, FeatureServiceClient,
+    ObjectId, PortalClient,
 };
+use secrecy::ExposeSecret;
 use std::collections::HashMap;
-use std::env;
+
+/// Service information needed throughout the example.
+struct ServiceInfo {
+    service_item_id: String,
+    service_url: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -76,17 +83,66 @@ async fn main() -> Result<()> {
     tracing::info!("📎 ArcGIS Feature Attachments Examples");
     tracing::info!("Demonstrating file attachment management workflows");
 
-    // Load environment variables from .env
-    dotenvy::dotenv().ok();
+    // Load environment configuration (automatically loads .env)
+    let config = EnvConfig::global();
 
-    // Load configuration
-    let config = load_config()?;
+    // Validate required keys are present
+    let content_key = config.arcgis_content_key.as_ref().context(
+        "ARCGIS_CONTENT_KEY not set. Add to .env:\n\
+         ARCGIS_CONTENT_KEY=your_api_key_here\n\
+         \n\
+         This key is used to create and delete services.",
+    )?;
 
+    let features_key = config.arcgis_features_key.as_ref().context(
+        "ARCGIS_FEATURES_KEY not set. Add to .env:\n\
+         ARCGIS_FEATURES_KEY=your_api_key_here\n\
+         \n\
+         This key is used to create/edit features and attachments.",
+    )?;
+
+    // Step 1: Create feature service with attachments enabled
+    let service_info = create_feature_service(content_key.expose_secret()).await?;
+
+    // Step 2: Create clients for feature operations
+    let features_auth = ApiKeyAuth::new(features_key.expose_secret());
+    let features_client = ArcGISClient::new(features_auth);
+    let feature_service = FeatureServiceClient::new(&service_info.service_url, &features_client);
+    let layer_id = arcgis::LayerId::new(0);
+
+    // Step 3: Create test feature
+    let object_id = create_test_feature(&feature_service, layer_id).await?;
+
+    // Step 4: Demonstrate attachment operations
+    demonstrate_list_attachments(&feature_service, layer_id, object_id).await?;
+    demonstrate_add_photo(&feature_service, layer_id, object_id).await?;
+    demonstrate_add_pdf(&feature_service, layer_id, object_id).await?;
+    demonstrate_download(&feature_service, layer_id, object_id).await?;
+    demonstrate_update(&feature_service, layer_id, object_id).await?;
+    demonstrate_delete(&feature_service, layer_id, object_id).await?;
+
+    // Step 5: Cleanup
+    cleanup(
+        content_key.expose_secret(),
+        &feature_service,
+        layer_id,
+        object_id,
+        &service_info.service_item_id,
+    )
+    .await?;
+
+    print_best_practices();
+
+    Ok(())
+}
+
+/// Creates a hosted feature service with attachments enabled.
+async fn create_feature_service(content_key: &str) -> Result<ServiceInfo> {
     tracing::info!("\n=== Step 1: Creating Feature Service ===");
     tracing::info!("Creating hosted feature service with attachments enabled");
 
     // Create portal client with content management key
-    let content_auth = ApiKeyAuth::new(&config.content_key);
+    let content_auth = ApiKeyAuth::new(content_key);
     let content_client = ArcGISClient::new(content_auth);
     let portal = PortalClient::new("https://www.arcgis.com/sharing/rest", &content_client);
 
@@ -155,15 +211,19 @@ async fn main() -> Result<()> {
 
     tracing::info!("✅ Layer with attachments enabled added to service");
 
+    Ok(ServiceInfo {
+        service_item_id,
+        service_url,
+    })
+}
+
+/// Creates a test feature to demonstrate attachment operations.
+async fn create_test_feature(
+    feature_service: &FeatureServiceClient<'_>,
+    layer_id: arcgis::LayerId,
+) -> Result<ObjectId> {
     tracing::info!("\n=== Step 2: Creating Test Feature ===");
     tracing::info!("Creating a test feature to demonstrate attachments");
-
-    // Create feature service client with editing key
-    let features_auth = ApiKeyAuth::new(&config.features_key);
-    let features_client = ArcGISClient::new(features_auth);
-    let feature_service = FeatureServiceClient::new(&service_url, &features_client);
-
-    let layer_id = arcgis::LayerId::new(0); // First layer
 
     let mut attributes = HashMap::new();
     attributes.insert(
@@ -200,19 +260,28 @@ async fn main() -> Result<()> {
         anyhow::bail!("No results from add_features operation");
     };
 
+    Ok(object_id)
+}
+
+/// Demonstrates listing existing attachments on a feature.
+async fn demonstrate_list_attachments(
+    feature_service: &FeatureServiceClient<'_>,
+    layer_id: arcgis::LayerId,
+    object_id: ObjectId,
+) -> Result<()> {
     tracing::info!("\n=== Example 1: Listing Existing Attachments ===");
     tracing::info!("Query attachments for feature {}", object_id);
 
-    let initial_attachments = feature_service
+    let attachments = feature_service
         .query_attachments(layer_id, object_id)
         .await?;
 
     tracing::info!(
-        attachment_count = initial_attachments.len(),
+        attachment_count = attachments.len(),
         "Found existing attachments"
     );
 
-    for attachment in &initial_attachments {
+    for attachment in &attachments {
         tracing::info!(
             id = attachment.id().0,
             name = attachment.name(),
@@ -222,12 +291,20 @@ async fn main() -> Result<()> {
         );
     }
 
+    Ok(())
+}
+
+/// Demonstrates adding a photo attachment.
+async fn demonstrate_add_photo(
+    feature_service: &FeatureServiceClient<'_>,
+    layer_id: arcgis::LayerId,
+    object_id: ObjectId,
+) -> Result<()> {
     tracing::info!("\n=== Example 2: Adding Photo Attachment ===");
     tracing::info!("Upload an inspection photo to the feature");
 
     // Create a mock JPEG image (minimal valid JPEG header + data)
     let mock_jpeg_data = create_mock_jpeg();
-
     let source = AttachmentSource::from_bytes("inspection_photo.jpg", mock_jpeg_data.clone());
 
     let add_result = feature_service
@@ -246,11 +323,19 @@ async fn main() -> Result<()> {
 
     tracing::info!("💡 Tip: Use AttachmentSource::from_path() for large files to stream from disk");
 
+    Ok(())
+}
+
+/// Demonstrates adding a PDF document attachment.
+async fn demonstrate_add_pdf(
+    feature_service: &FeatureServiceClient<'_>,
+    layer_id: arcgis::LayerId,
+    object_id: ObjectId,
+) -> Result<()> {
     tracing::info!("\n=== Example 3: Adding PDF Document ===");
     tracing::info!("Attach an inspection report document");
 
     let mock_pdf_data = create_mock_pdf();
-
     let source = AttachmentSource::from_bytes("inspection_report.pdf", mock_pdf_data.clone());
 
     let pdf_result = feature_service
@@ -267,6 +352,15 @@ async fn main() -> Result<()> {
         tracing::warn!("Failed to attach PDF");
     }
 
+    Ok(())
+}
+
+/// Demonstrates downloading attachments to file and memory.
+async fn demonstrate_download(
+    feature_service: &FeatureServiceClient<'_>,
+    layer_id: arcgis::LayerId,
+    object_id: ObjectId,
+) -> Result<()> {
     tracing::info!("\n=== Example 4: Downloading Attachments ===");
     tracing::info!("Retrieve attachment files for reporting");
 
@@ -280,7 +374,6 @@ async fn main() -> Result<()> {
 
         // Download to file
         let target = DownloadTarget::to_path("/tmp/downloaded_attachment.dat");
-
         let download_result = feature_service
             .download_attachment(layer_id, object_id, attachment_id, target)
             .await?;
@@ -291,7 +384,6 @@ async fn main() -> Result<()> {
 
         // Download to memory
         let target = DownloadTarget::to_bytes();
-
         let download_result = feature_service
             .download_attachment(layer_id, object_id, attachment_id, target)
             .await?;
@@ -309,6 +401,15 @@ async fn main() -> Result<()> {
 
     tracing::info!("💡 Tip: Use to_path() for large files to avoid loading into memory");
 
+    Ok(())
+}
+
+/// Demonstrates updating an existing attachment.
+async fn demonstrate_update(
+    feature_service: &FeatureServiceClient<'_>,
+    layer_id: arcgis::LayerId,
+    object_id: ObjectId,
+) -> Result<()> {
     tracing::info!("\n=== Example 5: Updating an Attachment ===");
     tracing::info!("Replace an outdated photo with a new one");
 
@@ -340,6 +441,15 @@ async fn main() -> Result<()> {
         tracing::info!("No attachments available to update");
     }
 
+    Ok(())
+}
+
+/// Demonstrates deleting attachments.
+async fn demonstrate_delete(
+    feature_service: &FeatureServiceClient<'_>,
+    layer_id: arcgis::LayerId,
+    object_id: ObjectId,
+) -> Result<()> {
     tracing::info!("\n=== Example 6: Deleting Attachments ===");
     tracing::info!("Clean up test attachments created in this example");
 
@@ -390,6 +500,17 @@ async fn main() -> Result<()> {
         tracing::info!("No attachments found");
     }
 
+    Ok(())
+}
+
+/// Cleans up test data - deletes feature and service.
+async fn cleanup(
+    content_key: &str,
+    feature_service: &FeatureServiceClient<'_>,
+    layer_id: arcgis::LayerId,
+    object_id: ObjectId,
+    service_item_id: &str,
+) -> Result<()> {
     // Cleanup Step 1: Delete the test feature
     tracing::info!("\n=== Step 7: Cleanup - Deleting Test Feature ===");
 
@@ -409,13 +530,21 @@ async fn main() -> Result<()> {
         }
     }
 
-
     // Cleanup Step 2: Delete the feature service
     tracing::info!("\n=== Step 8: Cleanup - Deleting Feature Service ===");
 
-    portal.delete_service(&service_item_id).await?;
+    let content_auth = ApiKeyAuth::new(content_key);
+    let content_client = ArcGISClient::new(content_auth);
+    let portal = PortalClient::new("https://www.arcgis.com/sharing/rest", &content_client);
+
+    portal.delete_service(service_item_id).await?;
     tracing::info!(service_item_id = %service_item_id, "✅ Feature service deleted");
 
+    Ok(())
+}
+
+/// Prints best practices and tips for working with attachments.
+fn print_best_practices() {
     tracing::info!("\n✅ All attachment operations completed successfully!");
     tracing::info!("💡 Attachment Best Practices:");
     tracing::info!("   - Enable attachments when creating hosted feature layers");
@@ -436,38 +565,6 @@ async fn main() -> Result<()> {
     tracing::info!("   - Attachments count toward your ArcGIS storage quota");
     tracing::info!("   - Each attachment typically limited to 10MB");
     tracing::info!("   - Monitor total storage usage in organization settings");
-
-    Ok(())
-}
-
-/// Configuration loaded from environment variables.
-struct Config {
-    content_key: String,
-    features_key: String,
-}
-
-/// Loads configuration from environment variables with helpful error messages.
-fn load_config() -> Result<Config> {
-    let content_key = env::var("ARCGIS_CONTENT_KEY").context(
-        "ARCGIS_CONTENT_KEY not set. Add to .env:\n\
-         ARCGIS_CONTENT_KEY=your_api_key_here\n\
-         \n\
-         This key is used to create and delete services.",
-    )?;
-
-    let features_key = env::var("ARCGIS_FEATURES_KEY").context(
-        "ARCGIS_FEATURES_KEY not set. Add to .env:\n\
-         ARCGIS_FEATURES_KEY=your_api_key_here\n\
-         \n\
-         This key is used to create/edit features and attachments.",
-    )?;
-
-    tracing::debug!("Configuration loaded");
-
-    Ok(Config {
-        content_key,
-        features_key,
-    })
 }
 
 /// Creates a minimal valid JPEG file for demonstration purposes.
@@ -484,17 +581,77 @@ fn create_mock_jpeg() -> Vec<u8> {
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
         0xFF, 0xC0, 0x00, 0x0B, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01, 0x01, 0x11, 0x00, 0xFF, 0xC4,
         0x00, 0x14, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xDA, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3F, 0x00,
-        0x7F, 0xFF, 0xD9,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xC4, 0x00, 0x14, 0x10, 0x01, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xDA, 0x00,
+        0x08, 0x01, 0x01, 0x00, 0x00, 0x3F, 0x00, 0x7F, 0xFF, 0xD9,
     ]
 }
 
 /// Creates a minimal valid PDF file for demonstration purposes.
 ///
-/// This is the smallest possible PDF - contains no visible content but is technically valid.
+/// This is a tiny PDF containing just the text "Test" - enough to be valid.
 fn create_mock_pdf() -> Vec<u8> {
-    b"%PDF-1.0\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj 3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000056 00000 n\n0000000115 00000 n\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n220\n%%EOF"
-        .to_vec()
+    // Minimal valid PDF with "Test" text
+    let pdf = b"%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+/Resources <<
+/Font <<
+/F1 <<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+>>
+>>
+>>
+endobj
+4 0 obj
+<<
+/Length 44
+>>
+stream
+BT
+/F1 12 Tf
+100 700 Td
+(Test) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000317 00000 n
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+410
+%%EOF
+";
+    pdf.to_vec()
 }
 
 /// Creates a proper layer definition for addToDefinition operation.
