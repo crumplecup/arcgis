@@ -47,3 +47,5 @@ Desktop.ini
 
 # Linux
 .directory
+# Example output files
+map_*.png
