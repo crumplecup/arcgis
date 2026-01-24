@@ -116,6 +116,10 @@ path = "examples/public/query_features.rs"
 name = "spatial_query"
 path = "examples/public/spatial_query.rs"
 
+[[example]]
+name = "map_service_basics"
+path = "examples/public/map_service_basics.rs"
+
 # Enterprise examples - Authentication & Setup
 [[example]]
 name = "basic_client"
