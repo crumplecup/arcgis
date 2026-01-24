@@ -26,11 +26,20 @@
 //! RUST_LOG=debug cargo run --example routing_navigation
 //! ```
 //!
+//! # Real-World Use Cases
+//!
+//! - **Trip planning**: Calculate optimal multi-stop routes with ETAs
+//! - **Delivery optimization**: Plan efficient delivery routes
+//! - **Service coverage**: Determine areas reachable within time limits
+//! - **Emergency response**: Find nearest hospitals, fire stations, police
+//! - **Location intelligence**: Analyze accessibility and drive-time zones
+//!
 //! # Cost Awareness
 //!
 //! ⚠️ This example uses the World Routing Service which consumes routing credits.
 //! Check your ArcGIS Online quota before running multiple times.
 
+use anyhow::Result;
 use arcgis::{
     ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, ClosestFacilityParameters, NALocation,
     RouteParameters, RoutingServiceClient, ServiceAreaParameters,
@@ -43,7 +52,7 @@ const SERVICE_AREA_SERVICE: &str = "https://route-api.arcgis.com/arcgis/rest/ser
 const CLOSEST_FACILITY_SERVICE: &str = "https://route-api.arcgis.com/arcgis/rest/services/World/ClosestFacility/NAServer/ClosestFacility_World";
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<()> {
     // Initialize tracing for structured logging
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -55,15 +64,28 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("🗺️ ArcGIS Routing & Navigation Examples");
     tracing::info!("Pacific Coast Road Trip: San Francisco → Seattle");
 
-    // Create authenticated client
+    // Create authenticated client (automatically loads .env)
+    tracing::debug!("Creating authenticated client");
     let auth = ApiKeyAuth::from_env()?;
     let client = ArcGISClient::new(auth);
 
-    // Example 1: Multi-Stop Route
+    // Demonstrate routing and navigation operations
+    demonstrate_multi_stop_route(&client).await?;
+    demonstrate_service_area(&client).await?;
+    demonstrate_closest_facility(&client).await?;
+
+    tracing::info!("\n✅ All routing examples completed successfully!");
+    print_best_practices();
+
+    Ok(())
+}
+
+/// Demonstrates multi-stop route planning through cities.
+async fn demonstrate_multi_stop_route(client: &ArcGISClient) -> Result<()> {
     tracing::info!("\n=== Example 1: Planning Your Road Trip Route ===");
     tracing::info!("Calculate optimal route: SF → Portland → Seattle");
 
-    let route_service = RoutingServiceClient::new(ROUTE_SERVICE, &client);
+    let route_service = RoutingServiceClient::new(ROUTE_SERVICE, client);
 
     // Define road trip stops
     let san_francisco = create_stop(-122.4194, 37.7749, "San Francisco, CA");
@@ -79,14 +101,10 @@ async fn main() -> anyhow::Result<()> {
         .return_directions(true)
         .return_routes(true)
         .return_stops(true)
-        .build()
-        ?;
+        .build()?;
 
     tracing::debug!("Sending route request to ArcGIS");
-    let route_result = route_service
-        .solve_route(route_params)
-        .await
-        ?;
+    let route_result = route_service.solve_route(route_params).await?;
 
     if let Some(route) = route_result.routes().first() {
         let distance_miles = route.total_length().unwrap_or(0.0);
@@ -117,25 +135,27 @@ async fn main() -> anyhow::Result<()> {
         tracing::warn!("⚠️  No route found in result");
     }
 
-    // Example 2: Service Area Analysis
+    Ok(())
+}
+
+/// Demonstrates generating drive-time service area polygons.
+async fn demonstrate_service_area(client: &ArcGISClient) -> Result<()> {
     tracing::info!("\n=== Example 2: Drive-Time Analysis ===");
     tracing::info!("Generate 15, 30, and 45-minute drive zones from San Francisco");
 
-    let service_area_client = RoutingServiceClient::new(SERVICE_AREA_SERVICE, &client);
+    let service_area_client = RoutingServiceClient::new(SERVICE_AREA_SERVICE, client);
 
-    let sf_facility = san_francisco.clone();
+    let san_francisco = create_stop(-122.4194, 37.7749, "San Francisco, CA");
 
     let service_area_params = ServiceAreaParameters::builder()
-        .facilities(vec![sf_facility])
+        .facilities(vec![san_francisco])
         .default_breaks(vec![15.0, 30.0, 45.0]) // Minutes
-        .build()
-        ?;
+        .build()?;
 
     tracing::debug!("Calculating service area polygons");
     let service_area_result = service_area_client
         .solve_service_area(service_area_params)
-        .await
-        ?;
+        .await?;
 
     tracing::info!(
         polygon_count = service_area_result.service_area_polygons().len(),
@@ -162,11 +182,15 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("💡 Pro tip: Service areas show reachable regions for delivery planning");
 
-    // Example 3: Closest Facility Analysis
+    Ok(())
+}
+
+/// Demonstrates finding the closest facility from current location.
+async fn demonstrate_closest_facility(client: &ArcGISClient) -> Result<()> {
     tracing::info!("\n=== Example 3: Finding Nearest Services ===");
     tracing::info!("Scenario: Running low on gas near Portland - find closest gas station");
 
-    let closest_facility_client = RoutingServiceClient::new(CLOSEST_FACILITY_SERVICE, &client);
+    let closest_facility_client = RoutingServiceClient::new(CLOSEST_FACILITY_SERVICE, client);
 
     // Your current location (incident)
     let current_location = create_location(-122.65, 45.50, "Your Location");
@@ -181,14 +205,12 @@ async fn main() -> anyhow::Result<()> {
         .facilities(vec![gas_station_1, gas_station_2, gas_station_3])
         .default_target_facility_count(1) // Find closest 1
         .return_routes(true)
-        .build()
-        ?;
+        .build()?;
 
     tracing::debug!("Finding nearest gas station");
     let closest_result = closest_facility_client
         .solve_closest_facility(closest_facility_params)
-        .await
-        ?;
+        .await?;
 
     tracing::info!(
         route_count = closest_result.routes().len(),
@@ -219,17 +241,35 @@ async fn main() -> anyhow::Result<()> {
         );
     }
 
-    // Summary and Best Practices
-    tracing::info!("\n✅ All routing examples completed successfully!");
-    tracing::info!("💡 Routing Best Practices:");
+    Ok(())
+}
+
+/// Prints best practices for routing and navigation.
+fn print_best_practices() {
+    tracing::info!("\n💡 Routing Best Practices:");
     tracing::info!("   - Cache route results to minimize API calls and costs");
     tracing::info!("   - Use service areas for coverage/accessibility analysis");
     tracing::info!("   - Closest facility is perfect for emergency response planning");
     tracing::info!("   - Always check total_miles/total_minutes for route validation");
     tracing::info!("   - Consider traffic patterns with time-of-day routing (premium feature)");
-    tracing::info!("⚠️  Note: World Routing Service consumes credits - monitor your quota!");
-
-    Ok(())
+    tracing::info!("");
+    tracing::info!("🎯 When to Use Each Service:");
+    tracing::info!("   - Route: Multi-stop trip planning, delivery routes");
+    tracing::info!("   - Service Area: Coverage analysis, accessibility zones");
+    tracing::info!("   - Closest Facility: Emergency response, nearest service finder");
+    tracing::info!("");
+    tracing::info!("⚡ Performance Tips:");
+    tracing::info!("   - Batch multiple route calculations when possible");
+    tracing::info!("   - Request only needed attributes (directions, geometry)");
+    tracing::info!("   - Use straight-line distance for rough estimates first");
+    tracing::info!("   - Consider caching frequently-requested routes");
+    tracing::info!("");
+    tracing::info!("💰 Credit Usage:");
+    tracing::info!("   - Simple route (2 stops): ~0.5 credits");
+    tracing::info!("   - Optimized route (10+ stops): ~1.0 credits");
+    tracing::info!("   - Service area: ~0.5 credits per facility");
+    tracing::info!("   - Closest facility: ~0.5 credits");
+    tracing::info!("   ⚠️  Monitor your ArcGIS Online quota!");
 }
 
 /// Helper to create a route stop/location
