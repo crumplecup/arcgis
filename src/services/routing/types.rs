@@ -1095,8 +1095,8 @@ impl<T> Default for ClosestFacilityFeatureSet<T> {
 #[serde(rename_all = "camelCase")]
 pub struct ClosestFacilityResult {
     /// Routes from incidents to facilities.
-    #[serde(default, rename = "cfRoutes")]
-    cfroutes_raw: ClosestFacilityFeatureSet<Route>,
+    #[serde(default)]
+    routes: ClosestFacilityFeatureSet<Route>,
 
     /// Facilities that were analyzed.
     #[serde(default)]
@@ -1114,7 +1114,7 @@ pub struct ClosestFacilityResult {
 impl ClosestFacilityResult {
     /// Gets the routes.
     pub fn routes(&self) -> &[Route] {
-        &self.cfroutes_raw.features
+        &self.routes.features
     }
 
     /// Gets the facilities.

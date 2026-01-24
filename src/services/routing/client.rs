@@ -408,7 +408,7 @@ impl<'a> RoutingServiceClient<'a> {
         }
         if let Some(return_routes) = params.return_routes() {
             form.push((
-                "returnRoutes",
+                "returnCFRoutes",
                 if *return_routes { "true" } else { "false" },
             ));
         }

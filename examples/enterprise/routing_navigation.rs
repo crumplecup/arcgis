@@ -189,17 +189,17 @@ async fn demonstrate_service_area(client: &ArcGISClient) -> Result<()> {
 /// Demonstrates finding the closest facility from current location.
 async fn demonstrate_closest_facility(client: &ArcGISClient) -> Result<()> {
     tracing::info!("\n=== Example 3: Finding Nearest Services ===");
-    tracing::info!("Scenario: Running low on gas near Portland - find closest gas station");
+    tracing::info!("Scenario: Road trip on I-5 - find closest gas station near San Jose");
 
     let closest_facility_client = RoutingServiceClient::new(CLOSEST_FACILITY_SERVICE, client);
 
-    // Your current location (incident)
-    let current_location = create_location(-122.65, 45.50, "Your Location");
+    // Your current location (incident) - Downtown San Jose
+    let current_location = create_location(-121.8863, 37.3382, "Downtown San Jose");
 
-    // Nearby gas stations (facilities) - hypothetical locations
-    let gas_station_1 = create_location(-122.64, 45.51, "Shell Station");
-    let gas_station_2 = create_location(-122.66, 45.49, "Chevron Station");
-    let gas_station_3 = create_location(-122.67, 45.52, "76 Station");
+    // Gas stations along I-5/US-101 corridor (facilities)
+    let gas_station_1 = create_location(-121.8947, 37.3688, "North San Jose Station");
+    let gas_station_2 = create_location(-121.8772, 37.3088, "South San Jose Station");
+    let gas_station_3 = create_location(-121.9025, 37.2893, "Campbell Station");
 
     let closest_facility_params = ClosestFacilityParameters::builder()
         .incidents(vec![current_location])
