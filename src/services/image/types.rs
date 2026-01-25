@@ -14,48 +14,59 @@ pub struct ExportImageParameters {
 
     /// Image width in pixels.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     size: Option<String>,
 
     /// Image format (png, jpg, tiff, etc.).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     format: Option<String>,
 
     /// Pixel type for the output.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     pixel_type: Option<PixelType>,
 
     /// No data value.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     no_data: Option<f64>,
 
     /// Interpolation method.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     interpolation: Option<InterpolationType>,
 
     /// JPEG compression quality (0-100).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     compression_quality: Option<u8>,
 
     /// Band IDs to include (comma-separated).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     band_ids: Option<String>,
 
     /// Mosaic rule for multi-raster datasets.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     mosaic_rule: Option<MosaicRule>,
 
     /// Rendering rule for dynamic visualization.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     rendering_rule: Option<RenderingRule>,
 
     /// Spatial reference WKID.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "bboxSR")]
+    #[builder(default)]
     bbox_sr: Option<u32>,
 
     /// Output spatial reference WKID.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "imageSR")]
+    #[builder(default)]
     image_sr: Option<u32>,
 }
 
@@ -225,30 +236,37 @@ pub struct SampleParameters {
     /// Spatial reference of input geometry.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "geometrySR")]
+    #[builder(default)]
     geometry_sr: Option<u32>,
 
     /// Sample count (for polylines).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     sample_count: Option<u32>,
 
     /// Sample distance (for polylines).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     sample_distance: Option<f64>,
 
     /// Output fields.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     out_fields: Option<String>,
 
     /// Return geometry.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_geometry: Option<bool>,
 
     /// Mosaic rule.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     mosaic_rule: Option<MosaicRule>,
 
     /// Rendering rule.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     rendering_rule: Option<RenderingRule>,
 }
 
@@ -267,23 +285,28 @@ pub struct SampleResult {
 pub struct HistogramParameters {
     /// Geometry (area of interest).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     geometry: Option<String>,
 
     /// Geometry type.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     geometry_type: Option<String>,
 
     /// Spatial reference.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "geometrySR")]
+    #[builder(default)]
     geometry_sr: Option<u32>,
 
     /// Mosaic rule.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     mosaic_rule: Option<MosaicRule>,
 
     /// Rendering rule.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     rendering_rule: Option<RenderingRule>,
 }
 

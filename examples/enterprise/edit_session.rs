@@ -316,8 +316,9 @@ async fn add_feature_in_session(
         .first()
         .context("No add results returned")?
         .object_id()
-        .context("Added feature has no ObjectID")?
-        .clone();
+        .as_ref()
+        .copied()
+        .context("Added feature has no ObjectID")?;
 
     tracing::info!(object_id = object_id.0, "✅ Feature added to session");
 

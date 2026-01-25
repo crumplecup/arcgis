@@ -114,13 +114,12 @@ impl<'a> ImageServiceClient<'a> {
 
         let export_url = format!("{}/exportImage", self.url);
 
-        let params_json = serde_json::to_string(&params)?;
-
         let response = self
             .client
             .http()
             .get(&export_url)
-            .query(&[("f", "json"), ("params", &params_json)])
+            .query(&params)
+            .query(&[("f", "json")])
             .send()
             .await?;
 
@@ -311,13 +310,12 @@ impl<'a> ImageServiceClient<'a> {
 
         let samples_url = format!("{}/getSamples", self.url);
 
-        let params_json = serde_json::to_string(&params)?;
-
         let response = self
             .client
             .http()
             .get(&samples_url)
-            .query(&[("f", "json"), ("params", &params_json)])
+            .query(&params)
+            .query(&[("f", "json")])
             .send()
             .await?;
 
@@ -368,13 +366,12 @@ impl<'a> ImageServiceClient<'a> {
 
         let histogram_url = format!("{}/computeHistograms", self.url);
 
-        let params_json = serde_json::to_string(&params)?;
-
         let response = self
             .client
             .http()
             .get(&histogram_url)
-            .query(&[("f", "json"), ("params", &params_json)])
+            .query(&params)
+            .query(&[("f", "json")])
             .send()
             .await?;
 

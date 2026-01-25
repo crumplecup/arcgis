@@ -6,18 +6,6 @@ use reqwest::Client as ReqwestClient;
 use std::sync::Arc;
 use tracing::instrument;
 
-/// Initialize environment variables from .env file.
-///
-/// This function is called automatically the first time an ArcGIS client is created.
-/// It loads environment variables from a `.env` file in the current directory or
-/// any parent directory.
-///
-/// If no `.env` file is found, this function silently succeeds - it's optional.
-/// This allows users to:
-/// - Store API keys and credentials securely in `.env` (gitignored)
-/// - Use system environment variables instead
-/// - Deploy with different env management systems
-
 /// The main client for interacting with ArcGIS services.
 ///
 /// This client handles HTTP communication, authentication, and common

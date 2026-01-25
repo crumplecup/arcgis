@@ -249,8 +249,9 @@ async fn create_test_feature(
         if *result.success() {
             let oid = result
                 .object_id()
-                .context("Added feature should have ObjectID")?
-                .clone();
+                .as_ref()
+                .copied()
+                .context("Added feature should have ObjectID")?;
             tracing::info!(object_id = oid.0, "✅ Test feature created");
             oid
         } else {
