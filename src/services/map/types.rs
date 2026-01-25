@@ -760,6 +760,60 @@ pub struct MapServiceMetadata {
     /// Tile info (for cached services).
     #[serde(skip_serializing_if = "Option::is_none")]
     tile_info: Option<TileInfo>,
+
+    /// Whether this is a single fused map cache (cached basemap).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    single_fused_map_cache: Option<bool>,
+}
+
+impl MapServiceMetadata {
+    /// Checks if the service supports the identify operation.
+    ///
+    /// Identify requires the "Query" capability and is not supported on cached basemaps.
+    pub fn supports_identify(&self) -> bool {
+        self.supports_capability("Query") && !self.is_cached()
+    }
+
+    /// Checks if the service supports the find operation.
+    ///
+    /// Find requires the "Query" capability and is not supported on cached basemaps.
+    pub fn supports_find(&self) -> bool {
+        self.supports_capability("Query") && !self.is_cached()
+    }
+
+    /// Checks if the service supports the legend operation.
+    ///
+    /// Most services support legend retrieval, but cached basemaps may not.
+    pub fn supports_legend(&self) -> bool {
+        // Legend is generally supported unless it's a pure tile cache
+        !self.is_cached() || self.tile_info().is_some()
+    }
+
+    /// Checks if the service supports map export.
+    ///
+    /// Map export requires the "Map" capability.
+    pub fn supports_export(&self) -> bool {
+        self.supports_capability("Map")
+    }
+
+    /// Checks if the service is a cached basemap (single fused map cache).
+    ///
+    /// Cached basemaps only support tile/image export, not dynamic queries.
+    pub fn is_cached(&self) -> bool {
+        self.single_fused_map_cache.unwrap_or(false)
+    }
+
+    /// Checks if the service has a specific capability.
+    ///
+    /// # Arguments
+    ///
+    /// * `capability` - The capability name to check (e.g., "Map", "Query", "Data")
+    pub fn supports_capability(&self, capability: &str) -> bool {
+        self.capabilities
+            .as_ref()
+            .map(|caps| caps.split(',').any(|c| c.trim() == capability))
+            .unwrap_or(false)
+    }
 }
 
 /// Parameters for the find operation.

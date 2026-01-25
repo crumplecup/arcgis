@@ -302,7 +302,7 @@ impl<'a> MapServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending legend request");
 
-        let mut request = self.client.http().get(&url);
+        let mut request = self.client.http().get(&url).query(&[("f", "json")]);
 
         if let Some(token) = self.client.get_token_if_required().await? {
             request = request.query(&[("token", token)]);
@@ -323,7 +323,7 @@ impl<'a> MapServiceClient<'a> {
             }));
         }
 
-        let legend: LegendResponse = response.json().await?;
+        let legend: LegendResponse = Self::parse_json_response(response, "legend").await?;
 
         tracing::info!(layer_count = legend.layers().len(), "Legend retrieved");
 
@@ -383,7 +383,7 @@ impl<'a> MapServiceClient<'a> {
             }));
         }
 
-        let metadata: MapServiceMetadata = response.json().await?;
+        let metadata: MapServiceMetadata = Self::parse_json_response(response, "metadata").await?;
 
         tracing::info!(layers = metadata.layers().len(), "Metadata retrieved");
 
@@ -458,7 +458,7 @@ impl<'a> MapServiceClient<'a> {
             }));
         }
 
-        let identify_response: IdentifyResponse = response.json().await?;
+        let identify_response: IdentifyResponse = Self::parse_json_response(response, "identify").await?;
 
         tracing::info!(
             result_count = identify_response.results().len(),
@@ -691,14 +691,12 @@ impl<'a> MapServiceClient<'a> {
 
         tracing::debug!(url = %url, search_text = %params.search_text(), "Sending find request");
 
-        let form = serde_urlencoded::to_string(&params)?;
         let mut request = self
             .client
             .http()
             .get(&url)
-            .query(&[("f", "json")])
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(form);
+            .query(&params)
+            .query(&[("f", "json")]);
 
         if let Some(token) = self.client.get_token_if_required().await? {
             request = request.query(&[("token", token)]);
@@ -719,7 +717,7 @@ impl<'a> MapServiceClient<'a> {
             }));
         }
 
-        let result: crate::FindResponse = response.json().await?;
+        let result: crate::FindResponse = Self::parse_json_response(response, "find").await?;
 
         tracing::info!(result_count = result.results().len(), "Find completed");
 
@@ -954,7 +952,7 @@ impl<'a> MapServiceClient<'a> {
             }));
         }
 
-        let result: crate::QueryDomainsResponse = response.json().await?;
+        let result: crate::QueryDomainsResponse = Self::parse_json_response(response, "queryDomains").await?;
 
         tracing::info!(
             layer_count = result.layers().len(),
@@ -963,4 +961,96 @@ impl<'a> MapServiceClient<'a> {
 
         Ok(result)
     }
+
+    /// Attempts to parse a JSON response, handling HTML error pages gracefully.
+    ///
+    /// ArcGIS servers sometimes return HTTP 200 with HTML error pages instead of JSON.
+    /// This helper detects such cases and provides clear error messages while preserving
+    /// the original error content in the error chain.
+    ///
+    /// # Arguments
+    ///
+    /// * `response` - The HTTP response to parse
+    /// * `operation` - Name of the operation (for error messages)
+    async fn parse_json_response<T>(
+        response: reqwest::Response,
+        operation: &str,
+    ) -> Result<T>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        // Extract content-type before consuming response
+        let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| String::from(""));
+
+        // If content-type indicates HTML, extract error message
+        if content_type.contains("text/html") {
+            let html_body = response.text().await.unwrap_or_else(|e| {
+                format!("Failed to read HTML error response: {}", e)
+            });
+
+            tracing::error!(
+                content_type = %content_type,
+                operation = %operation,
+                body_preview = %&html_body.chars().take(200).collect::<String>(),
+                "Server returned HTML error page instead of JSON"
+            );
+
+            // Try to extract a meaningful error message from HTML
+            let error_msg = extract_html_error(&html_body)
+                .unwrap_or_else(|| "Server returned HTML error page".to_string());
+
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: 400,
+                message: format!(
+                    "{} operation not supported: {}. HTML response: {}",
+                    operation,
+                    error_msg,
+                    &html_body.chars().take(200).collect::<String>()
+                ),
+            }));
+        }
+
+        // Try to parse as JSON, providing context if it fails
+        response.json().await.map_err(|e| {
+            tracing::error!(
+                error = %e,
+                operation = %operation,
+                content_type = %content_type,
+                "Failed to parse response as JSON"
+            );
+            crate::Error::from(crate::ErrorKind::Http(crate::HttpError::new(e)))
+        })
+    }
+}
+
+/// Extracts a meaningful error message from an HTML error page.
+///
+/// Looks for common patterns in ArcGIS Server error pages.
+fn extract_html_error(html: &str) -> Option<String> {
+    // Look for common error message patterns
+    let patterns = [
+        ("<p><b>Message:</b> <u>", "</u></p>"),
+        ("<p><b>Description:</b> <u>", "</u></p>"),
+        ("<h2>", "</h2>"),
+        ("<h1>", "</h1>"),
+    ];
+
+    for (start, end) in patterns {
+        if let Some(start_idx) = html.find(start) {
+            let content_start = start_idx + start.len();
+            if let Some(end_idx) = html[content_start..].find(end) {
+                let msg = &html[content_start..content_start + end_idx];
+                if !msg.trim().is_empty() {
+                    return Some(msg.trim().to_string());
+                }
+            }
+        }
+    }
+
+    None
 }

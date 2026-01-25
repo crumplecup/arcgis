@@ -1,6 +1,6 @@
 //! 🗺️ Map Service Basics - Render Maps and Identify Features
 //!
-//! Real-world map service scenarios using ESRI's public World Street Map:
+//! Real-world map service scenarios using ESRI's public USA MapServer:
 //! Export static map images, identify features at clicked locations, search
 //! by keyword, and retrieve legend information for visualization!
 //!
@@ -15,19 +15,19 @@
 //!
 //! # Prerequisites
 //!
-//! - No authentication required (uses public ESRI World Street Map service)
+//! - No authentication required (uses public ESRI USA MapServer)
 //!
 //! # Service Capabilities
 //!
-//! **World Street Map** is a cached basemap service that supports:
+//! **USA MapServer** is a dynamic map service that supports:
 //! - ✅ Map export (static images)
 //! - ✅ Transparent backgrounds
 //! - ✅ Custom DPI
+//! - ✅ Feature identification (identify operation)
+//! - ✅ Text search (find operation)
+//! - ✅ Legend retrieval
 //!
-//! **Note**: Identify, Find, and Legend operations require dynamic map services
-//! or feature services. This example demonstrates the API calls, but they will
-//! fail gracefully on cached basemaps. For a working identify/find example,
-//! use a dynamic MapServer or FeatureServer URL.
+//! This service includes 4 layers: Cities, Highways, States, and Counties.
 //!
 //! # Running
 //!
@@ -59,9 +59,9 @@ use arcgis::{
     MapServiceClient, NoAuth,
 };
 
-/// Public ESRI World Street Map service (no auth required).
-const WORLD_STREET_MAP: &str =
-    "https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer";
+/// Public ESRI USA MapServer service (no auth required).
+const USA_MAP_SERVER: &str =
+    "https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer";
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -74,36 +74,19 @@ async fn main() -> Result<()> {
         .init();
 
     tracing::info!("🗺️ Map Service Examples");
-    tracing::info!("Using ESRI's public World Street Map service");
+    tracing::info!("Using ESRI's public USA MapServer service");
 
     // Create client with NoAuth (public service)
     let client = ArcGISClient::new(NoAuth);
-    let map_service = MapServiceClient::new(WORLD_STREET_MAP, &client);
+    let map_service = MapServiceClient::new(USA_MAP_SERVER, &client);
 
     // Demonstrate Map Service operations
     demonstrate_basic_map_export(&map_service).await?;
     demonstrate_transparent_export(&map_service).await?;
     demonstrate_high_dpi_export(&map_service).await?;
-
-    // Note: World Street Map is a cached basemap - identify/find/legend require dynamic services
-    tracing::info!("\n⚠️  Note: Remaining examples (identify, find, legend) require");
-    tracing::info!("   a dynamic map service. World Street Map is a cached basemap.");
-    tracing::info!("   For these operations, use a FeatureServer or dynamic MapServer.");
-
-    // Attempt identify with graceful error handling
-    if let Err(e) = demonstrate_identify_features(&map_service).await {
-        tracing::warn!("Identify not supported on this service: {}", e);
-    }
-
-    // Attempt find with graceful error handling
-    if let Err(e) = demonstrate_find_by_text(&map_service).await {
-        tracing::warn!("Find not supported on this service: {}", e);
-    }
-
-    // Attempt legend with graceful error handling
-    if let Err(e) = demonstrate_legend_retrieval(&map_service).await {
-        tracing::warn!("Legend not supported on this service: {}", e);
-    }
+    demonstrate_identify_features(&map_service).await?;
+    demonstrate_find_by_text(&map_service).await?;
+    demonstrate_legend_retrieval(&map_service).await?;
 
     tracing::info!("\n✅ All map service examples completed successfully!");
     print_best_practices();
@@ -203,17 +186,17 @@ async fn demonstrate_high_dpi_export(service: &MapServiceClient<'_>) -> Result<(
 /// Demonstrates identifying features at a clicked point.
 async fn demonstrate_identify_features(service: &MapServiceClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 4: Identify Features at Point ===");
-    tracing::info!("Identify features at clicked location (Golden Gate Bridge)");
+    tracing::info!("Identify features at clicked location (Los Angeles area)");
 
-    // Golden Gate Bridge location
-    let point_x = -122.4783;
-    let point_y = 37.8199;
+    // Los Angeles area (should intersect California state layer)
+    let point_x = -118.25;
+    let point_y = 34.05;
 
     // Build geometry JSON for point
     let geometry = format!("{{\"x\":{},\"y\":{}}}", point_x, point_y);
 
-    // Map extent for context (San Francisco area)
-    let map_extent = "-122.5,37.7,-122.3,37.9";
+    // Map extent for context (Southern California)
+    let map_extent = "-120.0,32.0,-116.0,36.0";
 
     // Image display format: "width,height,dpi"
     let image_display = "800,600,96";
@@ -263,12 +246,12 @@ async fn demonstrate_identify_features(service: &MapServiceClient<'_>) -> Result
 /// Demonstrates finding features by text search.
 async fn demonstrate_find_by_text(service: &MapServiceClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 5: Find Features by Text ===");
-    tracing::info!("Search for features containing 'Park' across all layers");
+    tracing::info!("Search for cities containing 'Los' in their name");
 
     let params = arcgis::FindParams::builder()
-        .search_text("Park")
-        .layers(vec![0]) // Search in layer 0
-        .search_fields(vec!["NAME".to_string()]) // Search in NAME field
+        .search_text("Los")
+        .layers(vec![0]) // Search in layer 0 (Cities)
+        .search_fields(vec!["AREANAME".to_string()]) // Search in AREANAME field
         .sr(4326) // WGS84 spatial reference
         .contains(true) // Match partial text
         .return_geometry(false) // Don't need geometry for this example
@@ -283,9 +266,9 @@ async fn demonstrate_find_by_text(service: &MapServiceClient<'_>) -> Result<()> 
     );
 
     if response.results().is_empty() {
-        tracing::info!("   No features found matching 'Park'");
+        tracing::info!("   No cities found containing 'Los'");
     } else {
-        tracing::info!("🔍 Features found:");
+        tracing::info!("🔍 Cities found:");
         for (i, result) in response.results().iter().take(5).enumerate() {
             tracing::info!(
                 "   {}. Layer {}: {}",
