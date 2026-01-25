@@ -127,11 +127,12 @@ async fn demonstrate_export_image(service: &ImageServiceClient<'_>) -> Result<()
     tracing::info!("\n=== Example 2: Export Raster Image ===");
     tracing::info!("Export land cover data for San Francisco Bay Area");
 
-    // San Francisco Bay Area extent (Web Mercator)
+    // San Francisco Bay Area extent (Web Mercator EPSG:3857)
     let bbox = "-13658209,4525874,-13598209,4565874";
 
     let params = ExportImageParametersBuilder::default()
         .bbox(bbox)
+        .bbox_sr(3857u32)  // Specify bbox is in Web Mercator
         .size("800,600")
         .format("png")
         .build()
