@@ -12,7 +12,7 @@ homepage = "https://github.com/crumplecup/arcgis"
 keywords = ["arcgis", "gis", "geospatial", "esri", "maps"]
 categories = ["api-bindings", "web-programming::http-client"]
 readme = "README.md"
-exclude = [".github/", "examples/", "benches/"]
+exclude = [".github/", "benches/"]
 
 [features]
 # Testing features (organized by API key privilege classes)
