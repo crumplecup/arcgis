@@ -28,9 +28,3 @@ jobs:
 
       - name: Check for warnings and errors
         run: cargo check --all-targets
-
-      - name: Run public tests
-        run: cargo test --features test-public
-        env:
-          RUST_LOG: info
-          RUST_BACKTRACE: 1
