@@ -88,48 +88,34 @@ impl EnvConfig {
         tracing::debug!("Loading environment configuration");
 
         let config = Self {
-            arcgis_api_key: std::env::var("ARCGIS_API_KEY")
-                .ok()
-                .map(|s| {
-                    tracing::debug!("ARCGIS_API_KEY loaded from environment");
-                    SecretString::new(s.into())
-                }),
-            arcgis_public_key: std::env::var("ARCGIS_PUBLIC_KEY")
-                .ok()
-                .map(|s| {
-                    tracing::debug!("ARCGIS_PUBLIC_KEY loaded from environment");
-                    SecretString::new(s.into())
-                }),
-            arcgis_location_key: std::env::var("ARCGIS_LOCATION_KEY")
-                .ok()
-                .map(|s| {
-                    tracing::debug!("ARCGIS_LOCATION_KEY loaded from environment");
-                    SecretString::new(s.into())
-                }),
-            arcgis_content_key: std::env::var("ARCGIS_CONTENT_KEY")
-                .ok()
-                .map(|s| {
-                    tracing::debug!("ARCGIS_CONTENT_KEY loaded from environment");
-                    SecretString::new(s.into())
-                }),
-            arcgis_features_key: std::env::var("ARCGIS_FEATURES_KEY")
-                .ok()
-                .map(|s| {
-                    tracing::debug!("ARCGIS_FEATURES_KEY loaded from environment");
-                    SecretString::new(s.into())
-                }),
-            arcgis_client_id: std::env::var("ARCGIS_CLIENT_ID")
-                .ok()
-                .map(|s| {
-                    tracing::debug!("ARCGIS_CLIENT_ID loaded from environment");
-                    SecretString::new(s.into())
-                }),
-            arcgis_client_secret: std::env::var("ARCGIS_CLIENT_SECRET")
-                .ok()
-                .map(|s| {
-                    tracing::debug!("ARCGIS_CLIENT_SECRET loaded from environment");
-                    SecretString::new(s.into())
-                }),
+            arcgis_api_key: std::env::var("ARCGIS_API_KEY").ok().map(|s| {
+                tracing::debug!("ARCGIS_API_KEY loaded from environment");
+                SecretString::new(s.into())
+            }),
+            arcgis_public_key: std::env::var("ARCGIS_PUBLIC_KEY").ok().map(|s| {
+                tracing::debug!("ARCGIS_PUBLIC_KEY loaded from environment");
+                SecretString::new(s.into())
+            }),
+            arcgis_location_key: std::env::var("ARCGIS_LOCATION_KEY").ok().map(|s| {
+                tracing::debug!("ARCGIS_LOCATION_KEY loaded from environment");
+                SecretString::new(s.into())
+            }),
+            arcgis_content_key: std::env::var("ARCGIS_CONTENT_KEY").ok().map(|s| {
+                tracing::debug!("ARCGIS_CONTENT_KEY loaded from environment");
+                SecretString::new(s.into())
+            }),
+            arcgis_features_key: std::env::var("ARCGIS_FEATURES_KEY").ok().map(|s| {
+                tracing::debug!("ARCGIS_FEATURES_KEY loaded from environment");
+                SecretString::new(s.into())
+            }),
+            arcgis_client_id: std::env::var("ARCGIS_CLIENT_ID").ok().map(|s| {
+                tracing::debug!("ARCGIS_CLIENT_ID loaded from environment");
+                SecretString::new(s.into())
+            }),
+            arcgis_client_secret: std::env::var("ARCGIS_CLIENT_SECRET").ok().map(|s| {
+                tracing::debug!("ARCGIS_CLIENT_SECRET loaded from environment");
+                SecretString::new(s.into())
+            }),
         };
 
         tracing::debug!("Environment configuration loaded");

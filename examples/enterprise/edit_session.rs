@@ -166,8 +166,8 @@ fn load_config() -> Result<Config> {
         .context("LAYER_ID must be a number")?;
 
     // Parse version GUID
-    let version_guid = Uuid::parse_str(&version_guid_str)
-        .context("VERSION_GUID must be a valid UUID")?;
+    let version_guid =
+        Uuid::parse_str(&version_guid_str).context("VERSION_GUID must be a valid UUID")?;
     tracing::debug!(version_guid = %version_guid, "Parsed version GUID");
 
     Ok(Config {
@@ -338,10 +338,7 @@ async fn save_edit_session(
         .await?;
 
     if !stop_response.success() {
-        anyhow::bail!(
-            "Failed to save changes: {:?}",
-            stop_response.error()
-        );
+        anyhow::bail!("Failed to save changes: {:?}", stop_response.error());
     }
 
     tracing::info!(
@@ -365,10 +362,7 @@ async fn discard_edit_session(
         .await?;
 
     if !stop_response.success() {
-        anyhow::bail!(
-            "Failed to discard changes: {:?}",
-            stop_response.error()
-        );
+        anyhow::bail!("Failed to discard changes: {:?}", stop_response.error());
     }
 
     tracing::info!(

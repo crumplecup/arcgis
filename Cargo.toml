@@ -16,10 +16,14 @@ exclude = [".github/", "examples/", "benches/"]
 
 [features]
 # Testing features (organized by API key privilege classes)
-test-public = []     # Tier 1: Public tests using free ArcGIS services (no authentication)
-test-location = []   # Tier 2: Location Services + Spatial Analysis (requires ARCGIS_LOCATION_KEY)
-test-content = []    # Tier 3: Content + Sharing + Groups - content management (requires ARCGIS_CONTENT_KEY, manual only)
-test-features = []   # Tier 3: Features - editing privileges (requires ARCGIS_FEATURES_KEY, manual only)
+test-public = [
+] # Tier 1: Public tests using free ArcGIS services (no authentication)
+test-location = [
+] # Tier 2: Location Services + Spatial Analysis (requires ARCGIS_LOCATION_KEY)
+test-content = [
+] # Tier 3: Content + Sharing + Groups - content management (requires ARCGIS_CONTENT_KEY, manual only)
+test-features = [
+] # Tier 3: Features - editing privileges (requires ARCGIS_FEATURES_KEY, manual only)
 
 [dependencies]
 # Core HTTP and async runtime
@@ -93,7 +97,7 @@ tokio-test = "0.4"
 mockito = "1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow = "1"
-config = "0.14"
+config = "0.15"
 
 [build-dependencies]
 prost-build = "0.14"

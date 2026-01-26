@@ -225,7 +225,12 @@ async fn demonstrate_identify_features(service: &MapServiceClient<'_>) -> Result
     } else {
         tracing::info!("📍 Features identified:");
         for (i, result) in response.results().iter().take(5).enumerate() {
-            tracing::info!("   {}. Layer {}: {}", i + 1, result.layer_id(), result.layer_name());
+            tracing::info!(
+                "   {}. Layer {}: {}",
+                i + 1,
+                result.layer_id(),
+                result.layer_name()
+            );
 
             // Show a few attributes
             if !result.attributes().is_empty() {
@@ -260,10 +265,7 @@ async fn demonstrate_find_by_text(service: &MapServiceClient<'_>) -> Result<()> 
 
     let response = service.find(params).await?;
 
-    tracing::info!(
-        result_count = response.results().len(),
-        "✅ Find completed"
-    );
+    tracing::info!(result_count = response.results().len(), "✅ Find completed");
 
     if response.results().is_empty() {
         tracing::info!("   No cities found containing 'Los'");
@@ -302,18 +304,11 @@ async fn demonstrate_legend_retrieval(service: &MapServiceClient<'_>) -> Result<
 
     let legend = service.get_legend().await?;
 
-    tracing::info!(
-        layer_count = legend.layers().len(),
-        "✅ Legend retrieved"
-    );
+    tracing::info!(layer_count = legend.layers().len(), "✅ Legend retrieved");
 
     tracing::info!("🎨 Legend information:");
     for layer in legend.layers().iter().take(5) {
-        tracing::info!(
-            "   Layer {}: {}",
-            layer.layer_id(),
-            layer.layer_name()
-        );
+        tracing::info!("   Layer {}: {}", layer.layer_id(), layer.layer_name());
 
         // Show legend items (symbols)
         if !layer.legend().is_empty() {

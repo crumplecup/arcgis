@@ -287,7 +287,9 @@ async fn demonstrate_high_precision(geocoder: &GeocodeServiceClient<'_>) -> Resu
 /// Prints best practices for geocoding operations.
 fn print_best_practices() {
     tracing::info!("\n💡 Geocoding Best Practices:");
-    tracing::info!("   - Filter results by score for higher quality (90+ is excellent, 80+ is good)");
+    tracing::info!(
+        "   - Filter results by score for higher quality (90+ is excellent, 80+ is good)"
+    );
     tracing::info!("   - Use suggest() for autocomplete in search interfaces");
     tracing::info!("   - Reverse geocoding is ideal for 'Where am I?' features");
     tracing::info!("   - Add delays between requests to respect API rate limits");

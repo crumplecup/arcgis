@@ -621,8 +621,8 @@ impl Route {
             total_wait_time,
             geometry,
             directions: Vec::new(), // Directions come from separate array in response
-            start_time: None,        // Not in route attributes
-            end_time: None,          // Not in route attributes
+            start_time: None,       // Not in route attributes
+            end_time: None,         // Not in route attributes
         }
     }
 }

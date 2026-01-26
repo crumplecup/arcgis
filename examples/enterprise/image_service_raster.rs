@@ -49,9 +49,9 @@
 
 use anyhow::Result;
 use arcgis::{
-    geo_types::{Geometry, LineString, Point},
     ArcGISClient, ArcGISGeometry, ExportImageParametersBuilder, HistogramParametersBuilder,
     ImageServiceClient, NoAuth, SampleParametersBuilder,
+    geo_types::{Geometry, LineString, Point},
 };
 
 /// Public NLCD Land Cover 2001 Image Service (no auth required).
@@ -132,7 +132,7 @@ async fn demonstrate_export_image(service: &ImageServiceClient<'_>) -> Result<()
 
     let params = ExportImageParametersBuilder::default()
         .bbox(bbox)
-        .bbox_sr(3857u32)  // Specify bbox is in Web Mercator
+        .bbox_sr(3857u32) // Specify bbox is in Web Mercator
         .size("800,600")
         .format("png")
         .build()
@@ -172,10 +172,7 @@ async fn demonstrate_identify_pixel(service: &ImageServiceClient<'_>) -> Result<
     tracing::info!("📍 Pixel Values at Redlands, CA:");
     if let Some(value) = result.value() {
         tracing::info!("   Land Cover Class: {}", value);
-        tracing::info!("   Location: Lon {}, Lat {}",
-            point.x(),
-            point.y()
-        );
+        tracing::info!("   Location: Lon {}, Lat {}", point.x(), point.y());
 
         // NLCD class codes (common values):
         // 21 = Developed, Open Space
@@ -209,9 +206,9 @@ async fn demonstrate_sample_transect(service: &ImageServiceClient<'_>) -> Result
 
     // Create a line from coast to inland (Santa Barbara area)
     let line = LineString::from(vec![
-        (-119.7, 34.4),   // Pacific coast
-        (-119.5, 34.45),  // Mid-point
-        (-119.3, 34.5),   // Inland
+        (-119.7, 34.4),  // Pacific coast
+        (-119.5, 34.45), // Mid-point
+        (-119.3, 34.5),  // Inland
     ]);
 
     let geom: Geometry = line.into();
@@ -286,7 +283,8 @@ async fn demonstrate_compute_histograms(service: &ImageServiceClient<'_>) -> Res
         tracing::info!("   Band {}: {} bins", i, histogram.counts().len());
 
         // Show the most common values
-        if let Some(max_count_idx) = histogram.counts()
+        if let Some(max_count_idx) = histogram
+            .counts()
             .iter()
             .enumerate()
             .max_by_key(|(_, count)| *count)
@@ -295,7 +293,8 @@ async fn demonstrate_compute_histograms(service: &ImageServiceClient<'_>) -> Res
             let count = histogram.counts()[max_count_idx];
 
             if let (Some(min), Some(max)) = (histogram.min(), histogram.max()) {
-                let value = min + (max_count_idx as f64 * (max - min) / histogram.counts().len() as f64);
+                let value =
+                    min + (max_count_idx as f64 * (max - min) / histogram.counts().len() as f64);
                 tracing::info!("      Most common value ≈ {:.0} (count: {})", value, count);
             } else {
                 tracing::info!("      Most common bin {} (count: {})", max_count_idx, count);

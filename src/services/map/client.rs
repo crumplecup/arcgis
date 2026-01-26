@@ -458,7 +458,8 @@ impl<'a> MapServiceClient<'a> {
             }));
         }
 
-        let identify_response: IdentifyResponse = Self::parse_json_response(response, "identify").await?;
+        let identify_response: IdentifyResponse =
+            Self::parse_json_response(response, "identify").await?;
 
         tracing::info!(
             result_count = identify_response.results().len(),
@@ -952,7 +953,8 @@ impl<'a> MapServiceClient<'a> {
             }));
         }
 
-        let result: crate::QueryDomainsResponse = Self::parse_json_response(response, "queryDomains").await?;
+        let result: crate::QueryDomainsResponse =
+            Self::parse_json_response(response, "queryDomains").await?;
 
         tracing::info!(
             layer_count = result.layers().len(),
@@ -972,10 +974,7 @@ impl<'a> MapServiceClient<'a> {
     ///
     /// * `response` - The HTTP response to parse
     /// * `operation` - Name of the operation (for error messages)
-    async fn parse_json_response<T>(
-        response: reqwest::Response,
-        operation: &str,
-    ) -> Result<T>
+    async fn parse_json_response<T>(response: reqwest::Response, operation: &str) -> Result<T>
     where
         T: serde::de::DeserializeOwned,
     {
@@ -989,9 +988,10 @@ impl<'a> MapServiceClient<'a> {
 
         // If content-type indicates HTML, extract error message
         if content_type.contains("text/html") {
-            let html_body = response.text().await.unwrap_or_else(|e| {
-                format!("Failed to read HTML error response: {}", e)
-            });
+            let html_body = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read HTML error response: {}", e));
 
             tracing::error!(
                 content_type = %content_type,
