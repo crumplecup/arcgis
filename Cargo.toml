@@ -174,3 +174,7 @@ path = "examples/enterprise/geoprocessing_tools.rs"
 [[example]]
 name = "portal_publishing"
 path = "examples/enterprise/portal_publishing.rs"
+
+[[example]]
+name = "places_poi_search"
+path = "examples/enterprise/places_poi_search.rs"
