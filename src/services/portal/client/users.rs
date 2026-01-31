@@ -56,9 +56,15 @@ impl<'a> PortalClient<'a> {
         }
 
         // Parse response
-        let user: UserInfo = response.json().await?;
+        let response_text = response.text().await?;
+        tracing::debug!("Raw getSelf response: {}", response_text);
+        let user: UserInfo = serde_json::from_str(&response_text)?;
 
-        tracing::debug!(username = %user.username(), "Got user info");
+        if let Some(username) = user.effective_username() {
+            tracing::debug!(username = %username, "Got user info");
+        } else {
+            tracing::debug!("Got user info (username not available)");
+        }
 
         Ok(user)
     }

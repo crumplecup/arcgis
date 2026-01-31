@@ -5,11 +5,17 @@ use serde::{Deserialize, Serialize};
 /// Information about a portal user.
 ///
 /// Returned by the `getSelf` operation and other user-related queries.
+/// When using OAuth2 client credentials, returns appInfo instead of user details.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct UserInfo {
-    /// Unique username.
-    username: String,
+    /// Unique username (present with user authentication).
+    #[serde(default)]
+    username: Option<String>,
+
+    /// Application info (present with OAuth2 client credentials).
+    #[serde(default)]
+    app_info: Option<AppInfo>,
 
     /// User's full name.
     #[serde(default)]
@@ -88,15 +94,53 @@ pub struct UserInfo {
     org_id: Option<String>,
 }
 
+/// Application information returned for OAuth2 client credentials.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct AppInfo {
+    /// Application ID.
+    app_id: String,
+
+    /// Item ID of the application.
+    item_id: String,
+
+    /// Username of the application owner.
+    app_owner: String,
+
+    /// Organization ID.
+    org_id: String,
+
+    /// Application title.
+    app_title: String,
+
+    /// Privileges assigned to the application.
+    #[serde(default)]
+    privileges: Vec<String>,
+}
+
+impl UserInfo {
+    /// Gets the effective username, checking both user and app contexts.
+    ///
+    /// With user authentication, returns the username field.
+    /// With OAuth2 client credentials, returns appOwner from appInfo.
+    pub fn effective_username(&self) -> Option<&str> {
+        self.username
+            .as_deref()
+            .or_else(|| self.app_info.as_ref().map(|info| info.app_owner.as_str()))
+    }
+}
+
 /// Group membership information.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupMembership {
     /// Group ID.
-    id: String,
+    #[serde(default)]
+    id: Option<String>,
 
     /// Group title.
-    title: String,
+    #[serde(default)]
+    title: Option<String>,
 
     /// User's membership information in the group (can be string or object depending on API response).
     #[serde(default)]

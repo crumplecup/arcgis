@@ -63,7 +63,13 @@ impl<'a> PortalClient<'a> {
 
         // Get authentication token and user info
         let user = self.get_self().await?;
-        let url = url.replace("{username}", user.username());
+        let username = user.effective_username().ok_or_else(|| {
+            crate::Error::from(crate::ErrorKind::Api {
+                code: 401,
+                message: "Username not available in user info".to_string(),
+            })
+        })?;
+        let url = url.replace("{username}", username);
 
         tracing::debug!(url = %url, "Sending createService request");
 
@@ -176,7 +182,13 @@ impl<'a> PortalClient<'a> {
 
         // Get authentication token and user info
         let user = self.get_self().await?;
-        let url = url.replace("{username}", user.username());
+        let username = user.effective_username().ok_or_else(|| {
+            crate::Error::from(crate::ErrorKind::Api {
+                code: 401,
+                message: "Username not available in user info".to_string(),
+            })
+        })?;
+        let url = url.replace("{username}", username);
 
         tracing::debug!(url = %url, "Sending publish request");
 
@@ -316,7 +328,13 @@ impl<'a> PortalClient<'a> {
 
         // Get authentication token and user info
         let user = self.get_self().await?;
-        let url = url.replace("{username}", user.username());
+        let username = user.effective_username().ok_or_else(|| {
+            crate::Error::from(crate::ErrorKind::Api {
+                code: 401,
+                message: "Username not available in user info".to_string(),
+            })
+        })?;
+        let url = url.replace("{username}", username);
 
         tracing::debug!(url = %url, "Sending getPublishStatus request");
 
@@ -515,7 +533,13 @@ impl<'a> PortalClient<'a> {
 
         // Get authentication token and user info
         let user = self.get_self().await?;
-        let url = url.replace("{username}", user.username());
+        let username = user.effective_username().ok_or_else(|| {
+            crate::Error::from(crate::ErrorKind::Api {
+                code: 401,
+                message: "Username not available in user info".to_string(),
+            })
+        })?;
+        let url = url.replace("{username}", username);
 
         tracing::debug!(url = %url, "Sending overwriteService request");
 

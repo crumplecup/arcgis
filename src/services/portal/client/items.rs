@@ -92,13 +92,16 @@ impl<'a> PortalClient<'a> {
 
         // We need the username to construct the URL
         let user = self.get_self().await?;
-        let url = format!(
-            "{}/content/users/{}/addItem",
-            self.base_url,
-            user.username()
-        );
+        let username = user.effective_username().ok_or_else(|| {
+            crate::Error::from(crate::ErrorKind::Api {
+                code: 401,
+                message: "Username not available in user info".to_string(),
+            })
+        })?;
 
-        tracing::debug!(url = %url, username = %user.username(), "Sending addItem request");
+        let url = format!("{}/content/users/{}/addItem", self.base_url, username);
+
+        tracing::debug!(url = %url, username = %username, "Sending addItem request");
 
         // Build form data
         let mut form = reqwest::multipart::Form::new()
