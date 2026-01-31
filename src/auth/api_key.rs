@@ -5,6 +5,19 @@ use async_trait::async_trait;
 use secrecy::{ExposeSecret, SecretString};
 use tracing::instrument;
 
+/// API key tier for privilege-separated authentication.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ApiKeyTier {
+    /// Content management operations (create/publish/share items).
+    Content,
+    /// Feature editing operations.
+    Features,
+    /// Location services (geocoding, routing, geometry operations).
+    Location,
+    /// Public services (read-only operations).
+    Public,
+}
+
 /// API Key authentication provider.
 ///
 /// This is the simplest authentication method for ArcGIS services.
@@ -45,57 +58,60 @@ impl ApiKeyAuth {
 
     /// Creates a new API Key authentication provider from environment variables.
     ///
-    /// This method automatically loads `.env` file and intelligently searches for API keys:
-    /// 1. First checks tier-specific keys (privilege separation):
-    ///    - `ARCGIS_LOCATION_KEY` - Location services
-    ///    - `ARCGIS_CONTENT_KEY` - Content management
-    ///    - `ARCGIS_FEATURES_KEY` - Feature editing
-    ///    - `ARCGIS_PUBLIC_KEY` - Public services
-    /// 2. Falls back to `ARCGIS_API_KEY` (skeleton key with all privileges)
+    /// This method automatically loads `.env` file and loads the specified tier's API key.
+    /// Falls back to `ARCGIS_API_KEY` (legacy skeleton key) if the tier-specific key is not set.
     ///
-    /// This allows examples and user code to work seamlessly with the multi-tier system.
-    /// Users can provide tier-specific keys for privilege separation, or a skeleton key
-    /// for simplicity.
+    /// # Arguments
+    ///
+    /// * `tier` - Which API key tier to load (Content, Features, Location, or Public)
+    ///
+    /// # Key Tiers
+    ///
+    /// - `ApiKeyTier::Content` → `ARCGIS_CONTENT_KEY` (content management, publishing, sharing)
+    /// - `ApiKeyTier::Features` → `ARCGIS_FEATURES_KEY` (feature editing)
+    /// - `ApiKeyTier::Location` → `ARCGIS_LOCATION_KEY` (geocoding, routing, geometry)
+    /// - `ApiKeyTier::Public` → `ARCGIS_PUBLIC_KEY` (public read-only services)
     ///
     /// # Errors
     ///
-    /// Returns an error if no API key environment variable is found.
+    /// Returns an error if neither the tier-specific key nor `ARCGIS_API_KEY` is found.
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use arcgis::ApiKeyAuth;
+    /// use arcgis::{ApiKeyAuth, ApiKeyTier};
     ///
-    /// // Automatically finds and uses any available API key
-    /// let auth = ApiKeyAuth::from_env()?;
+    /// // Load content management key for portal operations
+    /// let auth = ApiKeyAuth::from_env(ApiKeyTier::Content)?;
     /// # Ok::<(), arcgis::Error>(())
     /// ```
     #[instrument]
-    pub fn from_env() -> Result<Self> {
-        tracing::debug!("Loading API key from environment");
+    pub fn from_env(tier: ApiKeyTier) -> Result<Self> {
+        tracing::debug!("Loading API key from environment: {:?}", tier);
 
         // Get global configuration (automatically loads .env on first access)
         let config = crate::EnvConfig::global();
 
-        // Try tier-specific keys first, then fall back to skeleton key
-        let api_key = config
-            .arcgis_location_key
-            .as_ref()
-            .or(config.arcgis_content_key.as_ref())
-            .or(config.arcgis_features_key.as_ref())
-            .or(config.arcgis_public_key.as_ref())
-            .or(config.arcgis_api_key.as_ref())
-            .ok_or_else(|| {
-                tracing::error!(
-                    "No API key found in environment. Set one of: ARCGIS_LOCATION_KEY, \
-                     ARCGIS_CONTENT_KEY, ARCGIS_FEATURES_KEY, ARCGIS_PUBLIC_KEY, or ARCGIS_API_KEY"
-                );
-                crate::Error::from(crate::ErrorKind::Env(crate::EnvError::new(
-                    std::env::VarError::NotPresent,
-                )))
-            })?;
+        // Match on the tier to get the correct key
+        let (api_key, key_name) = match tier {
+            ApiKeyTier::Content => (config.arcgis_content_key.as_ref(), "ARCGIS_CONTENT_KEY"),
+            ApiKeyTier::Features => (config.arcgis_features_key.as_ref(), "ARCGIS_FEATURES_KEY"),
+            ApiKeyTier::Location => (config.arcgis_location_key.as_ref(), "ARCGIS_LOCATION_KEY"),
+            ApiKeyTier::Public => (config.arcgis_public_key.as_ref(), "ARCGIS_PUBLIC_KEY"),
+        };
 
-        tracing::debug!("Successfully loaded API key from environment");
+        // Fall back to legacy ARCGIS_API_KEY if tier-specific key not set
+        let api_key = api_key.or(config.arcgis_api_key.as_ref()).ok_or_else(|| {
+            tracing::error!(
+                "No API key found in environment. Set {} or ARCGIS_API_KEY",
+                key_name
+            );
+            crate::Error::from(crate::ErrorKind::Env(crate::EnvError::new(
+                std::env::VarError::NotPresent,
+            )))
+        })?;
+
+        tracing::debug!("Successfully loaded API key from environment: {}", key_name);
         Ok(Self::new(api_key.expose_secret().to_string()))
     }
 }

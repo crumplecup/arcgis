@@ -63,7 +63,7 @@ mod types;
 mod util;
 
 // Re-exports
-pub use auth::{ApiKeyAuth, AuthProvider, ClientCredentialsAuth, NoAuth};
+pub use auth::{ApiKeyAuth, ApiKeyTier, AuthProvider, ClientCredentialsAuth, NoAuth};
 pub use client::ArcGISClient;
 pub use config::EnvConfig;
 pub use error::{
