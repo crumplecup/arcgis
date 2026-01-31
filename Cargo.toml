@@ -162,3 +162,11 @@ path = "examples/enterprise/portal_content_management.rs"
 [[example]]
 name = "image_service_raster"
 path = "examples/enterprise/image_service_raster.rs"
+
+[[example]]
+name = "geoprocessing_tools"
+path = "examples/enterprise/geoprocessing_tools.rs"
+
+[[example]]
+name = "portal_publishing"
+path = "examples/enterprise/portal_publishing.rs"
