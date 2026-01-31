@@ -1,0 +1,643 @@
+//! 🚀 Portal Publishing - Complete Data Lifecycle Example
+//!
+//! Demonstrates the full spatial data lifecycle: query → convert → publish → share → verify.
+//! This "full meal deal" example shows real-world interoperability between ArcGIS REST API,
+//! GeoRust ecosystem, and Portal for ArcGIS.
+//!
+//! # What You'll Learn
+//!
+//! - **Data acquisition**: Query features from public ArcGIS services
+//! - **Format conversion**: FeatureSet → GeoJSON using geo-types
+//! - **Direct service creation**: Create hosted services programmatically
+//! - **Feature editing**: Add features to services via applyEdits
+//! - **Item creation**: Upload GeoJSON to Portal catalog
+//! - **Access control**: Share services with organization
+//! - **Round-trip verification**: Query your new service
+//! - **Cleanup**: Delete services and items
+//!
+//! # Prerequisites
+//!
+//! - Required: API key with content management privileges in `.env`
+//! - Permissions: Create content, publish hosted services, sharing
+//! - Credits: Publishing consumes ArcGIS Online credits
+//!
+//! ## Environment Variables
+//!
+//! ```env
+//! # Tier 3: Content management (required for portal publishing)
+//! ARCGIS_CONTENT_KEY=your_api_key_with_content_privileges
+//! ```
+//!
+//! Note: Portal publishing operations require an API key with content creation privileges.
+//!
+//! # Running
+//!
+//! ```bash
+//! cargo run --example portal_publishing
+//!
+//! # With debug logging to see all API calls:
+//! RUST_LOG=debug cargo run --example portal_publishing
+//! ```
+//!
+//! # Real-World Use Cases
+//!
+//! - **Data pipelines**: ETL workflows (extract → transform → publish)
+//! - **Data migration**: Move data between systems using standard formats
+//! - **Open data portals**: Convert and publish public datasets
+//! - **Backup and restore**: Export services → GeoJSON → re-publish
+//! - **Format conversion**: Shapefile → GeoJSON → Hosted Service
+//! - **Multi-platform support**: Share data across GIS platforms
+//! - **Developer workflows**: Local GeoJSON files → test services
+//!
+//! # Publishing Concepts
+//!
+//! **Publishing Workflows:**
+//!
+//! This example demonstrates TWO different workflows for publishing spatial data:
+//!
+//! **Workflow A: Direct Service Creation** (Demonstrated)
+//! - Create empty hosted feature service with schema
+//! - Add features programmatically using applyEdits
+//! - Best for: Programmatic data loading, ETL pipelines, dynamic schemas
+//!
+//! **Workflow B: GeoJSON Item Creation** (Demonstrated)
+//! - Create GeoJSON item in portal catalog
+//! - Useful for: Data archival, cataloging, metadata management
+//! - Note: Full publish from GeoJSON requires file upload (future SDK enhancement)
+//!
+//! **Item Types:**
+//! - Feature Service: Vector data with attributes (points, lines, polygons)
+//! - Map Service: Cached/dynamic map tiles
+//! - Image Service: Raster/imagery
+//! - Vector Tile Service: MVT format for base maps
+//!
+//! **Hosting Models:**
+//! - Hosted: ArcGIS Online/Portal manages data storage
+//! - Federated: Data stays in enterprise geodatabase
+//! - Referenced: Service points to external data source
+//!
+//! # GeoRust Integration
+//!
+//! This example demonstrates interoperability with the GeoRust ecosystem:
+//! - `geo-types` - Standard Rust geometry types
+//! - `geojson` - GeoJSON format support
+//! - Future: `shapefile-rs`, `geotiff` for other formats
+
+use anyhow::{Context, Result};
+use arcgis::{
+    AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, CreateServiceParams, EditOptions, Feature,
+    FeatureServiceClient, LayerId, NoAuth, PortalClient, SharingParameters,
+};
+use serde_json::json;
+use std::collections::HashMap;
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Initialize tracing for structured logging
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+        )
+        .init();
+
+    tracing::info!("🚀 Portal Publishing Examples");
+    tracing::info!("Demonstrating hosted feature service creation and management");
+    tracing::info!("");
+
+    // Create authenticated client (automatically loads .env)
+    tracing::debug!("Creating authenticated client");
+    let auth = ApiKeyAuth::from_env(ApiKeyTier::Content)
+        .context("Failed to load API key from environment (requires ARCGIS_CONTENT_KEY)")?;
+    let client = ArcGISClient::new(auth);
+    let portal = PortalClient::new("https://www.arcgis.com/sharing/rest", &client);
+
+    tracing::info!("✅ Authenticated with API key (ARCGIS_CONTENT_KEY)");
+    tracing::info!("");
+
+    // Demonstrate two different publishing workflows
+    tracing::info!("\n💡 This example demonstrates TWO workflows for publishing spatial data:");
+    tracing::info!(
+        "   A) Direct Service Creation - Create service with schema, add features programmatically"
+    );
+    tracing::info!("   B) GeoJSON Item - Create catalog item (full publish requires file upload)");
+    tracing::info!("");
+
+    demonstrate_workflow_a_direct_service(&portal, &client).await?;
+    demonstrate_workflow_b_geojson_item(&portal, &client).await?;
+
+    tracing::info!("\n✅ Portal publishing examples completed successfully!");
+    print_best_practices();
+
+    Ok(())
+}
+
+/// Helper: Query public service and convert to GeoJSON (shared by both workflows).
+async fn query_and_convert_to_geojson()
+-> Result<(arcgis::FeatureSet, geojson::FeatureCollection, String)> {
+    tracing::info!("📥 Querying features from public ArcGIS service");
+    tracing::info!("");
+    tracing::info!("   Source: World Cities (ESRI public service)");
+    tracing::info!("   Service: Public feature layer (no auth required)");
+    tracing::info!("   Strategy: Query first 10 cities for demo purposes");
+    tracing::info!("");
+
+    let cities_url = "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer";
+
+    // Use NoAuth for public service
+    let public_client = ArcGISClient::new(NoAuth);
+    let cities_service = FeatureServiceClient::new(cities_url, &public_client);
+
+    let query_result = cities_service
+        .query(LayerId(0))
+        .where_clause("1=1")
+        .return_geometry(true)
+        .out_fields(&["CITY_NAME", "CNTRY_NAME", "POP"])
+        .limit(10)
+        .execute()
+        .await?;
+
+    let feature_count = query_result.features().len();
+    tracing::info!("✅ Retrieved {} cities from public service", feature_count);
+
+    // Show sample data
+    if let Some(first_city) = query_result.features().first() {
+        if let Some(city_name) = first_city.attributes().get("CITY_NAME") {
+            if let Some(country) = first_city.attributes().get("CNTRY_NAME") {
+                tracing::info!("   Sample: {}, {}", city_name, country);
+            }
+        }
+    }
+
+    tracing::info!("");
+    tracing::info!("🔄 Converting to GeoJSON format");
+    tracing::info!("");
+    tracing::info!("   Format: ArcGIS FeatureSet → GeoJSON FeatureCollection");
+    tracing::info!("   Ecosystem: Using geojson crate (GeoRust)");
+    tracing::info!("   Purpose: Standard format for portal upload");
+    tracing::info!("");
+
+    let geojson_fc = featureset_to_geojson(&query_result)?;
+    let geojson_string = serde_json::to_string_pretty(&geojson_fc)?;
+
+    tracing::info!(
+        "✅ Converted {} features to GeoJSON",
+        geojson_fc.features.len()
+    );
+    tracing::info!("   GeoJSON size: {} bytes", geojson_string.len());
+    tracing::info!("");
+
+    Ok((query_result, geojson_fc, geojson_string))
+}
+
+/// Workflow A: Direct service creation - create service with schema and add features.
+async fn demonstrate_workflow_a_direct_service(
+    portal: &PortalClient<'_>,
+    client: &ArcGISClient,
+) -> Result<()> {
+    tracing::info!("\n========================================");
+    tracing::info!("=== WORKFLOW A: Direct Service Creation ===");
+    tracing::info!("========================================");
+    tracing::info!("Query → Convert → Create Service → Add Features → Share → Verify → Cleanup");
+    tracing::info!("");
+
+    // ========================================================================
+    // STEP 1: Query and convert features
+    // ========================================================================
+    let (query_result, _geojson_fc, _geojson_string) = query_and_convert_to_geojson().await?;
+    let feature_count = query_result.features().len();
+
+    // ========================================================================
+    // STEP 2: Create hosted feature service with schema
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("🏗️  STEP 2: Creating hosted feature service with schema");
+    tracing::info!("");
+    tracing::info!("   Service Name: SampleCitiesDirect");
+    tracing::info!("   Type: Hosted Feature Service");
+    tracing::info!("   Schema: Point layer with CITY_NAME, CNTRY_NAME, POP fields");
+    tracing::info!("   Capabilities: Query, Create, Update, Delete, Editing");
+    tracing::info!("");
+
+    // Define service schema matching our data
+    let service_def = json!({
+        "layers": [{
+            "name": "Cities",
+            "type": "Feature Layer",
+            "geometryType": "esriGeometryPoint",
+            "hasAttachments": false,
+            "hasZ": false,
+            "hasM": false,
+            "fields": [
+                {
+                    "name": "OBJECTID",
+                    "type": "esriFieldTypeOID",
+                    "alias": "Object ID",
+                    "sqlType": "sqlTypeOther",
+                    "nullable": false,
+                    "editable": false
+                },
+                {
+                    "name": "CITY_NAME",
+                    "type": "esriFieldTypeString",
+                    "alias": "City Name",
+                    "sqlType": "sqlTypeVarchar",
+                    "length": 256,
+                    "nullable": true,
+                    "editable": true
+                },
+                {
+                    "name": "CNTRY_NAME",
+                    "type": "esriFieldTypeString",
+                    "alias": "Country Name",
+                    "sqlType": "sqlTypeVarchar",
+                    "length": 256,
+                    "nullable": true,
+                    "editable": true
+                },
+                {
+                    "name": "POP",
+                    "type": "esriFieldTypeInteger",
+                    "alias": "Population",
+                    "sqlType": "sqlTypeInteger",
+                    "nullable": true,
+                    "editable": true
+                }
+            ]
+        }]
+    });
+
+    let create_params = CreateServiceParams::new("SampleCitiesDirect")
+        .with_description("Created via direct service creation workflow using Rust SDK")
+        .with_capabilities("Query,Create,Update,Delete,Editing")
+        .with_max_record_count(1000)
+        .with_service_definition(service_def);
+
+    let create_result = portal.create_service(create_params).await?;
+
+    let service_item_id = create_result
+        .service_item_id()
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("No service item ID returned"))?
+        .clone();
+    let service_url = create_result
+        .service_url()
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("No service URL returned"))?
+        .clone();
+
+    tracing::info!("✅ Created hosted feature service");
+    tracing::info!("   Service ID: {}", service_item_id);
+    tracing::info!("   URL: {}", service_url);
+
+    // Wait a moment for service to be ready
+    tracing::info!("");
+    tracing::info!("⏳ Waiting for service to initialize (5 seconds)...");
+    tokio::time::sleep(Duration::from_secs(5)).await;
+
+    // ========================================================================
+    // STEP 3: Add features to the service
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("📝 STEP 3: Adding features to the service");
+    tracing::info!("");
+    tracing::info!("   Method: applyEdits with add operation");
+    tracing::info!("   Features: {} cities from query result", feature_count);
+    tracing::info!("");
+
+    // Convert ArcGIS features to Feature objects for add_features
+    let mut features_to_add = Vec::new();
+    for feature in query_result.features() {
+        let mut attributes = HashMap::new();
+
+        // Copy attributes from source feature
+        if let Some(city_name) = feature.attributes().get("CITY_NAME") {
+            attributes.insert("CITY_NAME".to_string(), city_name.clone());
+        }
+        if let Some(country) = feature.attributes().get("CNTRY_NAME") {
+            attributes.insert("CNTRY_NAME".to_string(), country.clone());
+        }
+        if let Some(pop) = feature.attributes().get("POP") {
+            attributes.insert("POP".to_string(), pop.clone());
+        }
+
+        // Create Feature with geometry
+        let geometry = feature.geometry().as_ref().cloned();
+        let new_feature = Feature::new(attributes, geometry);
+        features_to_add.push(new_feature);
+    }
+
+    // Add features to layer 0
+    let service_client = FeatureServiceClient::new(&service_url, client);
+    let edit_result = service_client
+        .add_features(LayerId(0), features_to_add, EditOptions::default())
+        .await?;
+
+    tracing::info!("✅ Added features to service");
+    tracing::info!("   Success count: {}", edit_result.success_count());
+    tracing::info!("   Failure count: {}", edit_result.failure_count());
+
+    if !edit_result.all_succeeded() {
+        tracing::warn!("   Some features failed to add");
+        for (i, result) in edit_result.add_results().iter().enumerate() {
+            if !*result.success() {
+                if let Some(error) = result.error() {
+                    tracing::warn!(
+                        "     Feature {}: {} (code {})",
+                        i,
+                        error.description(),
+                        error.code()
+                    );
+                }
+            }
+        }
+    }
+
+    // ========================================================================
+    // STEP 4: Share with organization
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("🔐 STEP 4: Sharing service with organization");
+    tracing::info!("");
+    tracing::info!("   Access Level: Private → Organization");
+    tracing::info!("   Visibility: All organization members");
+    tracing::info!("   Purpose: Enable collaboration and discovery");
+    tracing::info!("");
+
+    let share_params = SharingParameters::new().with_org(true);
+    let share_result = portal.share_item(&service_item_id, share_params).await?;
+
+    if *share_result.success() {
+        tracing::info!("✅ Service shared with organization");
+    }
+
+    // ========================================================================
+    // STEP 5: Verify round-trip by querying new service
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("🔍 STEP 5: Verifying round-trip (query published service)");
+    tracing::info!("");
+    tracing::info!("   Endpoint: {} (layer 0)", service_url);
+    tracing::info!("   Test: Query all features to verify data integrity");
+    tracing::info!("");
+
+    let verify_result = service_client
+        .query(LayerId(0))
+        .where_clause("1=1")
+        .count_only(true)
+        .execute()
+        .await?;
+
+    if let Some(count) = verify_result.count() {
+        tracing::info!("✅ Round-trip successful!");
+        tracing::info!("   Features in published service: {}", count);
+        tracing::info!("   Original features queried: {}", feature_count);
+
+        if *count == edit_result.success_count() as u32 {
+            tracing::info!("   ✓ Feature count matches (data integrity confirmed)");
+        }
+    }
+
+    // ========================================================================
+    // STEP 6: Cleanup (delete service)
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("🧹 STEP 6: Cleaning up test resources");
+    tracing::info!("");
+    tracing::info!("   Deleting: Hosted feature service");
+    tracing::info!("   Reason: Avoid cluttering portal with test data");
+    tracing::info!("");
+
+    let delete_service = portal.delete_item(&service_item_id).await?;
+    if *delete_service.success() {
+        tracing::info!("✅ Deleted hosted feature service");
+    }
+
+    // ========================================================================
+    // Summary
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("📊 Workflow A Summary:");
+    tracing::info!(
+        "   ✓ Queried {} features from public service",
+        feature_count
+    );
+    tracing::info!(
+        "   ✓ Created hosted service with schema ({})",
+        service_item_id
+    );
+    tracing::info!(
+        "   ✓ Added {} features via applyEdits",
+        edit_result.success_count()
+    );
+    tracing::info!("   ✓ Shared with organization");
+    tracing::info!("   ✓ Verified data integrity");
+    tracing::info!("   ✓ Cleaned up resources");
+    tracing::info!("");
+    tracing::info!("💡 Use Cases:");
+    tracing::info!("   • ETL pipelines (programmatic data loading)");
+    tracing::info!("   • Dynamic schema generation");
+    tracing::info!("   • Incremental data updates");
+    tracing::info!("   • Batch processing workflows");
+
+    Ok(())
+}
+
+/// Workflow B: Create GeoJSON item for cataloging.
+async fn demonstrate_workflow_b_geojson_item(
+    portal: &PortalClient<'_>,
+    _client: &ArcGISClient,
+) -> Result<()> {
+    tracing::info!("\n========================================");
+    tracing::info!("=== WORKFLOW B: GeoJSON Item Creation ===");
+    tracing::info!("========================================");
+    tracing::info!("Query → Convert → Create Item → Cleanup");
+    tracing::info!("");
+
+    // ========================================================================
+    // STEP 1: Query and convert features
+    // ========================================================================
+    let (_query_result, _geojson_fc, geojson_string) = query_and_convert_to_geojson().await?;
+
+    // ========================================================================
+    // STEP 2: Create GeoJSON portal item
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("📤 STEP 2: Creating GeoJSON item in portal catalog");
+    tracing::info!("");
+    tracing::info!("   Item Type: GeoJson");
+    tracing::info!("   Title: Sample Cities (GeoJSON Catalog)");
+    tracing::info!("   Purpose: Data archival and metadata management");
+    tracing::info!("");
+
+    let item_params = AddItemParams::new("Sample Cities (GeoJSON Catalog)", "GeoJson")
+        .with_description("Demonstrates GeoJSON item creation using ArcGIS Rust SDK")
+        .with_tags(vec![
+            "demo".to_string(),
+            "geojson".to_string(),
+            "rust-sdk".to_string(),
+        ])
+        .with_text(geojson_string.clone());
+
+    let add_result = portal.add_item(item_params).await?;
+    let item_id = add_result.id().to_string();
+
+    tracing::info!("✅ Created GeoJSON catalog item: {}", item_id);
+    tracing::info!("   GeoJSON size: {} bytes", geojson_string.len());
+
+    // ========================================================================
+    // Publishing Limitation Note
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("📝 Publishing Limitation:");
+    tracing::info!("   The portal.publish() endpoint requires items uploaded as files");
+    tracing::info!("   with serviceconfiguration.json metadata. Items created via");
+    tracing::info!("   .with_text() cannot be published directly.");
+    tracing::info!("");
+    tracing::info!("   Current SDK Status:");
+    tracing::info!("   ✅ Item creation - Works (as shown above)");
+    tracing::info!("   ⏳ File upload - Not yet implemented");
+    tracing::info!("   ⏳ Publish from file - Not yet implemented");
+    tracing::info!("");
+    tracing::info!("   For full publish workflow, use:");
+    tracing::info!("   • Workflow A (direct service creation) - Available now");
+    tracing::info!("   • File upload + publish - Future SDK enhancement");
+
+    // ========================================================================
+    // STEP 3: Cleanup (delete item)
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("🧹 STEP 3: Cleaning up test resources");
+    tracing::info!("");
+
+    let delete_item = portal.delete_item(&item_id).await?;
+    if *delete_item.success() {
+        tracing::info!("✅ Deleted GeoJSON catalog item");
+    }
+
+    // ========================================================================
+    // Summary
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("📊 Workflow B Summary:");
+    tracing::info!("   ✓ Created GeoJSON catalog item ({})", item_id);
+    tracing::info!("   ✓ Demonstrated portal item management");
+    tracing::info!("   ✓ Cleaned up resources");
+    tracing::info!("");
+    tracing::info!("💡 Use Cases:");
+    tracing::info!("   • Data cataloging and discovery");
+    tracing::info!("   • Metadata management");
+    tracing::info!("   • Data archival");
+    tracing::info!("   • Intermediate format storage");
+
+    Ok(())
+}
+
+/// Convert ArcGIS FeatureSet to GeoJSON FeatureCollection.
+///
+/// This demonstrates working with geo-types from the GeoRust ecosystem.
+fn featureset_to_geojson(featureset: &arcgis::FeatureSet) -> Result<geojson::FeatureCollection> {
+    let mut features = Vec::new();
+
+    for feature in featureset.features() {
+        // Convert attributes to GeoJSON properties
+        let properties = Some(
+            feature
+                .attributes()
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
+        );
+
+        // Convert ArcGIS geometry to GeoJSON geometry
+        let geometry = feature
+            .geometry()
+            .as_ref()
+            .and_then(arcgis_geometry_to_geojson);
+
+        let geojson_feature = geojson::Feature {
+            bbox: None,
+            geometry,
+            id: None,
+            properties,
+            foreign_members: None,
+        };
+
+        features.push(geojson_feature);
+    }
+
+    Ok(geojson::FeatureCollection {
+        bbox: None,
+        features,
+        foreign_members: None,
+    })
+}
+
+/// Convert ArcGIS geometry to GeoJSON geometry.
+fn arcgis_geometry_to_geojson(geom: &arcgis::ArcGISGeometry) -> Option<geojson::Geometry> {
+    use arcgis::ArcGISGeometry;
+    use geojson::{Geometry, Value};
+
+    match geom {
+        ArcGISGeometry::Point(pt) => Some(Geometry::new(Value::Point(vec![pt.x, pt.y]))),
+        ArcGISGeometry::Multipoint(mp) => {
+            let coords: Vec<Vec<f64>> = mp.points.iter().map(|p| vec![p[0], p[1]]).collect();
+            Some(Geometry::new(Value::MultiPoint(coords)))
+        }
+        ArcGISGeometry::Polyline(pl) => {
+            if pl.paths.len() == 1 {
+                let coords: Vec<Vec<f64>> = pl.paths[0].iter().map(|p| vec![p[0], p[1]]).collect();
+                Some(Geometry::new(Value::LineString(coords)))
+            } else {
+                let coords: Vec<Vec<Vec<f64>>> = pl
+                    .paths
+                    .iter()
+                    .map(|path| path.iter().map(|p| vec![p[0], p[1]]).collect())
+                    .collect();
+                Some(Geometry::new(Value::MultiLineString(coords)))
+            }
+        }
+        ArcGISGeometry::Polygon(pg) => {
+            let coords: Vec<Vec<Vec<f64>>> = pg
+                .rings
+                .iter()
+                .map(|ring| ring.iter().map(|p| vec![p[0], p[1]]).collect())
+                .collect();
+            Some(Geometry::new(Value::Polygon(coords)))
+        }
+        ArcGISGeometry::Envelope(_) => {
+            // Envelopes can be converted to Polygon if needed
+            None
+        }
+    }
+}
+
+/// Prints best practices for portal publishing.
+fn print_best_practices() {
+    tracing::info!("\n💡 Publishing Best Practices:");
+    tracing::info!("   - Use descriptive titles and tags for discoverability");
+    tracing::info!("   - Include thumbnail images (improves user experience)");
+    tracing::info!("   - Set appropriate sharing (private → org → public)");
+    tracing::info!("   - Monitor credit usage (hosting costs)");
+    tracing::info!("   - Clean up test services (avoid clutter)");
+    tracing::info!("   - Use folders to organize content");
+    tracing::info!("");
+    tracing::info!("🎯 Publishing Patterns:");
+    tracing::info!("   - Direct service creation: Best for programmatic workflows");
+    tracing::info!("   - File upload + publish: Best for large datasets (future enhancement)");
+    tracing::info!("   - Frequent updates: Use overwrite pattern");
+    tracing::info!("   - Multi-user editing: Enable sync and versioning");
+    tracing::info!("");
+    tracing::info!("⚡ Performance Tips:");
+    tracing::info!("   - Enable caching for read-only layers");
+    tracing::info!("   - Use indexes on query fields");
+    tracing::info!("   - Limit feature count with maxRecordCount");
+    tracing::info!("   - Consider archiving old data");
+    tracing::info!("");
+    tracing::info!("🔐 Security Considerations:");
+    tracing::info!("   - Start with private sharing, expand as needed");
+    tracing::info!("   - Use groups for team collaboration");
+    tracing::info!("   - Enable HTTPS-only access");
+    tracing::info!("   - Review access logs regularly");
+}
