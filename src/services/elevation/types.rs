@@ -14,33 +14,40 @@ pub struct ProfileParameters {
     input_geometry: String,
 
     /// Geometry type.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     geometry_type: Option<String>,
 
     /// DEM resolution (FINEST, 10m, 30m, 90m).
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "DEMResolution")]
     dem_resolution: Option<String>,
 
     /// Profile ID field for grouping.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "ProfileIDField")]
     profile_id_field: Option<String>,
 
     /// Return first point elevation.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     return_first_point: Option<bool>,
 
     /// Return last point elevation.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     return_last_point: Option<bool>,
 
     /// Spatial reference WKID.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "inSR")]
     in_sr: Option<u32>,
 
     /// Output spatial reference WKID.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "outSR")]
     out_sr: Option<u32>,
@@ -73,28 +80,34 @@ pub struct SummarizeElevationParameters {
     input_geometry: String,
 
     /// Geometry type.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     geometry_type: Option<String>,
 
     /// DEM resolution (FINEST, 10m, 30m, 90m).
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "DEMResolution")]
     dem_resolution: Option<String>,
 
     /// Include slope statistics.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     include_slope: Option<bool>,
 
     /// Include aspect statistics.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     include_aspect: Option<bool>,
 
     /// Spatial reference WKID.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "inSR")]
     in_sr: Option<u32>,
 
     /// Output spatial reference WKID.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "outSR")]
     out_sr: Option<u32>,
@@ -135,48 +148,59 @@ pub struct ViewshedParameters {
     input_points: String,
 
     /// Geometry type.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     geometry_type: Option<String>,
 
     /// Maximum viewing distance in meters.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     maximum_distance: Option<f64>,
 
     /// Maximum horizontal viewing angle (degrees).
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     maximum_horizontal_angle: Option<f64>,
 
     /// Maximum vertical angle (degrees).
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     maximum_vertical_angle: Option<f64>,
 
     /// Observer height above ground (meters).
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     observer_height: Option<f64>,
 
     /// Observer offset (additional height).
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     observer_offset: Option<f64>,
 
     /// Surface offset (target height above ground).
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     surface_offset: Option<f64>,
 
     /// DEM resolution (FINEST, 10m, 30m, 90m).
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "DEMResolution")]
     dem_resolution: Option<String>,
 
     /// Generalize viewshed polygons.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     generalize: Option<bool>,
 
     /// Spatial reference WKID.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "inSR")]
     in_sr: Option<u32>,
 
     /// Output spatial reference WKID.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "outSR")]
     out_sr: Option<u32>,

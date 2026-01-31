@@ -63,7 +63,7 @@ impl<'a> ElevationClient<'a> {
     /// ```
     pub fn new(client: &'a ArcGISClient) -> Self {
         ElevationClient {
-            url: "https://elevation.arcgis.com/arcgis/rest/services/Tools/Elevation/GPServer"
+            url: "https://elevation.arcgis.com/arcgis/rest/services/Tools/ElevationSync/GPServer"
                 .to_string(),
             client,
         }
