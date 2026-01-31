@@ -124,6 +124,10 @@ path = "examples/public/spatial_query.rs"
 name = "map_service_basics"
 path = "examples/public/map_service_basics.rs"
 
+[[example]]
+name = "vector_tiles"
+path = "examples/public/vector_tiles.rs"
+
 # Enterprise examples - Authentication & Setup
 [[example]]
 name = "basic_client"
