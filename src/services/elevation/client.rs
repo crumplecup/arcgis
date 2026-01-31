@@ -141,14 +141,18 @@ impl<'a> ElevationClient<'a> {
 
         let profile_url = format!("{}/Profile/execute", self.url);
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&profile_url)
             .query(&[("f", "json")])
-            .query(&params)
-            .send()
-            .await?;
+            .query(&params);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let result: ProfileResult = response.json().await?;
 
@@ -206,14 +210,18 @@ impl<'a> ElevationClient<'a> {
 
         let summarize_url = format!("{}/SummarizeElevation/execute", self.url);
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&summarize_url)
             .query(&[("f", "json")])
-            .query(&params)
-            .send()
-            .await?;
+            .query(&params);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let result: SummarizeElevationResult = response.json().await?;
 
@@ -277,14 +285,18 @@ impl<'a> ElevationClient<'a> {
 
         let viewshed_url = format!("{}/Viewshed/execute", self.url);
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&viewshed_url)
             .query(&[("f", "json")])
-            .query(&params)
-            .send()
-            .await?;
+            .query(&params);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let result: ViewshedResult = response.json().await?;
 
