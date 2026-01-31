@@ -24,7 +24,7 @@
 //! cargo run --example basic_client
 //! ```
 
-use arcgis::{ApiKeyAuth, ArcGISClient};
+use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient};
 
 fn main() -> anyhow::Result<()> {
     // Initialize tracing subscriber for structured logging
@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
 
     // Load API key from environment (.env file automatically loaded)
     tracing::info!("Creating API key authentication provider from environment");
-    let auth = ApiKeyAuth::from_env()?;
+    let auth = ApiKeyAuth::from_env(ApiKeyTier::Public)?;
 
     // Create the ArcGIS client
     tracing::info!("Creating ArcGIS client");

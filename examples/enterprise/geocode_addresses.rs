@@ -46,7 +46,7 @@
 //! - **Search interfaces**: Provide autocomplete for location search
 
 use anyhow::Result;
-use arcgis::{ApiKeyAuth, ArcGISClient, ArcGISPoint, GeocodeServiceClient};
+use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISPoint, GeocodeServiceClient};
 
 /// ArcGIS World Geocoding Service URL
 const WORLD_GEOCODE_SERVICE: &str =
@@ -67,7 +67,7 @@ async fn main() -> Result<()> {
 
     // Create geocoding service client (automatically loads .env)
     tracing::debug!("Creating geocoding service client");
-    let auth = ApiKeyAuth::from_env()?;
+    let auth = ApiKeyAuth::from_env(ApiKeyTier::Location)?;
     let client = ArcGISClient::new(auth);
     let geocoder = GeocodeServiceClient::new(WORLD_GEOCODE_SERVICE, &client);
 

@@ -41,8 +41,8 @@
 
 use anyhow::Result;
 use arcgis::{
-    ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, ClosestFacilityParameters, NALocation,
-    RouteParameters, RoutingServiceClient, ServiceAreaParameters, TravelDirection,
+    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISGeometry, ArcGISPoint, ClosestFacilityParameters,
+    NALocation, RouteParameters, RoutingServiceClient, ServiceAreaParameters, TravelDirection,
 };
 
 /// World Routing Service endpoints
@@ -66,7 +66,7 @@ async fn main() -> Result<()> {
 
     // Create authenticated client (automatically loads .env)
     tracing::debug!("Creating authenticated client");
-    let auth = ApiKeyAuth::from_env()?;
+    let auth = ApiKeyAuth::from_env(ApiKeyTier::Location)?;
     let client = ArcGISClient::new(auth);
 
     // Demonstrate routing and navigation operations
