@@ -60,10 +60,11 @@
 //! - Add features programmatically using applyEdits
 //! - Best for: Programmatic data loading, ETL pipelines, dynamic schemas
 //!
-//! **Workflow B: GeoJSON Item Creation** (Demonstrated)
-//! - Create GeoJSON item in portal catalog
-//! - Useful for: Data archival, cataloging, metadata management
-//! - Note: Full publish from GeoJSON requires file upload (future SDK enhancement)
+//! **Workflow B: Item Data Management** (Demonstrated)
+//! - Create portal item with metadata
+//! - Upload file data to item
+//! - Retrieve and verify stored data
+//! - Best for: Data archival, file storage, backup/restore
 //!
 //! **Item Types:**
 //! - Feature Service: Vector data with attributes (points, lines, polygons)
@@ -116,12 +117,12 @@ async fn main() -> Result<()> {
     tracing::info!("✅ Authenticated with API key (ARCGIS_CONTENT_KEY)");
     tracing::info!("");
 
-    // Demonstrate two different publishing workflows
-    tracing::info!("\n💡 This example demonstrates TWO workflows for publishing spatial data:");
+    // Demonstrate two different workflows
+    tracing::info!("\n💡 This example demonstrates TWO workflows for portal operations:");
     tracing::info!(
         "   A) Direct Service Creation - Create service with schema, add features programmatically"
     );
-    tracing::info!("   B) GeoJSON Item - Create catalog item (full publish requires file upload)");
+    tracing::info!("   B) Item Data Management - Upload and retrieve file data from portal items");
     tracing::info!("");
 
     demonstrate_workflow_a_direct_service(&portal, &client).await?;
@@ -444,76 +445,110 @@ async fn demonstrate_workflow_a_direct_service(
     Ok(())
 }
 
-/// Workflow B: Create GeoJSON item for cataloging.
+/// Workflow B: Portal item data management - upload and retrieve file data.
 async fn demonstrate_workflow_b_geojson_item(
     portal: &PortalClient<'_>,
     _client: &ArcGISClient,
 ) -> Result<()> {
     tracing::info!("\n========================================");
-    tracing::info!("=== WORKFLOW B: GeoJSON Item Creation ===");
+    tracing::info!("=== WORKFLOW B: Item Data Management ===");
     tracing::info!("========================================");
-    tracing::info!("Query → Convert → Create Item → Cleanup");
+    tracing::info!("Query → Convert → Create Item → Upload Data → Retrieve Data → Cleanup");
     tracing::info!("");
 
     // ========================================================================
     // STEP 1: Query and convert features
     // ========================================================================
     let (_query_result, _geojson_fc, geojson_string) = query_and_convert_to_geojson().await?;
+    let data_size = geojson_string.len();
 
     // ========================================================================
-    // STEP 2: Create GeoJSON portal item
+    // STEP 2: Create portal item (metadata only, no data yet)
     // ========================================================================
     tracing::info!("");
-    tracing::info!("📤 STEP 2: Creating GeoJSON item in portal catalog");
+    tracing::info!("📋 STEP 2: Creating portal item (metadata only)");
     tracing::info!("");
     tracing::info!("   Item Type: GeoJson");
-    tracing::info!("   Title: Sample Cities (GeoJSON Catalog)");
-    tracing::info!("   Purpose: Data archival and metadata management");
+    tracing::info!("   Title: Sample Cities (Data Management Demo)");
+    tracing::info!("   Purpose: Demonstrate file data upload and retrieval");
     tracing::info!("");
 
-    let item_params = AddItemParams::new("Sample Cities (GeoJSON Catalog)", "GeoJson")
-        .with_description("Demonstrates GeoJSON item creation using ArcGIS Rust SDK")
+    let item_params = AddItemParams::new("Sample Cities (Data Management Demo)", "GeoJson")
+        .with_description("Demonstrates item data management using ArcGIS Rust SDK")
         .with_tags(vec![
             "demo".to_string(),
-            "geojson".to_string(),
+            "data-management".to_string(),
             "rust-sdk".to_string(),
-        ])
-        .with_text(geojson_string.clone());
+        ]);
 
     let add_result = portal.add_item(item_params).await?;
     let item_id = add_result.id().to_string();
 
-    tracing::info!("✅ Created GeoJSON catalog item: {}", item_id);
-    tracing::info!("   GeoJSON size: {} bytes", geojson_string.len());
+    tracing::info!("✅ Created portal item: {}", item_id);
+    tracing::info!("   Status: Metadata only (no data yet)");
 
     // ========================================================================
-    // Publishing Limitation Note
+    // STEP 3: Upload file data to item
     // ========================================================================
     tracing::info!("");
-    tracing::info!("📝 Publishing Limitation:");
-    tracing::info!("   The portal.publish() endpoint requires items uploaded as files");
-    tracing::info!("   with serviceconfiguration.json metadata. Items created via");
-    tracing::info!("   .with_text() cannot be published directly.");
+    tracing::info!("📤 STEP 3: Uploading GeoJSON data to item");
     tracing::info!("");
-    tracing::info!("   Current SDK Status:");
-    tracing::info!("   ✅ Item creation - Works (as shown above)");
-    tracing::info!("   ⏳ File upload - Not yet implemented");
-    tracing::info!("   ⏳ Publish from file - Not yet implemented");
+    tracing::info!("   Method: update_item_data()");
+    tracing::info!("   Data size: {} bytes", data_size);
+    tracing::info!("   Format: GeoJSON (application/json)");
     tracing::info!("");
-    tracing::info!("   For full publish workflow, use:");
-    tracing::info!("   • Workflow A (direct service creation) - Available now");
-    tracing::info!("   • File upload + publish - Future SDK enhancement");
+
+    let geojson_bytes = geojson_string.into_bytes();
+    let update_result = portal.update_item_data(&item_id, geojson_bytes).await?;
+
+    if *update_result.success() {
+        tracing::info!("✅ Uploaded data successfully");
+        if let Some(id) = update_result.id() {
+            tracing::info!("   Item ID: {}", id);
+        }
+    }
 
     // ========================================================================
-    // STEP 3: Cleanup (delete item)
+    // STEP 4: Retrieve and verify stored data
     // ========================================================================
     tracing::info!("");
-    tracing::info!("🧹 STEP 3: Cleaning up test resources");
+    tracing::info!("📥 STEP 4: Retrieving data from item");
+    tracing::info!("");
+    tracing::info!("   Method: get_item_data()");
+    tracing::info!("   Purpose: Verify data integrity");
+    tracing::info!("");
+
+    let retrieved_data = portal.get_item_data(&item_id).await?;
+    let retrieved_size = retrieved_data.len();
+
+    tracing::info!("✅ Retrieved data successfully");
+    tracing::info!("   Retrieved size: {} bytes", retrieved_size);
+    tracing::info!("   Original size:  {} bytes", data_size);
+
+    if retrieved_size == data_size {
+        tracing::info!("   ✓ Data integrity verified (sizes match)");
+    } else {
+        tracing::warn!("   ⚠ Size mismatch detected!");
+    }
+
+    // Verify it's valid GeoJSON
+    let retrieved_string = String::from_utf8(retrieved_data.to_vec())?;
+    let parsed_geojson: geojson::FeatureCollection = serde_json::from_str(&retrieved_string)?;
+    tracing::info!(
+        "   ✓ Valid GeoJSON ({} features)",
+        parsed_geojson.features.len()
+    );
+
+    // ========================================================================
+    // STEP 5: Cleanup (delete item)
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("🧹 STEP 5: Cleaning up test resources");
     tracing::info!("");
 
     let delete_item = portal.delete_item(&item_id).await?;
     if *delete_item.success() {
-        tracing::info!("✅ Deleted GeoJSON catalog item");
+        tracing::info!("✅ Deleted portal item and data");
     }
 
     // ========================================================================
@@ -521,15 +556,21 @@ async fn demonstrate_workflow_b_geojson_item(
     // ========================================================================
     tracing::info!("");
     tracing::info!("📊 Workflow B Summary:");
-    tracing::info!("   ✓ Created GeoJSON catalog item ({})", item_id);
-    tracing::info!("   ✓ Demonstrated portal item management");
+    tracing::info!("   ✓ Created portal item (metadata) - {}", item_id);
+    tracing::info!("   ✓ Uploaded {} bytes via update_item_data()", data_size);
+    tracing::info!(
+        "   ✓ Retrieved {} bytes via get_item_data()",
+        retrieved_size
+    );
+    tracing::info!("   ✓ Verified data integrity");
     tracing::info!("   ✓ Cleaned up resources");
     tracing::info!("");
     tracing::info!("💡 Use Cases:");
-    tracing::info!("   • Data cataloging and discovery");
-    tracing::info!("   • Metadata management");
-    tracing::info!("   • Data archival");
-    tracing::info!("   • Intermediate format storage");
+    tracing::info!("   • File storage and retrieval through portal");
+    tracing::info!("   • Data backup and restore operations");
+    tracing::info!("   • Versioned data archival");
+    tracing::info!("   • Sharing data files with organization");
+    tracing::info!("   • Intermediate data storage for workflows");
 
     Ok(())
 }
