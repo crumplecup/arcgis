@@ -1,7 +1,7 @@
 //! Geometry Service client for geometric operations.
 
 use crate::{
-    ArcGISClient, ArcGISEnvelopeV2 as ArcGISEnvelope, ArcGISGeometryV2 as ArcGISGeometry, Result,
+    ArcGISClient, ArcGISEnvelope, ArcGISGeometry, Result,
 };
 use serde::Deserialize;
 use tracing::instrument;

@@ -616,8 +616,8 @@ fn featureset_to_geojson(featureset: &arcgis::FeatureSet) -> Result<geojson::Fea
 }
 
 /// Convert ArcGIS geometry to GeoJSON geometry.
-fn arcgis_geometry_to_geojson(geom: &arcgis::ArcGISGeometryV2) -> Option<geojson::Geometry> {
-    use arcgis::ArcGISGeometryV2 as ArcGISGeometry;
+fn arcgis_geometry_to_geojson(geom: &arcgis::ArcGISGeometry) -> Option<geojson::Geometry> {
+    use arcgis::ArcGISGeometry;
     use geojson::{Geometry, Value};
 
     match geom {

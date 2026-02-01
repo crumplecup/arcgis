@@ -1,7 +1,7 @@
 //! Geocoding service client.
 
 use crate::{
-    ArcGISClient, ArcGISPointV2 as ArcGISPoint, GeocodeResponse, LocationType, Result,
+    ArcGISClient, ArcGISPoint, GeocodeResponse, LocationType, Result,
     ReverseGeocodeResponse, SuggestResponse,
 };
 use tracing::instrument;

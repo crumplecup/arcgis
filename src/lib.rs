@@ -57,8 +57,6 @@ mod auth;
 mod client;
 mod config;
 mod error;
-#[cfg(feature = "geo")]
-mod geo;
 mod geometry;
 mod services;
 mod types;
@@ -72,17 +70,10 @@ pub use error::{
     BuilderError, EnvError, Error, ErrorKind, HttpError, IoError, JsonError, UrlEncodedError,
     UrlError,
 };
-// Old geometry types (will be replaced in Phase 8)
 pub use geometry::{
-    ArcGISEnvelope, ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
+    ArcGISEnvelope, ArcGISGeometry, ArcGISGeometryError, ArcGISGeometryErrorKind,
+    ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline, GeoError, GeometryJsonError,
     SpatialReference,
-};
-
-// New geometry types (temporary V2 suffix during migration)
-pub use geometry::{
-    ArcGISEnvelopeV2, ArcGISGeometryErrorKindV2, ArcGISGeometryErrorV2, ArcGISGeometryV2,
-    ArcGISMultipointV2, ArcGISPointV2, ArcGISPolygonV2, ArcGISPolylineV2, GeoError,
-    GeometryJsonError, SpatialReferenceV2,
 };
 pub use services::{
     AddAttachmentResult, AddItemParams, AddItemResult, AddressCandidate, AlterResponse,
@@ -145,14 +136,6 @@ pub use services::{
     ViewshedParametersBuilder, ViewshedResult,
 };
 pub use types::{AttachmentId, GeometryType, LayerId, ObjectId, SpatialRel};
-
-// ESRI Geometry types (feature-gated)
-#[cfg(feature = "geo")]
-pub use geo::{
-    EsriEnvelope, EsriGeometry, EsriGeometryError, EsriGeometryErrorKind, EsriMultipoint,
-    EsriPoint, EsriPolygon, EsriPolyline, GeoError, GeometryJsonError,
-    SpatialReference as EsriSpatialReference,
-};
 
 /// Result type alias using this crate's [`Error`] type.
 pub type Result<T> = std::result::Result<T, Error>;

@@ -41,8 +41,8 @@
 
 use anyhow::Result;
 use arcgis::{
-    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISGeometryV2 as ArcGISGeometry,
-    ArcGISPointV2 as ArcGISPoint, ClosestFacilityParameters, NALocation, RouteParameters,
+    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISGeometry,
+    ArcGISPoint, ClosestFacilityParameters, NALocation, RouteParameters,
     RoutingServiceClient, ServiceAreaParameters, TravelDirection,
 };
 
@@ -278,7 +278,7 @@ fn print_best_practices() {
 /// Helper to create a route stop/location
 fn create_stop(lon: f64, lat: f64, name: &str) -> NALocation {
     NALocation::new(ArcGISGeometry::Point(
-        ArcGISPoint::new(lon, lat).with_spatial_reference(Some(arcgis::SpatialReferenceV2::wgs84())),
+        ArcGISPoint::new(lon, lat).with_spatial_reference(Some(arcgis::SpatialReference::wgs84())),
     ))
     .with_name(name.to_string())
 }
@@ -286,7 +286,7 @@ fn create_stop(lon: f64, lat: f64, name: &str) -> NALocation {
 /// Helper to create a generic location (facility or incident)
 fn create_location(lon: f64, lat: f64, name: &str) -> NALocation {
     NALocation::new(ArcGISGeometry::Point(
-        ArcGISPoint::new(lon, lat).with_spatial_reference(Some(arcgis::SpatialReferenceV2::wgs84())),
+        ArcGISPoint::new(lon, lat).with_spatial_reference(Some(arcgis::SpatialReference::wgs84())),
     ))
     .with_name(name.to_string())
 }

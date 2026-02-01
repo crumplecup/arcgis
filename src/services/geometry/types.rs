@@ -1,6 +1,6 @@
 //! Types for geometry service operations.
 
-use crate::ArcGISGeometryV2 as ArcGISGeometry;
+use crate::ArcGISGeometry;
 use derive_getters::Getters;
 use serde::{Deserialize, Serialize};
 

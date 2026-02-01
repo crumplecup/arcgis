@@ -1,6 +1,6 @@
 //! Types for routing and network analysis operations.
 
-use crate::ArcGISGeometryV2 as ArcGISGeometry;
+use crate::ArcGISGeometry;
 use derive_getters::Getters;
 use serde::{Deserialize, Serialize};
 
@@ -615,7 +615,7 @@ impl Route {
             })
             .unwrap_or_else(|| {
                 // Default to empty point if conversion fails
-                ArcGISGeometry::Point(crate::ArcGISPointV2::new(0.0, 0.0))
+                ArcGISGeometry::Point(crate::ArcGISPoint::new(0.0, 0.0))
             });
 
         tracing::debug!(
@@ -697,7 +697,7 @@ impl Stop {
             })
             .unwrap_or_else(|| {
                 // Default to empty point if conversion fails
-                ArcGISGeometry::Point(crate::ArcGISPointV2::new(0.0, 0.0))
+                ArcGISGeometry::Point(crate::ArcGISPoint::new(0.0, 0.0))
             });
 
         let arrival_time = None; // Not directly in attributes

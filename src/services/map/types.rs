@@ -1,7 +1,7 @@
 //! Types for map service operations.
 
 use crate::{
-    ArcGISGeometryV2 as ArcGISGeometry, GeometryType, SpatialReferenceV2 as SpatialReference,
+    ArcGISGeometry, GeometryType, SpatialReference,
 };
 use derive_getters::Getters;
 use derive_setters::Setters;

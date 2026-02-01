@@ -1,13 +1,13 @@
 //! Types for Feature Service operations.
 
-use crate::{ArcGISGeometryV2 as ArcGISGeometry, GeometryType, ObjectId, SpatialRel};
+use crate::{ArcGISGeometry, GeometryType, ObjectId, SpatialRel};
 use derive_setters::Setters;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Serialization helpers for URL query parameters.
 mod serde_helpers {
-    use crate::ArcGISGeometryV2 as ArcGISGeometry;
+    use crate::ArcGISGeometry;
     use serde::Serializer;
 
     /// Serializes a Vec<String> as a comma-separated string for URL query parameters.

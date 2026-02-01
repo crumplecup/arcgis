@@ -17,9 +17,9 @@
 //! ```
 
 use arcgis::{
-    ArcGISClient, ArcGISEnvelopeV2 as ArcGISEnvelope, ArcGISGeometryV2 as ArcGISGeometry,
-    ArcGISPolygonV2 as ArcGISPolygon, FeatureServiceClient, GeometryType, LayerId, NoAuth,
-    SpatialReferenceV2 as SpatialReference, SpatialRel,
+    ArcGISClient, ArcGISEnvelope, ArcGISGeometry,
+    ArcGISPolygon, FeatureServiceClient, GeometryType, LayerId, NoAuth,
+    SpatialReference, SpatialRel,
 };
 
 /// Public World Cities feature service (no auth required).

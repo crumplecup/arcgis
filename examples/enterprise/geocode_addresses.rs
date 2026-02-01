@@ -47,7 +47,7 @@
 
 use anyhow::Result;
 use arcgis::{
-    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISPointV2 as ArcGISPoint, GeocodeServiceClient,
+    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISPoint, GeocodeServiceClient,
 };
 
 /// ArcGIS World Geocoding Service URL

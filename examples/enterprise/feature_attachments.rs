@@ -57,7 +57,7 @@
 
 use anyhow::{Context, Result};
 use arcgis::{
-    ApiKeyAuth, ArcGISClient, ArcGISGeometryV2 as ArcGISGeometry, ArcGISPointV2 as ArcGISPoint,
+    ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint,
     AttachmentId, AttachmentSource, CreateServiceParams, DownloadTarget, EditOptions, EnvConfig,
     Feature, FeatureServiceClient, ObjectId, PortalClient,
 };

@@ -1,6 +1,6 @@
 //! Geocoding service types.
 
-use crate::{ArcGISPointV2 as ArcGISPoint, SpatialReferenceV2 as SpatialReference};
+use crate::{ArcGISPoint, SpatialReference};
 use derive_getters::Getters;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

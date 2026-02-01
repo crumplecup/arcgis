@@ -3,9 +3,9 @@
 //! This module provides conversion from GeoJSON responses to ArcGIS FeatureSet format.
 
 use crate::{
-    ArcGISGeometryV2 as ArcGISGeometry, ArcGISMultipointV2 as ArcGISMultipoint,
-    ArcGISPointV2 as ArcGISPoint, ArcGISPolygonV2 as ArcGISPolygon,
-    ArcGISPolylineV2 as ArcGISPolyline, Error, ErrorKind, Feature, FeatureSet, Result,
+    ArcGISGeometry, ArcGISMultipoint,
+    ArcGISPoint, ArcGISPolygon,
+    ArcGISPolyline, Error, ErrorKind, Feature, FeatureSet, Result,
 };
 use std::collections::HashMap;
 use tracing::instrument;

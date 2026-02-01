@@ -49,7 +49,7 @@
 
 use anyhow::Result;
 use arcgis::{
-    ArcGISClient, ArcGISGeometryV2 as ArcGISGeometry, ExportImageParametersBuilder,
+    ArcGISClient, ArcGISGeometry, ExportImageParametersBuilder,
     HistogramParametersBuilder, ImageServiceClient, NoAuth, SampleParametersBuilder,
     geo_types::{Geometry, LineString, Point},
 };
