@@ -1,8 +1,8 @@
 //! Geocoding service client.
 
 use crate::{
-    ArcGISClient, ArcGISPoint, GeocodeResponse, LocationType, Result, ReverseGeocodeResponse,
-    SuggestResponse,
+    ArcGISClient, ArcGISPointV2 as ArcGISPoint, GeocodeResponse, LocationType, Result,
+    ReverseGeocodeResponse, SuggestResponse,
 };
 use tracing::instrument;
 
@@ -34,8 +34,8 @@ use tracing::instrument;
 /// for candidate in candidates.candidates() {
 ///     println!("{}: {}, {} (score: {})",
 ///         candidate.address(),
-///         candidate.location().x,
-///         candidate.location().y,
+///         candidate.location().x(),
+///         candidate.location().y(),
 ///         candidate.score()
 ///     );
 /// }
@@ -345,13 +345,7 @@ impl<'a> GeocodeServiceClient<'a> {
     /// # let auth = ApiKeyAuth::new("YOUR_API_KEY");
     /// # let client = ArcGISClient::new(auth);
     /// # let geocoder = GeocodeServiceClient::new("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer", &client);
-    /// let point = ArcGISPoint {
-    ///     x: -117.196,
-    ///     y: 34.056,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
+    /// let point = ArcGISPoint::new(-117.196, 34.056);
     ///
     /// let response = geocoder.reverse_geocode(&point).await?;
     ///
@@ -361,13 +355,13 @@ impl<'a> GeocodeServiceClient<'a> {
     /// # Ok(())
     /// # }
     /// ```
-    #[instrument(skip(self, location), fields(base_url = %self.base_url, x = location.x, y = location.y))]
+    #[instrument(skip(self, location), fields(base_url = %self.base_url, x = *location.x(), y = *location.y()))]
     pub async fn reverse_geocode(&self, location: &ArcGISPoint) -> Result<ReverseGeocodeResponse> {
-        tracing::debug!(x = location.x, y = location.y, "Reverse geocoding location");
+        tracing::debug!(x = *location.x(), y = *location.y(), "Reverse geocoding location");
 
         let url = format!("{}/reverseGeocode", self.base_url);
 
-        let location_str = format!("{},{}", location.x, location.y);
+        let location_str = format!("{},{}", location.x(), location.y());
 
         tracing::debug!(url = %url, location = %location_str, "Sending reverseGeocode request");
 
@@ -427,35 +421,29 @@ impl<'a> GeocodeServiceClient<'a> {
     /// let geocoder = GeocodeServiceClient::new("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer", &client);
     ///
     /// // Reverse geocode with Web Mercator output
-    /// let point = ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
+    /// let point = ArcGISPoint::new(-122.4194, 37.7749);
     /// let result = geocoder
     ///     .reverse_geocode_with_sr(&point, 3857)  // Web Mercator output
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    #[instrument(skip(self, location), fields(x = location.x, y = location.y, out_sr = out_sr))]
+    #[instrument(skip(self, location), fields(x = *location.x(), y = *location.y(), out_sr = out_sr))]
     pub async fn reverse_geocode_with_sr(
         &self,
         location: &ArcGISPoint,
         out_sr: i32,
     ) -> Result<ReverseGeocodeResponse> {
         tracing::debug!(
-            x = location.x,
-            y = location.y,
+            x = *location.x(),
+            y = *location.y(),
             out_sr = out_sr,
             "Reverse geocoding location with custom SR"
         );
 
         let url = format!("{}/reverseGeocode", self.base_url);
 
-        let location_str = format!("{},{}", location.x, location.y);
+        let location_str = format!("{},{}", location.x(), location.y());
 
         tracing::debug!(url = %url, location = %location_str, "Sending reverseGeocode request");
 

@@ -1,6 +1,6 @@
 //! Image service client implementation.
 
-use crate::{ArcGISClient, ArcGISGeometry, Result};
+use crate::{ArcGISClient, ArcGISGeometryV2 as ArcGISGeometry, Result};
 use tracing::instrument;
 
 use super::types::{
