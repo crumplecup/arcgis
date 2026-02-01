@@ -20,7 +20,9 @@ use tracing::instrument;
 /// let web_mercator = SpatialReference::web_mercator();
 /// assert!(web_mercator.is_projected());
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Getters, derive_builder::Builder)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Getters, derive_builder::Builder,
+)]
 #[builder(setter(into, strip_option))]
 #[serde(rename_all = "camelCase")]
 pub struct SpatialReference {

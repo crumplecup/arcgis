@@ -71,9 +71,8 @@ pub use error::{
     UrlError,
 };
 pub use geometry::{
-    ArcGISEnvelope, ArcGISGeometry, ArcGISGeometryError, ArcGISGeometryErrorKind,
-    ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline, GeoError, GeometryJsonError,
-    SpatialReference,
+    ArcGISEnvelope, ArcGISGeometry, ArcGISGeometryError, ArcGISGeometryErrorKind, ArcGISMultipoint,
+    ArcGISPoint, ArcGISPolygon, ArcGISPolyline, GeoError, GeometryJsonError, SpatialReference,
 };
 pub use services::{
     AddAttachmentResult, AddItemParams, AddItemResult, AddressCandidate, AlterResponse,

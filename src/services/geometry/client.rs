@@ -1,8 +1,6 @@
 //! Geometry Service client for geometric operations.
 
-use crate::{
-    ArcGISClient, ArcGISEnvelope, ArcGISGeometry, Result,
-};
+use crate::{ArcGISClient, ArcGISEnvelope, ArcGISGeometry, Result};
 use serde::Deserialize;
 use tracing::instrument;
 

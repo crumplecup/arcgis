@@ -1,8 +1,8 @@
 //! Query builder for Feature Service queries.
 
 use crate::{
-    ArcGISGeometry, FeatureQueryParams, FeatureServiceClient, FeatureSet,
-    GeometryType, LayerId, ObjectId, ResponseFormat, Result, SpatialRel,
+    ArcGISGeometry, FeatureQueryParams, FeatureServiceClient, FeatureSet, GeometryType, LayerId,
+    ObjectId, ResponseFormat, Result, SpatialRel,
 };
 use tracing::instrument;
 

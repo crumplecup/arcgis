@@ -1,8 +1,8 @@
 //! Geocoding service client.
 
 use crate::{
-    ArcGISClient, ArcGISPoint, GeocodeResponse, LocationType, Result,
-    ReverseGeocodeResponse, SuggestResponse,
+    ArcGISClient, ArcGISPoint, GeocodeResponse, LocationType, Result, ReverseGeocodeResponse,
+    SuggestResponse,
 };
 use tracing::instrument;
 
@@ -357,7 +357,11 @@ impl<'a> GeocodeServiceClient<'a> {
     /// ```
     #[instrument(skip(self, location), fields(base_url = %self.base_url, x = *location.x(), y = *location.y()))]
     pub async fn reverse_geocode(&self, location: &ArcGISPoint) -> Result<ReverseGeocodeResponse> {
-        tracing::debug!(x = *location.x(), y = *location.y(), "Reverse geocoding location");
+        tracing::debug!(
+            x = *location.x(),
+            y = *location.y(),
+            "Reverse geocoding location"
+        );
 
         let url = format!("{}/reverseGeocode", self.base_url);
 

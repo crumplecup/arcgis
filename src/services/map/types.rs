@@ -1,8 +1,6 @@
 //! Types for map service operations.
 
-use crate::{
-    ArcGISGeometry, GeometryType, SpatialReference,
-};
+use crate::{ArcGISGeometry, GeometryType, SpatialReference};
 use derive_getters::Getters;
 use derive_setters::Setters;
 use serde::{Deserialize, Serialize};

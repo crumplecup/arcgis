@@ -4,9 +4,8 @@
 
 use super::feature_collection_p_buffer::*;
 use crate::{
-    ArcGISGeometry, ArcGISMultipoint,
-    ArcGISPoint, ArcGISPolygon,
-    ArcGISPolyline, GeometryType, Result,
+    ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline, GeometryType,
+    Result,
 };
 
 /// Decode a PBF Geometry into an ArcGISGeometry.
