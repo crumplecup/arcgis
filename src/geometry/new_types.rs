@@ -335,7 +335,7 @@ impl From<geo_types::Point> for ArcGISPoint {
 // ============================================================================
 
 impl TryFrom<ArcGISPolyline> for geo_types::MultiLineString {
-    type Error = crate::ArcGISGeometryError;
+    type Error = crate::geometry::new_errors::ArcGISGeometryError;
 
     #[instrument(skip(polyline), fields(path_count = polyline.paths.len()))]
     fn try_from(polyline: ArcGISPolyline) -> Result<Self, Self::Error> {
@@ -423,7 +423,7 @@ impl From<geo_types::MultiLineString> for ArcGISPolyline {
 // ============================================================================
 
 impl TryFrom<ArcGISPolygon> for geo_types::Polygon {
-    type Error = crate::ArcGISGeometryError;
+    type Error = crate::geometry::new_errors::ArcGISGeometryError;
 
     #[instrument(skip(polygon), fields(ring_count = polygon.rings.len()))]
     fn try_from(polygon: ArcGISPolygon) -> Result<Self, Self::Error> {
@@ -541,7 +541,7 @@ impl From<geo_types::MultiPolygon> for ArcGISPolygon {
 // ============================================================================
 
 impl TryFrom<ArcGISMultipoint> for geo_types::MultiPoint {
-    type Error = crate::ArcGISGeometryError;
+    type Error = crate::geometry::new_errors::ArcGISGeometryError;
 
     #[instrument(skip(multipoint), fields(point_count = multipoint.points.len()))]
     fn try_from(multipoint: ArcGISMultipoint) -> Result<Self, Self::Error> {
@@ -634,7 +634,7 @@ impl From<geo_types::Geometry> for ArcGISGeometry {
 }
 
 impl TryFrom<ArcGISGeometry> for geo_types::Geometry {
-    type Error = crate::ArcGISGeometryError;
+    type Error = crate::geometry::new_errors::ArcGISGeometryError;
 
     #[instrument(skip(geom))]
     fn try_from(geom: ArcGISGeometry) -> Result<Self, Self::Error> {

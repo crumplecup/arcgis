@@ -88,7 +88,6 @@ prost = "0.14"
 bytes = "1.5"
 
 # Optional dependencies (enabled by features)
-geo = { version = "0.32", optional = true, features = ["use-serde"] }
 geozero = { version = "0.15", optional = true }
 
 [dev-dependencies]

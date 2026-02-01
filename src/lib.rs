@@ -72,9 +72,17 @@ pub use error::{
     BuilderError, EnvError, Error, ErrorKind, HttpError, IoError, JsonError, UrlEncodedError,
     UrlError,
 };
+// Old geometry types (will be replaced in Phase 8)
 pub use geometry::{
     ArcGISEnvelope, ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
     SpatialReference,
+};
+
+// New geometry types (temporary V2 suffix during migration)
+pub use geometry::{
+    ArcGISEnvelopeV2, ArcGISGeometryErrorKindV2, ArcGISGeometryErrorV2, ArcGISGeometryV2,
+    ArcGISMultipointV2, ArcGISPointV2, ArcGISPolygonV2, ArcGISPolylineV2, GeoError,
+    GeometryJsonError, SpatialReferenceV2,
 };
 pub use services::{
     AddAttachmentResult, AddItemParams, AddItemResult, AddressCandidate, AlterResponse,
