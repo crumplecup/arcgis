@@ -57,6 +57,8 @@ mod auth;
 mod client;
 mod config;
 mod error;
+#[cfg(feature = "geo")]
+mod geo;
 mod geometry;
 mod services;
 mod types;
@@ -135,6 +137,14 @@ pub use services::{
     ViewshedParametersBuilder, ViewshedResult,
 };
 pub use types::{AttachmentId, GeometryType, LayerId, ObjectId, SpatialRel};
+
+// ESRI Geometry types (feature-gated)
+#[cfg(feature = "geo")]
+pub use geo::{
+    EsriEnvelope, EsriGeometry, EsriGeometryError, EsriGeometryErrorKind, EsriMultipoint,
+    EsriPoint, EsriPolygon, EsriPolyline, GeoError, GeometryJsonError,
+    SpatialReference as EsriSpatialReference,
+};
 
 /// Result type alias using this crate's [`Error`] type.
 pub type Result<T> = std::result::Result<T, Error>;
