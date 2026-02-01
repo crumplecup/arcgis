@@ -154,11 +154,11 @@ mod tests {
     fn test_builder() -> anyhow::Result<()> {
         init_tracing();
         let sr = SpatialReferenceBuilder::default()
-            .wkid(2263)
-            .latest_wkid(2263)
+            .wkid(2263u32)
+            .latest_wkid(2263u32)
             .build()?;
 
-        assert_eq!(*sr.wkid(), Some(2263));
+        assert_eq!(*sr.wkid(), Some(2263u32));
         assert!(sr.is_projected());
         Ok(())
     }
