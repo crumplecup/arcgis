@@ -11,6 +11,7 @@ along with their last associated commit.
 | [FULL_COVERAGE_PLAN.md](FULL_COVERAGE_PLAN.md) | Full coverage implementation plan (70-75% API surface) | `121f0f5` - docs: update FULL_COVERAGE_PLAN.md for Elevation Service completion | Today |
 | [AUTHENTICATION_STRATEGY.md](AUTHENTICATION_STRATEGY.md) | Automated authentication strategy (API Key + Client Credentials) | New document | Today |
 | [docs/examples_expansion_plan.md](docs/examples_expansion_plan.md) | Examples expansion plan (25% → 80% coverage) | New document | Today |
+| [ESRI_GEOMETRY_INTEGRATION_PLAN.md](ESRI_GEOMETRY_INTEGRATION_PLAN.md) | ✅ Geometry consolidation refactor (COMPLETE) | Latest on branch `refactor/consolidate-geometry` | Today |
 
 ## Project Standards
 
