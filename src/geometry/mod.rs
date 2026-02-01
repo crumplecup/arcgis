@@ -81,4 +81,5 @@ pub use errors::{ArcGISGeometryError, ArcGISGeometryErrorKind, GeoError, Geometr
 pub use spatial_ref::SpatialReference;
 pub use types::{
     ArcGISEnvelope, ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
+    GeometryType, SpatialRel,
 };

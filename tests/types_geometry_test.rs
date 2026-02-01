@@ -1,4 +1,4 @@
-//! Tests for geometry-related types.
+//! Tests for geometry-related enums (GeometryType, SpatialRel).
 
 mod common;
 

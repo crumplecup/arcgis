@@ -72,7 +72,8 @@ pub use error::{
 };
 pub use geometry::{
     ArcGISEnvelope, ArcGISGeometry, ArcGISGeometryError, ArcGISGeometryErrorKind, ArcGISMultipoint,
-    ArcGISPoint, ArcGISPolygon, ArcGISPolyline, GeoError, GeometryJsonError, SpatialReference,
+    ArcGISPoint, ArcGISPolygon, ArcGISPolyline, GeoError, GeometryJsonError, GeometryType,
+    SpatialRel, SpatialReference,
 };
 pub use services::{
     AddAttachmentResult, AddItemParams, AddItemResult, AddressCandidate, AlterResponse,
@@ -134,7 +135,7 @@ pub use services::{
     VersionManagementClient, VersionPermission, VersioningType, ViewshedParameters,
     ViewshedParametersBuilder, ViewshedResult,
 };
-pub use types::{AttachmentId, GeometryType, LayerId, ObjectId, SpatialRel};
+pub use types::{AttachmentId, LayerId, ObjectId};
 
 /// Result type alias using this crate's [`Error`] type.
 pub type Result<T> = std::result::Result<T, Error>;
