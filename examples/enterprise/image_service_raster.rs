@@ -49,8 +49,8 @@
 
 use anyhow::Result;
 use arcgis::{
-    ArcGISClient, ArcGISGeometry, ExportImageParametersBuilder, HistogramParametersBuilder,
-    ImageServiceClient, NoAuth, SampleParametersBuilder,
+    ArcGISClient, ArcGISGeometryV2 as ArcGISGeometry, ExportImageParametersBuilder,
+    HistogramParametersBuilder, ImageServiceClient, NoAuth, SampleParametersBuilder,
     geo_types::{Geometry, LineString, Point},
 };
 
@@ -165,7 +165,7 @@ async fn demonstrate_identify_pixel(service: &ImageServiceClient<'_>) -> Result<
     // Redlands, California (where ESRI headquarters is located)
     let point = Point::new(-117.1825, 34.0555);
     let geom: Geometry = point.into();
-    let geometry = ArcGISGeometry::from_geo_types(&geom)?;
+    let geometry: ArcGISGeometry = geom.into();
 
     let result = service.identify(&geometry).await?;
 
@@ -212,7 +212,7 @@ async fn demonstrate_sample_transect(service: &ImageServiceClient<'_>) -> Result
     ]);
 
     let geom: Geometry = line.into();
-    let geometry = ArcGISGeometry::from_geo_types(&geom)?;
+    let geometry: ArcGISGeometry = geom.into();
 
     // Serialize geometry to JSON string
     let geometry_json = serde_json::to_string(&geometry)?;

@@ -616,23 +616,23 @@ fn featureset_to_geojson(featureset: &arcgis::FeatureSet) -> Result<geojson::Fea
 }
 
 /// Convert ArcGIS geometry to GeoJSON geometry.
-fn arcgis_geometry_to_geojson(geom: &arcgis::ArcGISGeometry) -> Option<geojson::Geometry> {
-    use arcgis::ArcGISGeometry;
+fn arcgis_geometry_to_geojson(geom: &arcgis::ArcGISGeometryV2) -> Option<geojson::Geometry> {
+    use arcgis::ArcGISGeometryV2 as ArcGISGeometry;
     use geojson::{Geometry, Value};
 
     match geom {
-        ArcGISGeometry::Point(pt) => Some(Geometry::new(Value::Point(vec![pt.x, pt.y]))),
+        ArcGISGeometry::Point(pt) => Some(Geometry::new(Value::Point(vec![*pt.x(), *pt.y()]))),
         ArcGISGeometry::Multipoint(mp) => {
-            let coords: Vec<Vec<f64>> = mp.points.iter().map(|p| vec![p[0], p[1]]).collect();
+            let coords: Vec<Vec<f64>> = mp.points().iter().map(|p| vec![p[0], p[1]]).collect();
             Some(Geometry::new(Value::MultiPoint(coords)))
         }
         ArcGISGeometry::Polyline(pl) => {
-            if pl.paths.len() == 1 {
-                let coords: Vec<Vec<f64>> = pl.paths[0].iter().map(|p| vec![p[0], p[1]]).collect();
+            if pl.paths().len() == 1 {
+                let coords: Vec<Vec<f64>> = pl.paths()[0].iter().map(|p| vec![p[0], p[1]]).collect();
                 Some(Geometry::new(Value::LineString(coords)))
             } else {
                 let coords: Vec<Vec<Vec<f64>>> = pl
-                    .paths
+                    .paths()
                     .iter()
                     .map(|path| path.iter().map(|p| vec![p[0], p[1]]).collect())
                     .collect();
@@ -641,7 +641,7 @@ fn arcgis_geometry_to_geojson(geom: &arcgis::ArcGISGeometry) -> Option<geojson::
         }
         ArcGISGeometry::Polygon(pg) => {
             let coords: Vec<Vec<Vec<f64>>> = pg
-                .rings
+                .rings()
                 .iter()
                 .map(|ring| ring.iter().map(|p| vec![p[0], p[1]]).collect())
                 .collect();

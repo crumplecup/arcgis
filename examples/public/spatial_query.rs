@@ -17,8 +17,9 @@
 //! ```
 
 use arcgis::{
-    ArcGISClient, ArcGISEnvelope, ArcGISGeometry, ArcGISPolygon, FeatureServiceClient,
-    GeometryType, LayerId, NoAuth, SpatialReference, SpatialRel,
+    ArcGISClient, ArcGISEnvelopeV2 as ArcGISEnvelope, ArcGISGeometryV2 as ArcGISGeometry,
+    ArcGISPolygonV2 as ArcGISPolygon, FeatureServiceClient, GeometryType, LayerId, NoAuth,
+    SpatialReferenceV2 as SpatialReference, SpatialRel,
 };
 
 /// Public World Cities feature service (no auth required).
@@ -66,13 +67,13 @@ async fn demonstrate_bounding_box_query(
 
     // Define a bounding box around California
     // IMPORTANT: Must specify spatial reference so service knows coordinate system
-    let california_bbox = ArcGISEnvelope {
-        xmin: -124.5,                                       // West
-        ymin: 32.5,                                         // South
-        xmax: -114.0,                                       // East
-        ymax: 42.0,                                         // North
-        spatial_reference: Some(SpatialReference::wgs84()), // WGS84 (lat/lon)
-    };
+    let california_bbox = ArcGISEnvelope::new(
+        -124.5, // xmin: West
+        32.5,   // ymin: South
+        -114.0, // xmax: East
+        42.0,   // ymax: North
+    )
+    .with_spatial_reference(Some(SpatialReference::wgs84()));
 
     let bbox_result = service
         .query(layer_id)
@@ -110,16 +111,14 @@ async fn demonstrate_polygon_query(
     tracing::info!("Find cities within a custom polygon");
 
     // Define a polygon (simplified Pacific Northwest)
-    let pacific_nw_polygon = ArcGISPolygon {
-        rings: vec![vec![
-            [-125.0, 49.0], // NW corner (start)
-            [-116.0, 49.0], // NE corner
-            [-116.0, 42.0], // SE corner
-            [-125.0, 42.0], // SW corner
-            [-125.0, 49.0], // Close the ring back to start
-        ]],
-        spatial_reference: Some(SpatialReference::wgs84()),
-    };
+    let pacific_nw_polygon = ArcGISPolygon::new(vec![vec![
+        vec![-125.0, 49.0], // NW corner (start)
+        vec![-116.0, 49.0], // NE corner
+        vec![-116.0, 42.0], // SE corner
+        vec![-125.0, 42.0], // SW corner
+        vec![-125.0, 49.0], // Close the ring back to start
+    ]])
+    .with_spatial_reference(Some(SpatialReference::wgs84()));
 
     let polygon_result = service
         .query(layer_id)
@@ -156,13 +155,8 @@ async fn demonstrate_combined_spatial_attribute(
     tracing::info!("\n=== Example 3: Combined Spatial + Attribute Query ===");
     tracing::info!("Large cities on the West Coast");
 
-    let west_coast_bbox = ArcGISEnvelope {
-        xmin: -125.0,
-        ymin: 32.0,
-        xmax: -114.0,
-        ymax: 50.0,
-        spatial_reference: Some(SpatialReference::wgs84()),
-    };
+    let west_coast_bbox = ArcGISEnvelope::new(-125.0, 32.0, -114.0, 50.0)
+        .with_spatial_reference(Some(SpatialReference::wgs84()));
 
     let combined_result = service
         .query(layer_id)
@@ -209,13 +203,8 @@ async fn demonstrate_spatial_relationships(
     tracing::info!("\n=== Example 4: Different Spatial Relationships ===");
     tracing::info!("Demonstrating various spatial relationship types");
 
-    let test_bbox = ArcGISEnvelope {
-        xmin: -122.5,
-        ymin: 37.5,
-        xmax: -122.0,
-        ymax: 38.0,
-        spatial_reference: Some(SpatialReference::wgs84()),
-    };
+    let test_bbox = ArcGISEnvelope::new(-122.5, 37.5, -122.0, 38.0)
+        .with_spatial_reference(Some(SpatialReference::wgs84()));
 
     // Test different spatial relationships
     let relationships = vec![
@@ -258,13 +247,8 @@ async fn demonstrate_large_area_pagination(
     tracing::info!("\n=== Example 5: Large Area with Auto-Pagination ===");
     tracing::info!("Query entire US with automatic pagination");
 
-    let us_bbox = ArcGISEnvelope {
-        xmin: -125.0,
-        ymin: 24.0,
-        xmax: -66.0,
-        ymax: 50.0,
-        spatial_reference: Some(SpatialReference::wgs84()),
-    };
+    let us_bbox = ArcGISEnvelope::new(-125.0, 24.0, -66.0, 50.0)
+        .with_spatial_reference(Some(SpatialReference::wgs84()));
 
     let us_result = service
         .query(layer_id)

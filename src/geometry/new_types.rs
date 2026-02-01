@@ -1,6 +1,6 @@
 //! ESRI geometry type implementations.
 
-use super::SpatialReference;
+use super::new_spatial_ref::SpatialReference;
 use derive_getters::Getters;
 use derive_setters::Setters;
 use serde::{Deserialize, Serialize};
