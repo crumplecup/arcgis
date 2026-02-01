@@ -46,9 +46,7 @@
 //! - **Search interfaces**: Provide autocomplete for location search
 
 use anyhow::Result;
-use arcgis::{
-    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISPoint, GeocodeServiceClient,
-};
+use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISPoint, GeocodeServiceClient};
 
 /// ArcGIS World Geocoding Service URL
 const WORLD_GEOCODE_SERVICE: &str =

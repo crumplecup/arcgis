@@ -57,9 +57,9 @@
 
 use anyhow::{Context, Result};
 use arcgis::{
-    ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint,
-    AttachmentId, AttachmentSource, CreateServiceParams, DownloadTarget, EditOptions, EnvConfig,
-    Feature, FeatureServiceClient, ObjectId, PortalClient,
+    ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, AttachmentId, AttachmentSource,
+    CreateServiceParams, DownloadTarget, EditOptions, EnvConfig, Feature, FeatureServiceClient,
+    ObjectId, PortalClient,
 };
 use secrecy::ExposeSecret;
 use std::collections::HashMap;

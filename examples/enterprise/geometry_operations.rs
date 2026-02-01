@@ -37,8 +37,8 @@
 
 use anyhow::Result;
 use arcgis::{
-    ArcGISClient, ArcGISGeometry, ArcGISPoint,
-    ArcGISPolyline, GeometryServiceClient, LinearUnit, NoAuth,
+    ArcGISClient, ArcGISGeometry, ArcGISPoint, ArcGISPolyline, GeometryServiceClient, LinearUnit,
+    NoAuth,
 };
 
 /// ArcGIS Online Geometry Service URL (free public utility)

@@ -49,8 +49,8 @@
 
 use anyhow::Result;
 use arcgis::{
-    ArcGISClient, ArcGISGeometry, ExportImageParametersBuilder,
-    HistogramParametersBuilder, ImageServiceClient, NoAuth, SampleParametersBuilder,
+    ArcGISClient, ArcGISGeometry, ExportImageParametersBuilder, HistogramParametersBuilder,
+    ImageServiceClient, NoAuth, SampleParametersBuilder,
     geo_types::{Geometry, LineString, Point},
 };
 

@@ -25,7 +25,9 @@ use tracing::instrument;
 /// let point_3d = ArcGISPoint::with_z(-118.2437, 34.0522, 100.0);
 /// assert_eq!(*point_3d.z(), Some(100.0));
 /// ```
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters, Setters, derive_builder::Builder)]
+#[derive(
+    Debug, Clone, PartialEq, Serialize, Deserialize, Getters, Setters, derive_builder::Builder,
+)]
 #[builder(setter(into, strip_option))]
 #[setters(prefix = "with_")]
 #[serde(rename_all = "camelCase")]
@@ -112,7 +114,9 @@ impl ArcGISPoint {
 /// let polyline = ArcGISPolyline::new(paths);
 /// assert_eq!(polyline.paths().len(), 1);
 /// ```
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters, Setters, derive_builder::Builder)]
+#[derive(
+    Debug, Clone, PartialEq, Serialize, Deserialize, Getters, Setters, derive_builder::Builder,
+)]
 #[builder(setter(into, strip_option))]
 #[setters(prefix = "with_")]
 #[serde(rename_all = "camelCase")]
@@ -181,7 +185,9 @@ impl ArcGISPolyline {
 /// let polygon = ArcGISPolygon::new(rings);
 /// assert_eq!(polygon.rings().len(), 1);
 /// ```
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters, Setters, derive_builder::Builder)]
+#[derive(
+    Debug, Clone, PartialEq, Serialize, Deserialize, Getters, Setters, derive_builder::Builder,
+)]
 #[builder(setter(into, strip_option))]
 #[setters(prefix = "with_")]
 #[serde(rename_all = "camelCase")]
@@ -252,7 +258,9 @@ impl ArcGISPolygon {
 /// let multipoint = ArcGISMultipoint::new(points);
 /// assert_eq!(multipoint.points().len(), 2);
 /// ```
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters, Setters, derive_builder::Builder)]
+#[derive(
+    Debug, Clone, PartialEq, Serialize, Deserialize, Getters, Setters, derive_builder::Builder,
+)]
 #[builder(setter(into, strip_option))]
 #[setters(prefix = "with_")]
 #[serde(rename_all = "camelCase")]
@@ -344,10 +352,12 @@ impl TryFrom<ArcGISPolyline> for geo_types::MultiLineString {
         tracing::debug!("Converting ArcGISPolyline to geo_types::MultiLineString");
 
         if polyline.paths.is_empty() {
-            return Err(ArcGISGeometryError::new(ArcGISGeometryErrorKind::EmptyGeometry(
-                "polyline".to_string(),
-                "conversion to MultiLineString".to_string(),
-            )));
+            return Err(ArcGISGeometryError::new(
+                ArcGISGeometryErrorKind::EmptyGeometry(
+                    "polyline".to_string(),
+                    "conversion to MultiLineString".to_string(),
+                ),
+            ));
         }
 
         let line_strings: Result<Vec<geo_types::LineString>, ArcGISGeometryError> = polyline
@@ -366,8 +376,7 @@ impl TryFrom<ArcGISPolyline> for geo_types::MultiLineString {
 
                 let coords: Result<Vec<geo_types::Coord>, ArcGISGeometryError> = path
                     .into_iter()
-                    .enumerate()
-                    .map(|(_pt_idx, pt)| {
+                    .map(|pt| {
                         if pt.len() < 2 {
                             return Err(ArcGISGeometryError::new(
                                 ArcGISGeometryErrorKind::InvalidCoordinateLength {
@@ -392,11 +401,12 @@ impl From<geo_types::LineString> for ArcGISPolyline {
     #[instrument(skip(line))]
     fn from(line: geo_types::LineString) -> Self {
         tracing::debug!("Converting geo_types::LineString to ArcGISPolyline");
-        let paths = vec![line
-            .into_inner()
-            .into_iter()
-            .map(|coord| vec![coord.x, coord.y])
-            .collect()];
+        let paths = vec![
+            line.into_inner()
+                .into_iter()
+                .map(|coord| vec![coord.x, coord.y])
+                .collect(),
+        ];
         ArcGISPolyline::new(paths)
     }
 }
@@ -432,10 +442,12 @@ impl TryFrom<ArcGISPolygon> for geo_types::Polygon {
         tracing::debug!("Converting ArcGISPolygon to geo_types::Polygon");
 
         if polygon.rings.is_empty() {
-            return Err(ArcGISGeometryError::new(ArcGISGeometryErrorKind::EmptyGeometry(
-                "polygon".to_string(),
-                "conversion to Polygon".to_string(),
-            )));
+            return Err(ArcGISGeometryError::new(
+                ArcGISGeometryErrorKind::EmptyGeometry(
+                    "polygon".to_string(),
+                    "conversion to Polygon".to_string(),
+                ),
+            ));
         }
 
         let mut rings_iter = polygon.rings.into_iter();
@@ -488,11 +500,13 @@ impl From<geo_types::Polygon> for ArcGISPolygon {
         tracing::debug!("Converting geo_types::Polygon to ArcGISPolygon");
         let (exterior, interiors) = polygon.into_inner();
 
-        let mut rings = vec![exterior
-            .into_inner()
-            .into_iter()
-            .map(|coord| vec![coord.x, coord.y])
-            .collect()];
+        let mut rings = vec![
+            exterior
+                .into_inner()
+                .into_iter()
+                .map(|coord| vec![coord.x, coord.y])
+                .collect(),
+        ];
 
         rings.extend(interiors.into_iter().map(|interior| {
             interior
@@ -514,11 +528,13 @@ impl From<geo_types::MultiPolygon> for ArcGISPolygon {
             .into_iter()
             .flat_map(|polygon| {
                 let (exterior, interiors) = polygon.into_inner();
-                let mut all_rings = vec![exterior
-                    .into_inner()
-                    .into_iter()
-                    .map(|coord| vec![coord.x, coord.y])
-                    .collect()];
+                let mut all_rings = vec![
+                    exterior
+                        .into_inner()
+                        .into_iter()
+                        .map(|coord| vec![coord.x, coord.y])
+                        .collect(),
+                ];
 
                 all_rings.extend(interiors.into_iter().map(|interior| {
                     interior
@@ -550,17 +566,18 @@ impl TryFrom<ArcGISMultipoint> for geo_types::MultiPoint {
         tracing::debug!("Converting ArcGISMultipoint to geo_types::MultiPoint");
 
         if multipoint.points.is_empty() {
-            return Err(ArcGISGeometryError::new(ArcGISGeometryErrorKind::EmptyGeometry(
-                "multipoint".to_string(),
-                "conversion to MultiPoint".to_string(),
-            )));
+            return Err(ArcGISGeometryError::new(
+                ArcGISGeometryErrorKind::EmptyGeometry(
+                    "multipoint".to_string(),
+                    "conversion to MultiPoint".to_string(),
+                ),
+            ));
         }
 
         let points: Result<Vec<geo_types::Point>, ArcGISGeometryError> = multipoint
             .points
             .into_iter()
-            .enumerate()
-            .map(|(_idx, pt)| {
+            .map(|pt| {
                 if pt.len() < 2 {
                     return Err(ArcGISGeometryError::new(
                         ArcGISGeometryErrorKind::InvalidCoordinateLength {
@@ -1073,22 +1090,10 @@ mod tests {
             geo_types::Coord { x: -118.0, y: 34.0 },
         ]);
         let hole = geo_types::LineString::new(vec![
-            geo_types::Coord {
-                x: -117.8,
-                y: 33.8,
-            },
-            geo_types::Coord {
-                x: -117.2,
-                y: 33.8,
-            },
-            geo_types::Coord {
-                x: -117.2,
-                y: 33.2,
-            },
-            geo_types::Coord {
-                x: -117.8,
-                y: 33.8,
-            },
+            geo_types::Coord { x: -117.8, y: 33.8 },
+            geo_types::Coord { x: -117.2, y: 33.8 },
+            geo_types::Coord { x: -117.2, y: 33.2 },
+            geo_types::Coord { x: -117.8, y: 33.8 },
         ]);
         let geo_polygon = geo_types::Polygon::new(exterior, vec![hole]);
 

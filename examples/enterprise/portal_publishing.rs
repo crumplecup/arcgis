@@ -628,7 +628,8 @@ fn arcgis_geometry_to_geojson(geom: &arcgis::ArcGISGeometry) -> Option<geojson::
         }
         ArcGISGeometry::Polyline(pl) => {
             if pl.paths().len() == 1 {
-                let coords: Vec<Vec<f64>> = pl.paths()[0].iter().map(|p| vec![p[0], p[1]]).collect();
+                let coords: Vec<Vec<f64>> =
+                    pl.paths()[0].iter().map(|p| vec![p[0], p[1]]).collect();
                 Some(Geometry::new(Value::LineString(coords)))
             } else {
                 let coords: Vec<Vec<Vec<f64>>> = pl

@@ -41,9 +41,8 @@
 
 use anyhow::Result;
 use arcgis::{
-    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISGeometry,
-    ArcGISPoint, ClosestFacilityParameters, NALocation, RouteParameters,
-    RoutingServiceClient, ServiceAreaParameters, TravelDirection,
+    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISGeometry, ArcGISPoint, ClosestFacilityParameters,
+    NALocation, RouteParameters, RoutingServiceClient, ServiceAreaParameters, TravelDirection,
 };
 
 /// World Routing Service endpoints
