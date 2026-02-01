@@ -1,6 +1,8 @@
 //! Geometry Service client for geometric operations.
 
-use crate::{ArcGISClient, ArcGISGeometry, Result};
+use crate::{
+    ArcGISClient, ArcGISEnvelopeV2 as ArcGISEnvelope, ArcGISGeometryV2 as ArcGISGeometry, Result,
+};
 use serde::Deserialize;
 use tracing::instrument;
 
@@ -171,11 +173,11 @@ impl<'a> GeometryServiceClient<'a> {
 
         // Determine geometry type from first geometry
         let geometry_type = match params.geometries().first() {
-            Some(crate::ArcGISGeometry::Point(_)) => "esriGeometryPoint",
-            Some(crate::ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
-            Some(crate::ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
-            Some(crate::ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
-            Some(crate::ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
+            Some(ArcGISGeometry::Point(_)) => "esriGeometryPoint",
+            Some(ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
+            Some(ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
+            Some(ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
+            Some(ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
             None => {
                 return Err(crate::Error::from(crate::ErrorKind::Other(
                     "No geometries to project".to_string(),
@@ -189,12 +191,12 @@ impl<'a> GeometryServiceClient<'a> {
         #[serde(rename_all = "camelCase")]
         struct GeometriesWrapper<'a> {
             geometry_type: &'a str,
-            geometries: &'a [crate::ArcGISGeometry],
+            geometries: &'a [ArcGISGeometry],
         }
 
         let wrapper = GeometriesWrapper {
             geometry_type,
-            geometries: params.geometries(),
+            geometries: params.geometries().as_slice(),
         };
         let geometries_json = serde_json::to_string(&wrapper)?;
         tracing::debug!(geometries_json = %geometries_json, "Serialized geometries wrapper");
@@ -324,14 +326,14 @@ impl<'a> GeometryServiceClient<'a> {
         // Buffer uses simplified format for points: x1,y1,x2,y2,...
         // Unlike project operation which needs wrapper format!
         let geometries_param = match params.geometries().first() {
-            Some(crate::ArcGISGeometry::Point(_)) => {
+            Some(ArcGISGeometry::Point(_)) => {
                 // Simplified point format: x1,y1,x2,y2,...
                 let coords: Vec<String> = params
                     .geometries()
                     .iter()
                     .filter_map(|g| {
-                        if let crate::ArcGISGeometry::Point(p) = g {
-                            Some(format!("{},{}", p.x, p.y))
+                        if let ArcGISGeometry::Point(p) = g {
+                            Some(format!("{},{}", p.x(), p.y()))
                         } else {
                             None
                         }
@@ -342,10 +344,10 @@ impl<'a> GeometryServiceClient<'a> {
             Some(_) => {
                 // For other geometry types, use JSON wrapper format
                 let geometry_type = match params.geometries().first() {
-                    Some(crate::ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
-                    Some(crate::ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
-                    Some(crate::ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
-                    Some(crate::ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
+                    Some(ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
+                    Some(ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
+                    Some(ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
+                    Some(ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
                     _ => unreachable!(),
                 };
 
@@ -353,12 +355,12 @@ impl<'a> GeometryServiceClient<'a> {
                 #[serde(rename_all = "camelCase")]
                 struct GeometriesWrapper<'a> {
                     geometry_type: &'a str,
-                    geometries: &'a [crate::ArcGISGeometry],
+                    geometries: &'a [ArcGISGeometry],
                 }
 
                 let wrapper = GeometriesWrapper {
                     geometry_type,
-                    geometries: params.geometries(),
+                    geometries: params.geometries().as_slice(),
                 };
                 serde_json::to_string(&wrapper)?
             }
@@ -518,7 +520,7 @@ impl<'a> GeometryServiceClient<'a> {
         &self,
         in_sr: i32,
         out_sr: i32,
-        extent_of_interest: Option<crate::ArcGISEnvelope>,
+        extent_of_interest: Option<ArcGISEnvelope>,
     ) -> Result<Vec<Transformation>> {
         tracing::debug!("Finding datum transformations");
 
@@ -921,26 +923,26 @@ impl<'a> GeometryServiceClient<'a> {
 
         // Distance operation requires nested format: {"geometryType":"esriGeometryPoint","geometry":{...}}
         let geometry_type1 = match params.geometry1() {
-            crate::ArcGISGeometry::Point(_) => "esriGeometryPoint",
-            crate::ArcGISGeometry::Multipoint(_) => "esriGeometryMultipoint",
-            crate::ArcGISGeometry::Polyline(_) => "esriGeometryPolyline",
-            crate::ArcGISGeometry::Polygon(_) => "esriGeometryPolygon",
-            crate::ArcGISGeometry::Envelope(_) => "esriGeometryEnvelope",
+            ArcGISGeometry::Point(_) => "esriGeometryPoint",
+            ArcGISGeometry::Multipoint(_) => "esriGeometryMultipoint",
+            ArcGISGeometry::Polyline(_) => "esriGeometryPolyline",
+            ArcGISGeometry::Polygon(_) => "esriGeometryPolygon",
+            ArcGISGeometry::Envelope(_) => "esriGeometryEnvelope",
         };
 
         let geometry_type2 = match params.geometry2() {
-            crate::ArcGISGeometry::Point(_) => "esriGeometryPoint",
-            crate::ArcGISGeometry::Multipoint(_) => "esriGeometryMultipoint",
-            crate::ArcGISGeometry::Polyline(_) => "esriGeometryPolyline",
-            crate::ArcGISGeometry::Polygon(_) => "esriGeometryPolygon",
-            crate::ArcGISGeometry::Envelope(_) => "esriGeometryEnvelope",
+            ArcGISGeometry::Point(_) => "esriGeometryPoint",
+            ArcGISGeometry::Multipoint(_) => "esriGeometryMultipoint",
+            ArcGISGeometry::Polyline(_) => "esriGeometryPolyline",
+            ArcGISGeometry::Polygon(_) => "esriGeometryPolygon",
+            ArcGISGeometry::Envelope(_) => "esriGeometryEnvelope",
         };
 
         #[derive(serde::Serialize)]
         #[serde(rename_all = "camelCase")]
         struct GeometryWrapper<'a> {
             geometry_type: &'a str,
-            geometry: &'a crate::ArcGISGeometry,
+            geometry: &'a ArcGISGeometry,
         }
 
         let geometry1_wrapper = GeometryWrapper {
