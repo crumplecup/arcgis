@@ -1,6 +1,6 @@
 //! Types for routing and network analysis operations.
 
-use crate::ArcGISGeometry;
+use crate::ArcGISGeometryV2 as ArcGISGeometry;
 use derive_getters::Getters;
 use serde::{Deserialize, Serialize};
 
@@ -604,7 +604,19 @@ impl Route {
 
         let total_wait_time = attrs.get("Total_WaitTime").and_then(|v| v.as_f64());
 
-        let geometry = feature.geometry().clone();
+        // Convert old geometry type to new via JSON (temporary during migration)
+        let geometry = feature
+            .geometry()
+            .as_ref()
+            .and_then(|old_geom| {
+                serde_json::to_value(old_geom)
+                    .ok()
+                    .and_then(|v| serde_json::from_value(v).ok())
+            })
+            .unwrap_or_else(|| {
+                // Default to empty point if conversion fails
+                ArcGISGeometry::Point(crate::ArcGISPointV2::new(0.0, 0.0))
+            });
 
         tracing::debug!(
             name = ?name,
@@ -619,7 +631,7 @@ impl Route {
             total_time,
             total_drive_time,
             total_wait_time,
-            geometry,
+            geometry: Some(geometry),
             directions: Vec::new(), // Directions come from separate array in response
             start_time: None,       // Not in route attributes
             end_time: None,         // Not in route attributes
@@ -674,7 +686,19 @@ impl Stop {
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
-        let geometry = feature.geometry().clone();
+        // Convert old geometry type to new via JSON (temporary during migration)
+        let geometry = feature
+            .geometry()
+            .as_ref()
+            .and_then(|old_geom| {
+                serde_json::to_value(old_geom)
+                    .ok()
+                    .and_then(|v| serde_json::from_value(v).ok())
+            })
+            .unwrap_or_else(|| {
+                // Default to empty point if conversion fails
+                ArcGISGeometry::Point(crate::ArcGISPointV2::new(0.0, 0.0))
+            });
 
         let arrival_time = None; // Not directly in attributes
 
@@ -698,7 +722,7 @@ impl Stop {
 
         Stop {
             name,
-            geometry,
+            geometry: Some(geometry),
             arrival_time,
             departure_time,
             wait_time,
