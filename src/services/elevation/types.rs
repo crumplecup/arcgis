@@ -1,8 +1,8 @@
 //! Elevation Service types and parameters.
 
+use crate::FeatureSet;
 use derive_getters::Getters;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 /// Parameters for generating an elevation profile.
 #[derive(Debug, Clone, Serialize, derive_builder::Builder, Getters)]
@@ -59,7 +59,7 @@ pub struct ProfileParameters {
 pub struct ProfileResult {
     /// Profile feature set with elevation data.
     #[serde(skip_serializing_if = "Option::is_none")]
-    output_profile: Option<Value>,
+    output_profile: Option<FeatureSet>,
 
     /// First point elevation.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -119,7 +119,7 @@ pub struct SummarizeElevationParameters {
 pub struct SummarizeElevationResult {
     /// Summary feature set with statistics.
     #[serde(skip_serializing_if = "Option::is_none")]
-    output_summary: Option<Value>,
+    output_summary: Option<FeatureSet>,
 
     /// Minimum elevation.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -212,7 +212,7 @@ pub struct ViewshedParameters {
 pub struct ViewshedResult {
     /// Viewshed polygon feature set.
     #[serde(skip_serializing_if = "Option::is_none")]
-    output_viewshed: Option<Value>,
+    output_viewshed: Option<FeatureSet>,
 
     /// Visible area in square meters.
     #[serde(skip_serializing_if = "Option::is_none")]
