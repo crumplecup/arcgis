@@ -572,7 +572,7 @@ pub struct IdentifyResult {
     geometry: Option<ArcGISGeometry>,
 
     /// Geometry type.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     geometry_type: Option<GeometryType>,
 }
 
@@ -923,7 +923,7 @@ pub struct FindResult {
     geometry: Option<ArcGISGeometry>,
 
     /// Geometry type.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     geometry_type: Option<GeometryType>,
 }
 

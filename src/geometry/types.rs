@@ -770,26 +770,21 @@ impl TryFrom<ArcGISGeometry> for geo_types::Geometry {
 /// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type")]
+#[serde(untagged)]
 pub enum ArcGISGeometry {
     /// Point geometry.
-    #[serde(rename = "point")]
     Point(ArcGISPoint),
 
     /// Polyline geometry.
-    #[serde(rename = "polyline")]
     Polyline(ArcGISPolyline),
 
     /// Polygon geometry.
-    #[serde(rename = "polygon")]
     Polygon(ArcGISPolygon),
 
     /// Multipoint geometry.
-    #[serde(rename = "multipoint")]
     Multipoint(ArcGISMultipoint),
 
     /// Envelope (bounding box) geometry.
-    #[serde(rename = "envelope")]
     Envelope(ArcGISEnvelope),
 }
 
@@ -1282,7 +1277,9 @@ mod tests {
         let geometry = ArcGISGeometry::Point(point);
 
         let json = serde_json::to_string(&geometry)?;
-        assert!(json.contains(r#""type":"point""#));
+        // Untagged serialization - no "type" field, just the point fields
+        assert!(json.contains(r#""x":-118.2437"#));
+        assert!(json.contains(r#""y":34.0522"#));
 
         Ok(())
     }
@@ -1290,7 +1287,8 @@ mod tests {
     #[test]
     fn test_esri_geometry_deserialization() -> anyhow::Result<()> {
         init_tracing();
-        let json = r#"{"type":"point","x":-118.2437,"y":34.0522,"spatialReference":{"wkid":4326,"latestWkid":4326}}"#;
+        // Untagged deserialization - no "type" field needed
+        let json = r#"{"x":-118.2437,"y":34.0522,"spatialReference":{"wkid":4326,"latestWkid":4326}}"#;
         let geometry: ArcGISGeometry = serde_json::from_str(json)?;
 
         match geometry {
