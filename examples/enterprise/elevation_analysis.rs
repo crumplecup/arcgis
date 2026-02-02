@@ -113,35 +113,41 @@ async fn demonstrate_elevation_profile(elevation: &ElevationClient<'_>) -> Resul
     tracing::info!("");
 
     // Sierra Nevada trail segment (Yosemite area)
-    // Coordinates: west to east transect across mountain terrain
-    let trail_geometry = r#"{"paths":[[[-119.65,37.85],[-119.60,37.87],[-119.55,37.85]]],"spatialReference":{"wkid":4326}}"#;
+    // Create a proper FeatureSet with line geometry
+    let trail_features = r#"{
+        "geometryType": "esriGeometryPolyline",
+        "features": [{
+            "geometry": {
+                "paths": [[[-119.65,37.85],[-119.60,37.87],[-119.55,37.85]]],
+                "spatialReference": {"wkid": 4326}
+            }
+        }],
+        "spatialReference": {"wkid": 4326}
+    }"#;
 
     tracing::info!("   Trail transect: Yosemite National Park area");
     tracing::info!("     Start: -119.65°, 37.85° (west)");
     tracing::info!("     End: -119.55°, 37.85° (east)");
-    tracing::info!("     Resolution: 30m DEM");
+    tracing::info!("     Resolution: FINEST DEM");
     tracing::info!("");
 
     let params = ProfileParametersBuilder::default()
-        .input_geometry(trail_geometry)
-        .geometry_type("esriGeometryPolyline")
-        .dem_resolution("30m")
-        .return_first_point(true)
-        .return_last_point(true)
+        .input_line_features(trail_features)
+        .dem_resolution("FINEST")
         .build()?;
 
     let result = elevation.profile(params).await?;
 
     tracing::info!("✅ Elevation profile generated");
 
-    if let Some(first_z) = result.first_point_z() {
+    if let Ok(first_z) = result.first_point_z() {
         tracing::info!("   Trail start elevation: {:.1} meters", first_z);
     }
 
-    if let Some(last_z) = result.last_point_z() {
+    if let Ok(last_z) = result.last_point_z() {
         tracing::info!("   Trail end elevation: {:.1} meters", last_z);
 
-        if let Some(first_z) = result.first_point_z() {
+        if let Ok(first_z) = result.first_point_z() {
             let gain = last_z - first_z;
             tracing::info!(
                 "   Elevation change: {}{:.1} meters",
@@ -151,12 +157,66 @@ async fn demonstrate_elevation_profile(elevation: &ElevationClient<'_>) -> Resul
         }
     }
 
+    // Extract typed elevation points using helper method
+    let points = result.elevation_points()?;
+
     tracing::info!("");
-    tracing::info!("💡 Profile data contains:");
-    tracing::info!("   • Elevation sampled at regular intervals");
-    tracing::info!("   • Distance along path from start");
-    tracing::info!("   • Useful for creating elevation charts");
-    tracing::info!("   • output_profile contains full feature set");
+    tracing::info!("📊 Profile analysis ({} points):", points.len());
+
+    // Find min/max elevation
+    let min_point = points
+        .iter()
+        .min_by(|a, b| a.elevation_meters().partial_cmp(b.elevation_meters()).unwrap());
+    let max_point = points
+        .iter()
+        .max_by(|a, b| a.elevation_meters().partial_cmp(b.elevation_meters()).unwrap());
+
+    if let Some(min) = min_point {
+        tracing::info!(
+            "   Lowest point: {:.1}m at {:.0}m from start",
+            min.elevation_meters(),
+            min.distance_meters()
+        );
+    }
+
+    if let Some(max) = max_point {
+        tracing::info!(
+            "   Highest point: {:.1}m at {:.0}m from start",
+            max.elevation_meters(),
+            max.distance_meters()
+        );
+    }
+
+    // Calculate total distance
+    if let Some(last) = points.last() {
+        tracing::info!("   Total distance: {:.1} kilometers", last.distance_meters() / 1000.0);
+    }
+
+    // Find steepest segment (largest elevation change between consecutive points)
+    let steepest = points
+        .windows(2)
+        .map(|pair| {
+            let distance_delta = pair[1].distance_meters() - pair[0].distance_meters();
+            let elevation_delta = pair[1].elevation_meters() - pair[0].elevation_meters();
+            let grade = if distance_delta > 0.0 {
+                (elevation_delta / distance_delta).abs() * 100.0
+            } else {
+                0.0
+            };
+            (grade, pair[0].distance_meters(), elevation_delta)
+        })
+        .max_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+
+    if let Some((grade, distance, _elevation_delta)) = steepest {
+        tracing::info!("   Steepest segment: {:.1}% grade at {:.0}m", grade, distance);
+    }
+
+    tracing::info!("");
+    tracing::info!("💡 Profile data provides:");
+    tracing::info!("   • Type-safe elevation points (no raw JSON parsing)");
+    tracing::info!("   • Distance and elevation for each sample point");
+    tracing::info!("   • Ready for charts, analysis, or further processing");
+    tracing::info!("   • Use elevation_points() helper to extract typed data");
 
     Ok(())
 }
