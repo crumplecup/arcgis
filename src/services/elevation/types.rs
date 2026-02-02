@@ -1,22 +1,21 @@
 //! Elevation Service types and parameters.
 
-use crate::FeatureSet;
+use crate::{ArcGISGeometryError, ArcGISGeometryErrorKind, FeatureSet};
 use derive_getters::Getters;
 use serde::{Deserialize, Serialize};
+use tracing::instrument;
 
 /// Parameters for generating an elevation profile.
 #[derive(Debug, Clone, Serialize, derive_builder::Builder, Getters)]
 #[builder(setter(into, strip_option))]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileParameters {
-    /// Input geometry (polyline or multipoint).
-    #[serde(rename = "InputLineOfSight")]
-    input_geometry: String,
-
-    /// Geometry type.
-    #[builder(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    geometry_type: Option<String>,
+    /// Input line features as a FeatureSet JSON string.
+    ///
+    /// Must be a valid FeatureSet with geometryType, features array, and spatialReference.
+    /// Example: `{"geometryType":"esriGeometryPolyline","features":[{"geometry":{"paths":[...]}}],"spatialReference":{"wkid":4326}}`
+    #[serde(rename = "InputLineFeatures")]
+    input_line_features: String,
 
     /// DEM resolution (FINEST, 10m, 30m, 90m).
     #[builder(default)]
@@ -24,23 +23,39 @@ pub struct ProfileParameters {
     #[serde(rename = "DEMResolution")]
     dem_resolution: Option<String>,
 
-    /// Profile ID field for grouping.
+    /// Profile ID field for grouping multiple profiles.
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "ProfileIDField")]
     profile_id_field: Option<String>,
 
-    /// Return first point elevation.
+    /// Maximum distance between sample points.
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    return_first_point: Option<bool>,
+    #[serde(rename = "MaximumSampleDistance")]
+    maximum_sample_distance: Option<f64>,
 
-    /// Return last point elevation.
+    /// Units for maximum sample distance (Meters, Kilometers, etc).
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    return_last_point: Option<bool>,
+    #[serde(rename = "MaximumSampleDistanceUnits")]
+    maximum_sample_distance_units: Option<String>,
 
-    /// Spatial reference WKID.
+    /// Return Z values (elevation) in output geometry.
+    ///
+    /// Must be true to get elevation data.
+    #[builder(default = "true")]
+    #[serde(rename = "returnZ")]
+    return_z: bool,
+
+    /// Return M values (distance along profile) in output geometry.
+    ///
+    /// Must be true to get distance data.
+    #[builder(default = "true")]
+    #[serde(rename = "returnM")]
+    return_m: bool,
+
+    /// Input spatial reference WKID.
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "inSR")]
@@ -54,20 +69,184 @@ pub struct ProfileParameters {
 }
 
 /// Result from elevation profile operation.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
-#[serde(rename_all = "camelCase")]
+///
+/// Contains elevation profile data as a FeatureSet with Z (elevation) and M (distance) values
+/// in the geometry coordinates.
+#[derive(Debug, Clone, PartialEq, Getters)]
 pub struct ProfileResult {
     /// Profile feature set with elevation data.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    output_profile: Option<FeatureSet>,
+    ///
+    /// The geometry contains Z values (elevation in meters) and M values (distance in meters)
+    /// along the profile path.
+    output_profile: FeatureSet,
+}
 
-    /// First point elevation.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    first_point_z: Option<f64>,
+impl ProfileResult {
+    /// Creates a new profile result from a FeatureSet.
+    pub fn new(output_profile: FeatureSet) -> Self {
+        Self { output_profile }
+    }
 
-    /// Last point elevation.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    last_point_z: Option<f64>,
+    /// Gets the first point elevation in meters.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the geometry is missing or invalid.
+    #[instrument(skip(self))]
+    pub fn first_point_z(&self) -> Result<f64, ArcGISGeometryError> {
+        let points = self.elevation_points()?;
+        points
+            .first()
+            .map(|p| *p.elevation_meters())
+            .ok_or_else(|| {
+                ArcGISGeometryError::new(ArcGISGeometryErrorKind::InvalidGeometry(
+                    "Profile has no points".to_string(),
+                ))
+            })
+    }
+
+    /// Gets the last point elevation in meters.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the geometry is missing or invalid.
+    #[instrument(skip(self))]
+    pub fn last_point_z(&self) -> Result<f64, ArcGISGeometryError> {
+        let points = self.elevation_points()?;
+        points
+            .last()
+            .map(|p| *p.elevation_meters())
+            .ok_or_else(|| {
+                ArcGISGeometryError::new(ArcGISGeometryErrorKind::InvalidGeometry(
+                    "Profile has no points".to_string(),
+                ))
+            })
+    }
+
+    /// Extracts elevation profile points from the feature set.
+    ///
+    /// Returns a vector of elevation points ordered by distance along the profile.
+    /// The elevation data is stored in the geometry Z values and distance in M values.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Profile geometry is missing or invalid
+    /// - Geometry is not a polyline
+    /// - Coordinates don't have Z or M values
+    #[instrument(skip(self))]
+    pub fn elevation_points(&self) -> Result<Vec<ElevationPoint>, ArcGISGeometryError> {
+        use crate::ArcGISGeometry;
+
+        tracing::debug!("Extracting elevation points from profile result");
+
+        let feature_count = self.output_profile.features().len();
+        tracing::debug!(feature_count, "Processing profile features");
+
+        if self.output_profile.features().is_empty() {
+            let err = ArcGISGeometryError::new(ArcGISGeometryErrorKind::InvalidGeometry(
+                "Profile result has no features".to_string(),
+            ));
+            tracing::error!(error = %err, "No features in profile");
+            return Err(err);
+        }
+
+        // Get the first feature (profile is typically a single polyline)
+        let feature = &self.output_profile.features()[0];
+
+        let geometry = feature.geometry().as_ref().ok_or_else(|| {
+            let err = ArcGISGeometryError::new(ArcGISGeometryErrorKind::InvalidGeometry(
+                "Profile feature missing geometry".to_string(),
+            ));
+            tracing::error!(error = %err, "Missing geometry");
+            err
+        })?;
+
+        // Extract polyline paths
+        let polyline = match geometry {
+            ArcGISGeometry::Polyline(polyline) => polyline,
+            _ => {
+                let err = ArcGISGeometryError::new(ArcGISGeometryErrorKind::InvalidGeometry(
+                    format!("Expected polyline geometry, got {:?}", geometry),
+                ));
+                tracing::error!(error = %err, "Wrong geometry type");
+                return Err(err);
+            }
+        };
+
+        let paths = polyline.paths();
+        if paths.is_empty() {
+            let err = ArcGISGeometryError::new(ArcGISGeometryErrorKind::InvalidGeometry(
+                "Polyline has no paths".to_string(),
+            ));
+            tracing::error!(error = %err, "No paths in polyline");
+            return Err(err);
+        }
+
+        // Get the first path (profile is a single path)
+        let path = &paths[0];
+        tracing::debug!(coord_count = path.len(), "Processing path coordinates");
+
+        let points: Result<Vec<ElevationPoint>, ArcGISGeometryError> = path
+            .iter()
+            .enumerate()
+            .map(|(idx, coord)| {
+                // Coordinates are [x, y, z, m] when hasZ and hasM are true
+                if coord.len() < 4 {
+                    let err = ArcGISGeometryError::new(
+                        ArcGISGeometryErrorKind::InvalidGeometry(format!(
+                            "Coordinate {} missing Z or M values (length: {}, expected 4)",
+                            idx,
+                            coord.len()
+                        )),
+                    );
+                    tracing::error!(
+                        coord_index = idx,
+                        coord_length = coord.len(),
+                        error = %err,
+                        "Invalid coordinate"
+                    );
+                    return Err(err);
+                }
+
+                let elevation = coord[2]; // Z value (elevation in meters)
+                let distance = coord[3]; // M value (distance in meters)
+
+                tracing::trace!(
+                    coord_index = idx,
+                    distance_m = distance,
+                    elevation_m = elevation,
+                    "Parsed elevation point"
+                );
+
+                Ok(ElevationPoint::new(distance, elevation))
+            })
+            .collect();
+
+        let points = points?;
+        tracing::debug!(point_count = points.len(), "Successfully extracted elevation points");
+        Ok(points)
+    }
+}
+
+/// A single point along an elevation profile.
+#[derive(Debug, Clone, PartialEq, Getters)]
+pub struct ElevationPoint {
+    /// Distance from start in meters.
+    distance_meters: f64,
+
+    /// Elevation in meters.
+    elevation_meters: f64,
+}
+
+impl ElevationPoint {
+    /// Creates a new elevation point.
+    pub fn new(distance_meters: f64, elevation_meters: f64) -> Self {
+        Self {
+            distance_meters,
+            elevation_meters,
+        }
+    }
 }
 
 /// Parameters for summarizing elevation within a polygon.

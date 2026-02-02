@@ -14,9 +14,9 @@ mod vector_tile;
 mod version_management;
 
 pub use elevation::{
-    DemResolution, ElevationClient, ProfileParameters, ProfileParametersBuilder, ProfileResult,
-    SummarizeElevationParameters, SummarizeElevationParametersBuilder, SummarizeElevationResult,
-    ViewshedParameters, ViewshedParametersBuilder, ViewshedResult,
+    DemResolution, ElevationClient, ElevationPoint, ProfileParameters, ProfileParametersBuilder,
+    ProfileResult, SummarizeElevationParameters, SummarizeElevationParametersBuilder,
+    SummarizeElevationResult, ViewshedParameters, ViewshedParametersBuilder, ViewshedResult,
 };
 pub use feature::{
     AddAttachmentResult, AttachmentInfo, AttachmentInfosResponse, AttachmentSource, CodedValue,

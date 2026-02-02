@@ -1,6 +1,6 @@
 //! Elevation service client implementation.
 
-use crate::{ArcGISClient, Result};
+use crate::{ArcGISClient, ErrorKind, FeatureSet, GPExecuteResult, Result};
 use tracing::instrument;
 
 use super::types::{
@@ -152,9 +152,60 @@ impl<'a> ElevationClient<'a> {
             request = request.query(&[("token", token)]);
         }
 
-        let response = request.send().await?;
+        tracing::debug!(url = %profile_url, "Sending profile request");
 
-        let result: ProfileResult = response.json().await?;
+        let response = request.send().await?;
+        let response_body = response.text().await?;
+
+        tracing::debug!(
+            response_length = response_body.len(),
+            response_body = %response_body,
+            "Received profile response"
+        );
+
+        let gp_result: GPExecuteResult = serde_json::from_str(&response_body)?;
+
+        tracing::debug!(
+            result_count = gp_result.results().len(),
+            message_count = gp_result.messages().len(),
+            "Parsed GP execute result"
+        );
+
+        // Extract the OutputProfile FeatureSet from the GP result
+        let output_param = gp_result
+            .results()
+            .first()
+            .ok_or_else(|| {
+                tracing::error!("GP result missing results array");
+                crate::Error::from(ErrorKind::Api {
+                    code: 0,
+                    message: "Elevation profile result missing results array".to_string(),
+                })
+            })?;
+
+        tracing::debug!(
+            param_name = ?output_param.param_name(),
+            data_type = ?output_param.data_type(),
+            "Extracting profile parameter"
+        );
+
+        let feature_set_value = output_param.value().as_ref().ok_or_else(|| {
+            tracing::error!("OutputProfile parameter missing value");
+            crate::Error::from(ErrorKind::Api {
+                code: 0,
+                message: "Elevation profile parameter missing value field".to_string(),
+            })
+        })?;
+
+        let feature_set: FeatureSet = serde_json::from_value(feature_set_value.clone())?;
+
+        tracing::debug!(
+            feature_count = feature_set.features().len(),
+            geometry_type = ?feature_set.geometry_type(),
+            "Extracted profile FeatureSet"
+        );
+
+        let result = ProfileResult::new(feature_set);
 
         tracing::debug!("Profile generated");
 
@@ -221,9 +272,18 @@ impl<'a> ElevationClient<'a> {
             request = request.query(&[("token", token)]);
         }
 
-        let response = request.send().await?;
+        tracing::debug!(url = %summarize_url, "Sending summarize elevation request");
 
-        let result: SummarizeElevationResult = response.json().await?;
+        let response = request.send().await?;
+        let response_body = response.text().await?;
+
+        tracing::debug!(
+            response_length = response_body.len(),
+            response_body = %response_body,
+            "Received summarize elevation response"
+        );
+
+        let result: SummarizeElevationResult = serde_json::from_str(&response_body)?;
 
         tracing::debug!(
             min = ?result.min_elevation(),
@@ -296,9 +356,18 @@ impl<'a> ElevationClient<'a> {
             request = request.query(&[("token", token)]);
         }
 
-        let response = request.send().await?;
+        tracing::debug!(url = %viewshed_url, "Sending viewshed request");
 
-        let result: ViewshedResult = response.json().await?;
+        let response = request.send().await?;
+        let response_body = response.text().await?;
+
+        tracing::debug!(
+            response_length = response_body.len(),
+            response_body = %response_body,
+            "Received viewshed response"
+        );
+
+        let result: ViewshedResult = serde_json::from_str(&response_body)?;
 
         tracing::debug!(
             visible_area = ?result.visible_area(),

@@ -46,7 +46,7 @@ mod types;
 
 pub use client::ElevationClient;
 pub use types::{
-    DemResolution, ProfileParameters, ProfileParametersBuilder, ProfileResult,
+    DemResolution, ElevationPoint, ProfileParameters, ProfileParametersBuilder, ProfileResult,
     SummarizeElevationParameters, SummarizeElevationParametersBuilder, SummarizeElevationResult,
     ViewshedParameters, ViewshedParametersBuilder, ViewshedResult,
 };

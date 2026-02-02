@@ -90,7 +90,7 @@ pub use services::{
     DifferenceResultType, DifferencesResponse, DirectionsLength, DirectionsStyle,
     DirectionsTimeAttribute, DistanceParameters, DistanceParametersBuilder, DistanceResult, Domain,
     DownloadResult, DownloadTarget, EditError, EditOptions, EditResult, EditResultItem,
-    EditSessionError, ElevationClient, ExportExtent, ExportImageParameters,
+    EditSessionError, ElevationClient, ElevationPoint, ExportExtent, ExportImageParameters,
     ExportImageParametersBuilder, ExportImageResult, ExportMapBuilder, ExportMapParams,
     ExportMapParamsBuilder, ExportMapResponse, ExportResult, ExportTarget, Extent, Feature,
     FeatureQueryParams, FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet,
