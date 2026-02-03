@@ -34,9 +34,15 @@
 //! ```
 
 mod client;
+mod service_definition;
 mod types;
 
 pub use client::PortalClient;
+pub use service_definition::{
+    EditorTrackingInfo, FieldDefinition, FieldDefinitionBuilder, FieldType, GeometryTypeDefinition,
+    LayerDefinition, LayerDefinitionBuilder, ServiceDefinition, ServiceDefinitionBuilder,
+    SpatialReferenceDefinition,
+};
 pub use types::{
     AddItemParams, AddItemResult, CreateGroupParams, CreateServiceParams, CreateServiceResult,
     DeleteItemResult, DeleteServiceResult, GroupInfo, GroupMembership, GroupMembershipType,

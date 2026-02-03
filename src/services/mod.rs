@@ -68,12 +68,14 @@ pub use places::{
 };
 pub use portal::{
     AddItemParams, AddItemResult, CreateGroupParams, CreateServiceParams, CreateServiceResult,
-    DeleteItemResult, DeleteServiceResult, GroupInfo, GroupMembership, GroupMembershipType,
-    GroupResult, GroupSearchParameters, GroupSearchResult, ItemInfo, OverwriteParameters,
-    OverwriteResult, PortalClient, PublishParameters, PublishResult, PublishStatus,
-    SearchParameters, SearchResult, ShareItemResult, SharingParameters, SortOrder,
-    UnshareItemResult, UpdateGroupParams, UpdateItemParams, UpdateItemResult,
-    UpdateServiceDefinitionParams, UpdateServiceDefinitionResult, UserInfo,
+    DeleteItemResult, DeleteServiceResult, EditorTrackingInfo, FieldDefinition,
+    FieldDefinitionBuilder, FieldType, GeometryTypeDefinition, GroupInfo, GroupMembership,
+    GroupMembershipType, GroupResult, GroupSearchParameters, GroupSearchResult, ItemInfo,
+    LayerDefinition, LayerDefinitionBuilder, OverwriteParameters, OverwriteResult, PortalClient,
+    PublishParameters, PublishResult, PublishStatus, SearchParameters, SearchResult,
+    ServiceDefinition, ServiceDefinitionBuilder, ShareItemResult, SharingParameters, SortOrder,
+    SpatialReferenceDefinition, UnshareItemResult, UpdateGroupParams, UpdateItemParams,
+    UpdateItemResult, UpdateServiceDefinitionParams, UpdateServiceDefinitionResult, UserInfo,
 };
 pub use routing::{
     BarrierType, ClosestFacilityParameters, ClosestFacilityParametersBuilder,

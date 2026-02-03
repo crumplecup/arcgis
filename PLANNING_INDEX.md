@@ -12,6 +12,7 @@ along with their last associated commit.
 | [AUTHENTICATION_STRATEGY.md](AUTHENTICATION_STRATEGY.md) | Automated authentication strategy (API Key + Client Credentials) | New document | Today |
 | [docs/examples_expansion_plan.md](docs/examples_expansion_plan.md) | Examples expansion plan (25% → 80% coverage) | New document | Today |
 | [ESRI_GEOMETRY_INTEGRATION_PLAN.md](ESRI_GEOMETRY_INTEGRATION_PLAN.md) | ✅ Geometry consolidation refactor (COMPLETE) | Latest on branch `refactor/consolidate-geometry` | Today |
+| [SERVICE_DEFINITION_TYPING_PLAN.md](SERVICE_DEFINITION_TYPING_PLAN.md) | 🟡 Strong typing for service definitions (replace serde_json::Value) | New document | Today |
 
 ## Project Standards
 
