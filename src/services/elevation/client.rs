@@ -172,16 +172,13 @@ impl<'a> ElevationClient<'a> {
         );
 
         // Extract the OutputProfile FeatureSet from the GP result
-        let output_param = gp_result
-            .results()
-            .first()
-            .ok_or_else(|| {
-                tracing::error!("GP result missing results array");
-                crate::Error::from(ErrorKind::Api {
-                    code: 0,
-                    message: "Elevation profile result missing results array".to_string(),
-                })
-            })?;
+        let output_param = gp_result.results().first().ok_or_else(|| {
+            tracing::error!("GP result missing results array");
+            crate::Error::from(ErrorKind::Api {
+                code: 0,
+                message: "Elevation profile result missing results array".to_string(),
+            })
+        })?;
 
         tracing::debug!(
             param_name = ?output_param.param_name(),

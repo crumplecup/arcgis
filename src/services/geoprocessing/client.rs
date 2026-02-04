@@ -117,9 +117,14 @@ impl<'a> GeoprocessingServiceClient<'a> {
         let mut form: Vec<(&str, String)> = Vec::new();
         form.push(("f", "json".to_string()));
 
-        // Serialize parameters as JSON
+        // Serialize parameters
         for (key, value) in parameters.iter() {
-            let value_str = serde_json::to_string(value)?;
+            let value_str = match value {
+                // For string values, use the raw string without JSON encoding
+                Value::String(s) => s.clone(),
+                // For other types (objects, arrays, numbers), JSON-serialize them
+                _ => serde_json::to_string(value)?,
+            };
             form.push((key.as_str(), value_str));
         }
 
@@ -186,9 +191,14 @@ impl<'a> GeoprocessingServiceClient<'a> {
         let mut form: Vec<(&str, String)> = Vec::new();
         form.push(("f", "json".to_string()));
 
-        // Serialize parameters as JSON
+        // Serialize parameters
         for (key, value) in parameters.iter() {
-            let value_str = serde_json::to_string(value)?;
+            let value_str = match value {
+                // For string values, use the raw string without JSON encoding
+                Value::String(s) => s.clone(),
+                // For other types (objects, arrays, numbers), JSON-serialize them
+                _ => serde_json::to_string(value)?,
+            };
             form.push((key.as_str(), value_str));
         }
 

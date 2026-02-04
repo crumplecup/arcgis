@@ -113,14 +113,11 @@ impl ProfileResult {
     #[instrument(skip(self))]
     pub fn last_point_z(&self) -> Result<f64, ArcGISGeometryError> {
         let points = self.elevation_points()?;
-        points
-            .last()
-            .map(|p| *p.elevation_meters())
-            .ok_or_else(|| {
-                ArcGISGeometryError::new(ArcGISGeometryErrorKind::InvalidGeometry(
-                    "Profile has no points".to_string(),
-                ))
-            })
+        points.last().map(|p| *p.elevation_meters()).ok_or_else(|| {
+            ArcGISGeometryError::new(ArcGISGeometryErrorKind::InvalidGeometry(
+                "Profile has no points".to_string(),
+            ))
+        })
     }
 
     /// Extracts elevation profile points from the feature set.
@@ -193,13 +190,13 @@ impl ProfileResult {
             .map(|(idx, coord)| {
                 // Coordinates are [x, y, z, m] when hasZ and hasM are true
                 if coord.len() < 4 {
-                    let err = ArcGISGeometryError::new(
-                        ArcGISGeometryErrorKind::InvalidGeometry(format!(
+                    let err = ArcGISGeometryError::new(ArcGISGeometryErrorKind::InvalidGeometry(
+                        format!(
                             "Coordinate {} missing Z or M values (length: {}, expected 4)",
                             idx,
                             coord.len()
-                        )),
-                    );
+                        ),
+                    ));
                     tracing::error!(
                         coord_index = idx,
                         coord_length = coord.len(),
@@ -224,7 +221,10 @@ impl ProfileResult {
             .collect();
 
         let points = points?;
-        tracing::debug!(point_count = points.len(), "Successfully extracted elevation points");
+        tracing::debug!(
+            point_count = points.len(),
+            "Successfully extracted elevation points"
+        );
         Ok(points)
     }
 }

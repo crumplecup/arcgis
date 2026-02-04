@@ -1288,7 +1288,8 @@ mod tests {
     fn test_esri_geometry_deserialization() -> anyhow::Result<()> {
         init_tracing();
         // Untagged deserialization - no "type" field needed
-        let json = r#"{"x":-118.2437,"y":34.0522,"spatialReference":{"wkid":4326,"latestWkid":4326}}"#;
+        let json =
+            r#"{"x":-118.2437,"y":34.0522,"spatialReference":{"wkid":4326,"latestWkid":4326}}"#;
         let geometry: ArcGISGeometry = serde_json::from_str(json)?;
 
         match geometry {
