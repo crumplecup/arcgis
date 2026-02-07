@@ -1331,9 +1331,9 @@ pub struct PublishStatus {
 #[derive(Debug, Clone, Default, derive_getters::Getters, derive_setters::Setters)]
 #[setters(prefix = "with_")]
 pub struct UpdateServiceDefinitionParams {
-    /// Updated service definition as JSON.
+    /// Updated service definition (strongly-typed).
     #[setters(skip)]
-    service_definition: Option<serde_json::Value>,
+    service_definition: Option<crate::ServiceDefinition>,
 
     /// Updated description.
     #[setters(skip)]
@@ -1354,8 +1354,22 @@ impl UpdateServiceDefinitionParams {
         Self::default()
     }
 
-    /// Sets the service definition.
-    pub fn with_service_definition(mut self, definition: serde_json::Value) -> Self {
+    /// Sets the service definition using strongly-typed ServiceDefinition.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{UpdateServiceDefinitionParams, ServiceDefinitionBuilder};
+    ///
+    /// let params = UpdateServiceDefinitionParams::new()
+    ///     .with_service_definition(
+    ///         ServiceDefinitionBuilder::default()
+    ///             .name("MyService")
+    ///             .build()
+    ///             .expect("Valid service definition")
+    ///     );
+    /// ```
+    pub fn with_service_definition(mut self, definition: crate::ServiceDefinition) -> Self {
         self.service_definition = Some(definition);
         self
     }
@@ -1418,9 +1432,9 @@ pub struct CreateServiceParams {
     #[setters(skip)]
     capabilities: Option<String>,
 
-    /// Service definition as JSON (contains layers, tables, etc.).
+    /// Service definition (strongly-typed, contains layers, tables, etc.).
     #[setters(skip)]
-    service_definition: Option<serde_json::Value>,
+    service_definition: Option<crate::ServiceDefinition>,
 }
 
 impl CreateServiceParams {
@@ -1467,8 +1481,32 @@ impl CreateServiceParams {
         self
     }
 
-    /// Sets the full service definition.
-    pub fn with_service_definition(mut self, definition: serde_json::Value) -> Self {
+    /// Sets the full service definition using strongly-typed ServiceDefinition.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{
+    ///     CreateServiceParams, ServiceDefinitionBuilder, LayerDefinitionBuilder,
+    ///     FieldDefinitionBuilder, FieldType, GeometryTypeDefinition
+    /// };
+    ///
+    /// let service_def = ServiceDefinitionBuilder::default()
+    ///     .name("MyService")
+    ///     .add_layer(
+    ///         LayerDefinitionBuilder::default()
+    ///             .name("Points")
+    ///             .geometry_type(GeometryTypeDefinition::Point)
+    ///             .build()
+    ///             .expect("Valid layer")
+    ///     )
+    ///     .build()
+    ///     .expect("Valid service definition");
+    ///
+    /// let params = CreateServiceParams::new("MyService")
+    ///     .with_service_definition(service_def);
+    /// ```
+    pub fn with_service_definition(mut self, definition: crate::ServiceDefinition) -> Self {
         self.service_definition = Some(definition);
         self
     }

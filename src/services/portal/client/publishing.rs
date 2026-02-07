@@ -18,30 +18,39 @@ impl<'a> PortalClient<'a> {
     /// # Example
     ///
     /// ```no_run
-    /// # use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient, CreateServiceParams};
+    /// # use arcgis::{
+    /// #     ArcGISClient, ApiKeyAuth, PortalClient, CreateServiceParams,
+    /// #     ServiceDefinitionBuilder, LayerDefinitionBuilder,
+    /// #     FieldDefinitionBuilder, FieldType, GeometryTypeDefinition
+    /// # };
     /// # async fn example(portal: &PortalClient<'_>) -> arcgis::Result<()> {
-    /// // Create a simple feature service with a point layer
-    /// let service_def = serde_json::json!({
-    ///     "layers": [{
-    ///         "name": "MyPoints",
-    ///         "type": "Feature Layer",
-    ///         "geometryType": "esriGeometryPoint",
-    ///         "hasAttachments": true,
-    ///         "fields": [
-    ///             {
-    ///                 "name": "OBJECTID",
-    ///                 "type": "esriFieldTypeOID",
-    ///                 "alias": "Object ID"
-    ///             },
-    ///             {
-    ///                 "name": "Name",
-    ///                 "type": "esriFieldTypeString",
-    ///                 "alias": "Name",
-    ///                 "length": 256
-    ///             }
-    ///         ]
-    ///     }]
-    /// });
+    /// // Create a simple feature service with strongly-typed definitions
+    /// let oid_field = FieldDefinitionBuilder::default()
+    ///     .name("OBJECTID")
+    ///     .field_type(FieldType::Oid)
+    ///     .alias("Object ID")
+    ///     .nullable(false)
+    ///     .editable(false)
+    ///     .build()?;
+    ///
+    /// let name_field = FieldDefinitionBuilder::default()
+    ///     .name("Name")
+    ///     .field_type(FieldType::String)
+    ///     .alias("Name")
+    ///     .length(256)
+    ///     .build()?;
+    ///
+    /// let layer = LayerDefinitionBuilder::default()
+    ///     .name("MyPoints")
+    ///     .geometry_type(GeometryTypeDefinition::Point)
+    ///     .object_id_field("OBJECTID")
+    ///     .fields(vec![oid_field, name_field])
+    ///     .build()?;
+    ///
+    /// let service_def = ServiceDefinitionBuilder::default()
+    ///     .name("MyFeatureService")
+    ///     .add_layer(layer)
+    ///     .build()?;
     ///
     /// let params = CreateServiceParams::new("MyFeatureService")
     ///     .with_description("A hosted feature service")
@@ -98,9 +107,18 @@ impl<'a> PortalClient<'a> {
             create_params_obj["capabilities"] = serde_json::json!(caps);
         }
 
-        // Add layer definitions if provided
-        if let Some(layers) = params.service_definition() {
-            create_params_obj["layers"] = layers.clone();
+        // Add full service definition if provided (layers, tables, spatial reference, etc.)
+        if let Some(service_def) = params.service_definition() {
+            // Serialize the ServiceDefinition to JSON and merge into createParameters
+            let service_def_json = serde_json::to_value(service_def)?;
+            if let serde_json::Value::Object(service_map) = service_def_json {
+                if let serde_json::Value::Object(ref mut params_map) = create_params_obj {
+                    // Merge service definition fields into create_params_obj
+                    for (key, value) in service_map {
+                        params_map.insert(key, value);
+                    }
+                }
+            }
         }
 
         // Build form data
@@ -419,7 +437,9 @@ impl<'a> PortalClient<'a> {
         let mut form = reqwest::multipart::Form::new().text("f", "json");
 
         if let Some(def) = params.service_definition() {
-            form = form.text("updateDefinition", def.to_string());
+            // Serialize ServiceDefinition to JSON string for ESRI API
+            let def_json = serde_json::to_string(def)?;
+            form = form.text("updateDefinition", def_json);
         }
 
         if let Some(desc) = params.description() {

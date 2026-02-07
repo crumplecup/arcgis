@@ -87,9 +87,10 @@
 use anyhow::{Context, Result};
 use arcgis::{
     AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, CreateServiceParams, EditOptions, Feature,
-    FeatureServiceClient, LayerId, NoAuth, PortalClient, SharingParameters,
+    FeatureServiceClient, FieldDefinitionBuilder, FieldType, GeometryTypeDefinition,
+    LayerDefinitionBuilder, LayerId, NoAuth, PortalClient, ServiceDefinitionBuilder,
+    SharingParameters,
 };
-use serde_json::json;
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -221,53 +222,60 @@ async fn demonstrate_workflow_a_direct_service(
     tracing::info!("   Capabilities: Query, Create, Update, Delete, Editing");
     tracing::info!("");
 
-    // Define service schema matching our data
-    let service_def = json!({
-        "layers": [{
-            "name": "Cities",
-            "type": "Feature Layer",
-            "geometryType": "esriGeometryPoint",
-            "hasAttachments": false,
-            "hasZ": false,
-            "hasM": false,
-            "fields": [
-                {
-                    "name": "OBJECTID",
-                    "type": "esriFieldTypeOID",
-                    "alias": "Object ID",
-                    "sqlType": "sqlTypeOther",
-                    "nullable": false,
-                    "editable": false
-                },
-                {
-                    "name": "CITY_NAME",
-                    "type": "esriFieldTypeString",
-                    "alias": "City Name",
-                    "sqlType": "sqlTypeVarchar",
-                    "length": 256,
-                    "nullable": true,
-                    "editable": true
-                },
-                {
-                    "name": "CNTRY_NAME",
-                    "type": "esriFieldTypeString",
-                    "alias": "Country Name",
-                    "sqlType": "sqlTypeVarchar",
-                    "length": 256,
-                    "nullable": true,
-                    "editable": true
-                },
-                {
-                    "name": "POP",
-                    "type": "esriFieldTypeInteger",
-                    "alias": "Population",
-                    "sqlType": "sqlTypeInteger",
-                    "nullable": true,
-                    "editable": true
-                }
-            ]
-        }]
-    });
+    // Define service schema matching our data using strongly-typed API
+    let oid_field = FieldDefinitionBuilder::default()
+        .name("OBJECTID")
+        .field_type(FieldType::Oid)
+        .alias("Object ID")
+        .nullable(false)
+        .editable(false)
+        .build()
+        .context("Failed to build OBJECTID field")?;
+
+    let city_name_field = FieldDefinitionBuilder::default()
+        .name("CITY_NAME")
+        .field_type(FieldType::String)
+        .alias("City Name")
+        .length(256)
+        .nullable(true)
+        .editable(true)
+        .build()
+        .context("Failed to build CITY_NAME field")?;
+
+    let country_name_field = FieldDefinitionBuilder::default()
+        .name("CNTRY_NAME")
+        .field_type(FieldType::String)
+        .alias("Country Name")
+        .length(256)
+        .nullable(true)
+        .editable(true)
+        .build()
+        .context("Failed to build CNTRY_NAME field")?;
+
+    let population_field = FieldDefinitionBuilder::default()
+        .name("POP")
+        .field_type(FieldType::Integer)
+        .alias("Population")
+        .nullable(true)
+        .editable(true)
+        .build()
+        .context("Failed to build POP field")?;
+
+    let layer = LayerDefinitionBuilder::default()
+        .id(0u32)
+        .name("Cities")
+        .layer_type("Feature Layer")
+        .geometry_type(GeometryTypeDefinition::Point)
+        .object_id_field("OBJECTID")
+        .fields(vec![oid_field, city_name_field, country_name_field, population_field])
+        .build()
+        .context("Failed to build layer definition")?;
+
+    let service_def = ServiceDefinitionBuilder::default()
+        .name("SampleCitiesDirect")
+        .layers(vec![layer])
+        .build()
+        .context("Failed to build service definition")?;
 
     let create_params = CreateServiceParams::new("SampleCitiesDirect")
         .with_description("Created via direct service creation workflow using Rust SDK")

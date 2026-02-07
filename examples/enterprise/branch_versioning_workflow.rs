@@ -98,8 +98,10 @@
 use anyhow::{Context, Result};
 use arcgis::{
     ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISGeometry, ArcGISPoint, ConflictDetection,
-    CreateServiceParams, CreateVersionParams, EditOptions, Feature, FeatureServiceClient, LayerId,
-    ObjectId, PortalClient, SessionId, VersionGuid, VersionManagementClient, VersionPermission,
+    CreateServiceParams, CreateVersionParams, EditOptions, Feature, FeatureServiceClient,
+    FieldDefinitionBuilder, FieldType, GeometryTypeDefinition, LayerDefinitionBuilder, LayerId,
+    ObjectId, PortalClient, ServiceDefinitionBuilder, SessionId, VersionGuid,
+    VersionManagementClient, VersionPermission,
 };
 use serde_json::json;
 use std::collections::HashMap;
@@ -171,11 +173,97 @@ async fn create_branch_versioned_service() -> Result<ServiceInfo> {
     let unique_name = format!("demo_versioning_{}", Uuid::new_v4().simple());
     tracing::info!("   Service name: {}", unique_name);
 
-    // Create service with editing capabilities
-    // Note: Branch versioning must be enabled after service creation via service definition
+    // Build service definition with branch versioning requirements
+    tracing::info!("   Creating service definition with branch versioning");
+
+    // ObjectID field (required for all feature services)
+    let oid_field = FieldDefinitionBuilder::default()
+        .name("OBJECTID")
+        .field_type(FieldType::Oid)
+        .alias("Object ID")
+        .nullable(false)
+        .editable(false)
+        .build()
+        .context("Failed to build ObjectID field")?;
+
+    // GlobalID field (required for branch versioning)
+    let globalid_field = FieldDefinitionBuilder::default()
+        .name("GlobalID")
+        .field_type(FieldType::GlobalId)
+        .alias("Global ID")
+        .nullable(false)
+        .editable(false)
+        .length(38)
+        .build()
+        .context("Failed to build GlobalID field")?;
+
+    // User fields for the demo
+    let name_field = FieldDefinitionBuilder::default()
+        .name("NAME")
+        .field_type(FieldType::String)
+        .alias("Name")
+        .length(255)
+        .nullable(true)
+        .editable(true)
+        .build()
+        .context("Failed to build NAME field")?;
+
+    let description_field = FieldDefinitionBuilder::default()
+        .name("DESCRIPTION")
+        .field_type(FieldType::String)
+        .alias("Description")
+        .length(1024)
+        .nullable(true)
+        .editable(true)
+        .build()
+        .context("Failed to build DESCRIPTION field")?;
+
+    let value_field = FieldDefinitionBuilder::default()
+        .name("VALUE")
+        .field_type(FieldType::Integer)
+        .alias("Value")
+        .nullable(true)
+        .editable(true)
+        .build()
+        .context("Failed to build VALUE field")?;
+
+    // Create branch-versioned layer
+    let layer = LayerDefinitionBuilder::default()
+        .id(0u32)
+        .name("DemoPoints")
+        .geometry_type(GeometryTypeDefinition::Point)
+        .object_id_field("OBJECTID")
+        .global_id_field("GlobalID")
+        .display_field("NAME")
+        .fields(vec![
+            oid_field,
+            globalid_field,
+            name_field,
+            description_field,
+            value_field,
+        ])
+        .is_data_branch_versioned(true)
+        .build()
+        .context("Failed to build layer definition")?;
+
+    // Create service definition
+    let service_def = ServiceDefinitionBuilder::default()
+        .name(&unique_name)
+        .service_description("Temporary branch versioning demo - will be deleted")
+        .capabilities("Query,Create,Update,Delete,Editing")
+        .max_record_count(2000)
+        .allow_geometry_updates(true)
+        .layers(vec![layer])
+        .build()
+        .context("Failed to build service definition")?;
+
+    tracing::info!("   ✅ Service definition built with branch versioning enabled");
+
+    // Create service with strongly-typed definition
     let service_params = CreateServiceParams::new(&unique_name)
         .with_description("Temporary branch versioning demo - will be deleted")
-        .with_capabilities("Query,Create,Update,Delete,Editing");
+        .with_capabilities("Query,Create,Update,Delete,Editing")
+        .with_service_definition(service_def);
 
     let create_result = portal
         .create_service(service_params)
@@ -263,7 +351,7 @@ async fn create_and_edit_version(
     // Step 1: Create named version
     let version_name = format!(
         "edit_branch_{}",
-        Uuid::new_v4().simple().to_string()[..8].to_string()
+        &Uuid::new_v4().simple().to_string()[..8]
     );
     tracing::info!("   Creating version: {}", version_name);
 
@@ -404,7 +492,7 @@ async fn reconcile_and_post(
     let has_conflicts = reconcile_response
         .has_conflicts()
         .as_ref()
-        .map_or(false, |x| *x);
+        .is_some_and(|x| *x);
 
     if has_conflicts {
         tracing::warn!("⚠️  Conflicts detected during reconcile");
