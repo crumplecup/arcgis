@@ -210,7 +210,7 @@ fn test_layer_missing_global_id_for_versioning() {
         .to_string();
     assert!(msg.contains("GlobalID"));
     assert!(msg.contains("FieldType::GlobalId"));
-    assert!(msg.contains("branch-version-scenarios"));
+    assert!(msg.contains("is_data_branch_versioned"));
 }
 
 /// Duplicate field names (case-insensitive) are caught.

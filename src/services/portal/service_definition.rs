@@ -1,16 +1,17 @@
 //! Service definition types for ArcGIS Feature Services.
 //!
 //! This module provides strongly-typed Rust structures that mirror ESRI's Feature Service
-//! JSON specification. All types are validated against official ESRI documentation to ensure
-//! API compatibility.
+//! JSON specification. These types are used with the `createService` and `addToDefinition`
+//! REST operations to define hosted feature service schemas.
 //!
 //! # ESRI Specification Sources
 //!
 //! - **Feature Service**: <https://developers.arcgis.com/rest/services-reference/enterprise/feature-service/>
 //! - **Layer Definition**: <https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/>
 //! - **Create Service**: <https://developers.arcgis.com/rest/users-groups-and-items/create-service/>
+//! - **Add to Definition**: <https://developers.arcgis.com/rest/services-reference/enterprise/add-to-definition-feature-service/>
 //!
-//! # Example: Creating a Branch-Versioned Service
+//! # Example: Defining a hosted feature service schema
 //!
 //! ```no_run
 //! use arcgis::{
@@ -18,42 +19,54 @@
 //!     GeometryTypeDefinition, FieldType,
 //! };
 //!
-//! let field = FieldDefinitionBuilder::default()
+//! let oid = FieldDefinitionBuilder::default()
 //!     .name("OBJECTID")
 //!     .field_type(FieldType::Oid)
 //!     .nullable(false)
 //!     .editable(false)
 //!     .build()?;
 //!
+//! let name_field = FieldDefinitionBuilder::default()
+//!     .name("Name")
+//!     .field_type(FieldType::String)
+//!     .length(255i32)
+//!     .build()?;
+//!
 //! let mut layer_builder = LayerDefinitionBuilder::default();
-//! layer_builder.id(0u32).name("Points").geometry_type(GeometryTypeDefinition::Point);
-//! let layer = layer_builder.add_field(field).build()?;
+//! layer_builder
+//!     .id(0u32)
+//!     .name("Points")
+//!     .geometry_type(GeometryTypeDefinition::Point);
+//! let layer = layer_builder
+//!     .add_field(oid)
+//!     .add_field(name_field)
+//!     .build()?;
 //!
 //! let mut svc_builder = ServiceDefinitionBuilder::default();
-//! svc_builder.name("MyVersionedService");
+//! svc_builder
+//!     .name("MyPointService")
+//!     .capabilities("Create,Delete,Query,Update,Editing")
+//!     .max_record_count(2000i32);
 //! let service_def = svc_builder.add_layer(layer).build()?;
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
 use serde::{Deserialize, Serialize};
 
-/// Top-level service definition for Feature Services.
+/// Top-level service definition for a hosted Feature Service.
 ///
-/// Maps to ESRI's `createParameters` JSON object used with the createService operation.
+/// Used as the `createParameters` JSON for the `createService` operation, and also
+/// returned when reading an existing service via `GET {serviceUrl}?f=json`.
 ///
 /// # ESRI Documentation
 ///
 /// Source: <https://developers.arcgis.com/rest/users-groups-and-items/create-service/>
 ///
+/// The `createService` operation creates a hosted feature service. The layer and table
+/// schema can be included in the same request or added later via `addToDefinition`.
+///
 /// Required properties:
-/// - `name`: Service name
-///
-/// All other properties are optional but recommended for production services.
-///
-/// # Branch Versioning
-///
-/// To enable branch versioning, include layers with ObjectID and GlobalID fields.
-/// Branch versioning is automatically enabled when these requirements are met.
+/// - `name`: Service name (unique within your organization's content)
 #[derive(
     Debug, Clone, Default, Serialize, Deserialize, derive_builder::Builder, derive_getters::Getters,
 )]
@@ -99,8 +112,8 @@ pub struct ServiceDefinition {
 
     /// Service capabilities.
     ///
-    /// Comma-separated list. Common: "Create,Delete,Query,Update,Editing".
-    /// For versioning: "Create,Delete,Query,Update,Editing,Sync".
+    /// Comma-separated list. Common values: "Create,Delete,Query,Update,Editing".
+    /// Include "Sync" to enable offline sync (extract and synchronize replicas).
     #[serde(skip_serializing_if = "Option::is_none")]
     #[builder(default)]
     capabilities: Option<String>,
@@ -179,15 +192,7 @@ impl ServiceDefinitionBuilder {
 /// - `id`: Layer ID (unique within service)
 /// - `name`: Layer name
 /// - `geometryType`: Type of geometry
-/// - `fields`: Field definitions (must include ObjectID)
-///
-/// # Branch Versioning Requirements
-///
-/// For branch-versioned layers, ESRI requires:
-/// - An ObjectID field (type: `esriFieldTypeOID`)
-/// - A GlobalID field (type: `esriFieldTypeGlobalID`)
-///
-/// Source: <https://pro.arcgis.com/en/pro-app/latest/help/data/geodatabases/overview/branch-version-scenarios.htm>
+/// - `fields`: Field definitions (must include an ObjectID field)
 #[derive(
     Debug, Clone, Serialize, Deserialize, derive_builder::Builder, derive_getters::Getters,
 )]
@@ -216,7 +221,6 @@ pub struct LayerDefinition {
     /// Field definitions.
     ///
     /// Must include at least an ObjectID field.
-    /// For versioning, must also include GlobalID field.
     ///
     /// Note: When deserializing from the service root endpoint (`GET {serviceUrl}?f=json`),
     /// ESRI returns only layer stubs without field definitions. Use
@@ -234,7 +238,8 @@ pub struct LayerDefinition {
 
     /// Name of the GlobalID field.
     ///
-    /// Required for branch versioning. Default: "GlobalID".
+    /// When present, enables features that depend on globally unique identifiers
+    /// such as offline sync and relationship tracking.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[builder(default)]
     global_id_field: Option<String>,
@@ -290,7 +295,8 @@ pub struct LayerDefinition {
 
     /// Whether data is branch versioned.
     ///
-    /// ESRI sets this automatically when GlobalID field is present.
+    /// Read-only property returned by existing services. Branch versioning is configured
+    /// through enterprise geodatabase administration, not through the REST API schema.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[builder(default)]
     is_data_branch_versioned: Option<bool>,
@@ -337,7 +343,7 @@ impl LayerDefinitionBuilder {
 /// # Special Fields
 ///
 /// - **ObjectID**: Required for all layers. Must be non-nullable, non-editable.
-/// - **GlobalID**: Required for branch versioning. Must be non-nullable, non-editable.
+/// - **GlobalID**: Enables offline sync and relationship tracking. Must be non-nullable, non-editable.
 /// - **Geometry**: Implicitly defined by layer's `geometryType`.
 ///
 /// # Field Naming
@@ -497,9 +503,9 @@ pub enum FieldType {
     #[serde(rename = "esriFieldTypeGUID")]
     Guid,
 
-    /// Global ID (required for versioning).
+    /// Global ID (GUID automatically assigned by ESRI).
     ///
-    /// Must be non-nullable and non-editable. Required for branch versioning.
+    /// Must be non-nullable and non-editable. Enables offline sync and relationship tracking.
     #[serde(rename = "esriFieldTypeGlobalID")]
     GlobalId,
 
@@ -697,7 +703,6 @@ pub struct TableDefinition {
     /// Field definitions.
     ///
     /// Must include at least an ObjectID field.
-    /// For versioning, must also include GlobalID field.
     #[serde(default)]
     #[builder(default)]
     fields: Vec<FieldDefinition>,
@@ -711,7 +716,8 @@ pub struct TableDefinition {
 
     /// Name of the GlobalID field.
     ///
-    /// Required for branch versioning. Default: "GlobalID".
+    /// When present, enables features that depend on globally unique identifiers
+    /// such as offline sync and relationship tracking.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[builder(default)]
     global_id_field: Option<String>,
@@ -755,7 +761,8 @@ pub struct TableDefinition {
 
     /// Whether data is branch versioned.
     ///
-    /// ESRI sets this automatically when GlobalID field is present.
+    /// Read-only property returned by existing services. Branch versioning is configured
+    /// through enterprise geodatabase administration, not through the REST API schema.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[builder(default)]
     is_data_branch_versioned: Option<bool>,
@@ -1498,7 +1505,7 @@ impl Default for FieldDefinition {
 ///
 /// Validation rules enforce ESRI's requirements for Feature Services:
 /// - ObjectID field is required and must be non-nullable and non-editable
-/// - GlobalID field is required when branch versioning is enabled
+/// - If `is_data_branch_versioned` is set to `true`, a GlobalID field must also be present
 /// - Field names must be unique within a layer or table
 /// - Layer and table IDs must be unique within the service
 /// - Named field references (object_id_field, global_id_field, display_field)
@@ -1589,18 +1596,19 @@ pub enum ServiceDefinitionValidationError {
         field_name: String,
     },
 
-    /// Branch versioning is enabled but no GlobalID field exists.
+    /// `is_data_branch_versioned` is set to `true` but no GlobalID field exists.
+    ///
+    /// Note: Branch versioning requires enterprise geodatabase administration and
+    /// cannot be enabled through the REST API alone.
     ///
     /// # Fix
     ///
-    /// Add a field with `FieldType::GlobalId`, `nullable: false`, `editable: false`,
-    /// `length: 38`.
-    ///
-    /// See <https://pro.arcgis.com/en/pro-app/latest/help/data/geodatabases/overview/branch-version-scenarios.htm>
+    /// Either add a field with `FieldType::GlobalId`, `nullable: false`, `editable: false`,
+    /// `length: 38`, or remove `is_data_branch_versioned: true`.
     #[display(
         "{entity_type} '{}' (id={}): is_data_branch_versioned is true but no GlobalID field found. \
-         Add a field with FieldType::GlobalId, nullable: false, editable: false, length: 38. \
-         See https://pro.arcgis.com/en/pro-app/latest/help/data/geodatabases/overview/branch-version-scenarios.htm",
+         Add a field with FieldType::GlobalId, nullable: false, editable: false, length: 38, \
+         or remove is_data_branch_versioned.",
         name,
         id
     )]
