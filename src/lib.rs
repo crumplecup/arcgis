@@ -144,6 +144,7 @@ pub use services::{
     ViewshedParameters, ViewshedParametersBuilder, ViewshedResult,
 };
 pub use types::{AttachmentId, LayerId, ObjectId};
+pub use util::check_esri_error;
 
 /// Result type alias using this crate's [`Error`] type.
 pub type Result<T> = std::result::Result<T, Error>;

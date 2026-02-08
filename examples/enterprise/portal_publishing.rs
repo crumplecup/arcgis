@@ -213,10 +213,17 @@ async fn demonstrate_workflow_a_direct_service(
     // ========================================================================
     // STEP 2: Create hosted feature service with schema
     // ========================================================================
+    // Generate unique service name to avoid conflicts with previous runs
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let service_name = format!("SampleCitiesDirect_{}", timestamp);
+
     tracing::info!("");
     tracing::info!("🏗️  STEP 2: Creating hosted feature service with schema");
     tracing::info!("");
-    tracing::info!("   Service Name: SampleCitiesDirect");
+    tracing::info!("   Service Name: {}", service_name);
     tracing::info!("   Type: Hosted Feature Service");
     tracing::info!("   Schema: Point layer with CITY_NAME, CNTRY_NAME, POP fields");
     tracing::info!("   Capabilities: Query, Create, Update, Delete, Editing");
@@ -277,12 +284,12 @@ async fn demonstrate_workflow_a_direct_service(
         .context("Failed to build layer definition")?;
 
     let service_def = ServiceDefinitionBuilder::default()
-        .name("SampleCitiesDirect")
+        .name(&service_name)
         .layers(vec![layer])
         .build()
         .context("Failed to build service definition")?;
 
-    let create_params = CreateServiceParams::new("SampleCitiesDirect")
+    let create_params = CreateServiceParams::new(&service_name)
         .with_description("Created via direct service creation workflow using Rust SDK")
         .with_capabilities("Query,Create,Update,Delete,Editing")
         .with_max_record_count(1000)
@@ -307,8 +314,25 @@ async fn demonstrate_workflow_a_direct_service(
 
     // Wait a moment for service to be ready
     tracing::info!("");
-    tracing::info!("⏳ Waiting for service to initialize (5 seconds)...");
-    tokio::time::sleep(Duration::from_secs(5)).await;
+    tracing::info!("⏳ Waiting for service to initialize (15 seconds)...");
+    tracing::info!("   (Hosted services need time to provision on ArcGIS Online)");
+    tokio::time::sleep(Duration::from_secs(15)).await;
+
+    // Verify service is accessible before adding features
+    tracing::info!("");
+    tracing::info!("🔍 Verifying service is accessible...");
+    let service_client = FeatureServiceClient::new(&service_url, client);
+    match service_client.get_definition().await {
+        Ok(def) => {
+            tracing::info!("   ✓ Service is accessible");
+            tracing::info!("   Layers: {}", def.layers().len());
+        }
+        Err(e) => {
+            tracing::warn!("   ⚠ Service not yet accessible: {}", e);
+            tracing::info!("   Waiting additional 10 seconds...");
+            tokio::time::sleep(Duration::from_secs(10)).await;
+        }
+    }
 
     // ========================================================================
     // STEP 3: Add features to the service
@@ -343,7 +367,6 @@ async fn demonstrate_workflow_a_direct_service(
     }
 
     // Add features to layer 0
-    let service_client = FeatureServiceClient::new(&service_url, client);
     let edit_result = service_client
         .add_features(LayerId(0), features_to_add, EditOptions::default())
         .await?;

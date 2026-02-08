@@ -154,6 +154,9 @@ impl<'a> PortalClient<'a> {
         let response_text = response.text().await?;
         tracing::debug!(response = %response_text, "createService raw response");
 
+        // Check for ESRI error in response
+        crate::check_esri_error(&response_text, "createService")?;
+
         // Parse response
         let result: CreateServiceResult = serde_json::from_str(&response_text)?;
 

@@ -219,35 +219,7 @@ impl<'a> GeometryServiceClient<'a> {
         }
 
         let response_text = response.text().await?;
-
-        // Check for ArcGIS error response (HTTP 200 but with error payload)
-        if response_text.contains("\"error\"") {
-            tracing::error!(response = %response_text, "API returned error in response body");
-
-            // Try to parse error details
-            #[derive(serde::Deserialize)]
-            struct ErrorResponse {
-                error: ErrorDetail,
-            }
-            #[derive(serde::Deserialize)]
-            struct ErrorDetail {
-                code: i32,
-                message: String,
-            }
-
-            if let Ok(err_resp) = serde_json::from_str::<ErrorResponse>(&response_text) {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: err_resp.error.code,
-                    message: err_resp.error.message,
-                }));
-            } else {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: 0,
-                    message: response_text,
-                }));
-            }
-        }
-
+        crate::check_esri_error(&response_text, "project")?;
         let result: ProjectResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(
@@ -428,35 +400,7 @@ impl<'a> GeometryServiceClient<'a> {
 
         let response_text = response.text().await?;
         tracing::debug!(response = %response_text, "Buffer raw response");
-
-        // Check for ArcGIS error response (HTTP 200 but with error payload)
-        if response_text.contains("\"error\"") {
-            tracing::error!(response = %response_text, "API returned error in response body");
-
-            // Try to parse error details
-            #[derive(serde::Deserialize)]
-            struct ErrorResponse {
-                error: ErrorDetail,
-            }
-            #[derive(serde::Deserialize)]
-            struct ErrorDetail {
-                code: i32,
-                message: String,
-            }
-
-            if let Ok(err_resp) = serde_json::from_str::<ErrorResponse>(&response_text) {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: err_resp.error.code,
-                    message: err_resp.error.message,
-                }));
-            } else {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: 0,
-                    message: response_text,
-                }));
-            }
-        }
-
+        crate::check_esri_error(&response_text, "buffer")?;
         let result: BufferResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(result_count = result.geometries().len(), "buffer completed");
@@ -989,34 +933,7 @@ impl<'a> GeometryServiceClient<'a> {
 
         let response_text = response.text().await?;
         tracing::debug!(response = %response_text, "Distance raw response");
-
-        // Check for ArcGIS error response (HTTP 200 but with error payload)
-        if response_text.contains("\"error\"") {
-            tracing::error!(response = %response_text, "API returned error in response body");
-
-            #[derive(serde::Deserialize)]
-            struct ErrorResponse {
-                error: ErrorDetail,
-            }
-            #[derive(serde::Deserialize)]
-            struct ErrorDetail {
-                code: i32,
-                message: String,
-            }
-
-            if let Ok(err_resp) = serde_json::from_str::<ErrorResponse>(&response_text) {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: err_resp.error.code,
-                    message: err_resp.error.message,
-                }));
-            } else {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: 0,
-                    message: response_text,
-                }));
-            }
-        }
-
+        crate::check_esri_error(&response_text, "distance")?;
         let result: DistanceResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(distance = result.distance(), "distance completed");

@@ -1,7 +1,9 @@
 //! Service definition retrieval operations for the Feature Service client.
 
 use super::FeatureServiceClient;
-use crate::{LayerDefinition, LayerId, Result, ServiceDefinition, TableDefinition};
+use crate::{
+    LayerDefinition, LayerId, Result, ServiceDefinition, TableDefinition, check_esri_error,
+};
 use tracing::instrument;
 
 impl<'a> FeatureServiceClient<'a> {
@@ -69,7 +71,9 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let definition: ServiceDefinition = response.json().await?;
+        let response_text = response.text().await?;
+        check_esri_error(&response_text, "get_definition")?;
+        let definition: ServiceDefinition = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             layer_count = definition.layers().len(),
@@ -139,7 +143,9 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let layer: LayerDefinition = response.json().await?;
+        let response_text = response.text().await?;
+        check_esri_error(&response_text, "get_layer_definition")?;
+        let layer: LayerDefinition = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             name = %layer.name(),
@@ -203,7 +209,9 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let table: TableDefinition = response.json().await?;
+        let response_text = response.text().await?;
+        check_esri_error(&response_text, "get_table_definition")?;
+        let table: TableDefinition = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             name = %table.name(),
