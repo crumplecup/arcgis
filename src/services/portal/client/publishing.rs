@@ -490,6 +490,159 @@ impl<'a> PortalClient<'a> {
         Ok(result)
     }
 
+    /// Adds layers or tables to an existing hosted feature service.
+    ///
+    /// ESRI's `createService` creates an empty service container. Use this method to add
+    /// layer and table definitions with their field schemas before adding features.
+    ///
+    /// # Workflow
+    ///
+    /// 1. [`create_service`](Self::create_service) - Creates empty service
+    /// 2. **`add_to_definition`** - Adds layer/table schemas
+    /// 3. [`FeatureServiceClient::add_features`](crate::FeatureServiceClient::add_features) - Adds feature data
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{
+    ///     ArcGISClient, ApiKeyAuth, PortalClient, CreateServiceParams,
+    ///     AddToDefinitionParams, FieldDefinitionBuilder, FieldType,
+    ///     LayerDefinitionBuilder, GeometryTypeDefinition,
+    /// };
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// let client = ArcGISClient::new(auth);
+    /// let portal = PortalClient::new("https://www.arcgis.com/sharing/rest", &client);
+    ///
+    /// // Step 1: Create empty service
+    /// let create_result = portal
+    ///     .create_service(CreateServiceParams::new("MyService"))
+    ///     .await?;
+    ///
+    /// let service_item_id = create_result.service_item_id()
+    ///     .as_ref()
+    ///     .expect("Service item ID");
+    ///
+    /// // Step 2: Add layer definition
+    /// let oid_field = FieldDefinitionBuilder::default()
+    ///     .name("OBJECTID")
+    ///     .field_type(FieldType::Oid)
+    ///     .nullable(false)
+    ///     .editable(false)
+    ///     .build()
+    ///     .expect("Valid field");
+    ///
+    /// let layer = LayerDefinitionBuilder::default()
+    ///     .id(0u32)
+    ///     .name("Points")
+    ///     .geometry_type(GeometryTypeDefinition::Point)
+    ///     .fields(vec![oid_field])
+    ///     .build()
+    ///     .expect("Valid layer");
+    ///
+    /// let add_result = portal
+    ///     .add_to_definition(service_item_id, AddToDefinitionParams::new()
+    ///         .with_layers(vec![layer]))
+    ///     .await?;
+    ///
+    /// println!("Added {} layers", add_result.layers().len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, service_item_id, params))]
+    pub async fn add_to_definition(
+        &self,
+        service_item_id: impl AsRef<str>,
+        params: crate::AddToDefinitionParams,
+    ) -> Result<crate::AddToDefinitionResult> {
+        let service_item_id = service_item_id.as_ref();
+
+        let layer_count = params.layers().as_ref().map_or(0, |v| v.len());
+        let table_count = params.tables().as_ref().map_or(0, |v| v.len());
+
+        tracing::debug!(
+            service_item_id = %service_item_id,
+            layer_count,
+            table_count,
+            "Adding to service definition"
+        );
+
+        // Get the service item to find its URL
+        let item = self.get_item(service_item_id).await?;
+
+        let service_url = item.url().clone().ok_or_else(|| {
+            crate::Error::from(crate::ErrorKind::Api {
+                code: 400,
+                message: "Item does not have a service URL".to_string(),
+            })
+        })?;
+
+        // addToDefinition is an admin operation - convert service URL to admin URL
+        // Regular: https://services.arcgis.com/.../rest/services/ServiceName/FeatureServer
+        // Admin:   https://services.arcgis.com/.../rest/admin/services/ServiceName/FeatureServer/addToDefinition
+        let admin_url = service_url.replace("/rest/services/", "/rest/admin/services/");
+        let url = format!("{}/addToDefinition", admin_url);
+
+        tracing::debug!(url = %url, "Sending addToDefinition request");
+
+        // Build the addToDefinition JSON payload
+        let mut add_definition = serde_json::Map::new();
+
+        if let Some(layers) = params.layers() {
+            let layers_json = serde_json::to_value(layers)?;
+            add_definition.insert("layers".to_string(), layers_json);
+        }
+
+        if let Some(tables) = params.tables() {
+            let tables_json = serde_json::to_value(tables)?;
+            add_definition.insert("tables".to_string(), tables_json);
+        }
+
+        let add_definition_str = serde_json::to_string(&add_definition)?;
+
+        // Build multipart form
+        let mut form = reqwest::multipart::Form::new()
+            .text("f", "json")
+            .text("addToDefinition", add_definition_str);
+
+        // Add token if required
+        if let Some(token) = self.client.get_token_if_required().await? {
+            form = form.text("token", token);
+        }
+
+        let response = self.client.http().post(&url).multipart(form).send().await?;
+
+        // Check for HTTP errors
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error response: {}", e));
+            tracing::error!(status = %status, error = %error_text, "addToDefinition request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        // Parse response
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "addToDefinition response");
+        crate::check_esri_error(&response_text, "addToDefinition")?;
+        let result: crate::AddToDefinitionResult = serde_json::from_str(&response_text)?;
+
+        tracing::info!(
+            success = result.success(),
+            layers_added = result.layers().len(),
+            tables_added = result.tables().len(),
+            "addToDefinition completed"
+        );
+
+        Ok(result)
+    }
+
     /// Deletes a hosted service.
     ///
     /// Permanently removes a hosted service and its associated item.

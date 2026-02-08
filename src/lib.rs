@@ -76,7 +76,8 @@ pub use geometry::{
     SpatialReference, SpatialRel,
 };
 pub use services::{
-    AddAttachmentResult, AddItemParams, AddItemResult, AddressCandidate, AlterResponse,
+    AddAttachmentResult, AddItemParams, AddItemResult, AddToDefinitionParams,
+    AddToDefinitionResult, AddedLayerInfo, AddressCandidate, AlterResponse,
     AlterVersionParams, AreaUnit, AreasAndLengthsParameters, AreasAndLengthsParametersBuilder,
     AreasAndLengthsResult, AttachmentInfo, AttachmentInfosResponse, AttachmentSource, BarrierType,
     BatchCandidateResult, BatchCandidatesResponse, BatchGeocodeResponse, BatchLocation,
