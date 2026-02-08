@@ -47,7 +47,7 @@ impl<'a> VersionManagementClient<'a> {
     ///
     /// let response = vm_client.create(params).await?;
     ///
-    /// if *response.success() {
+    /// if response.success().unwrap_or(false) {
     ///     if let Some(version_info) = response.version_info() {
     ///         println!("Created version: {}", version_info.version_name());
     ///     }
@@ -100,9 +100,14 @@ impl<'a> VersionManagementClient<'a> {
             }));
         }
 
-        let create_response: CreateVersionResponse = response.json().await?;
+        // Get raw response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "Raw create version response");
 
-        if *create_response.success() {
+        // Try to deserialize
+        let create_response: CreateVersionResponse = serde_json::from_str(&response_text)?;
+
+        if create_response.success().is_some_and(|s| s) {
             tracing::info!(
                 version_name = %params.version_name(),
                 "Version created successfully"

@@ -20,7 +20,7 @@
 //! );
 //!
 //! // Project a point from WGS84 to Web Mercator
-//! let point = ArcGISPoint { x: -122.4194, y: 37.7749, z: None, m: None, spatial_reference: None };
+//! let point = ArcGISPoint::new(-122.4194, 37.7749);
 //! let projected = geometry_service.project(vec![ArcGISGeometry::Point(point)], 4326, 3857).await?;
 //! # Ok(())
 //! # }

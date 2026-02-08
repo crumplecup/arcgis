@@ -158,7 +158,7 @@ impl<'a> QueryBuilder<'a> {
     /// ```no_run
     /// # use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId, ArcGISPoint, ArcGISGeometry, GeometryType, SpatialRel};
     /// # async fn example(service: &FeatureServiceClient<'_>) -> arcgis::Result<()> {
-    /// let point = ArcGISPoint { x: -118.0, y: 34.0, z: None, m: None, spatial_reference: None };
+    /// let point = ArcGISPoint::new(-118.0, 34.0);
     /// let features = service
     ///     .query(LayerId::new(0))
     ///     .spatial_filter(ArcGISGeometry::Point(point), GeometryType::Point, SpatialRel::Intersects)

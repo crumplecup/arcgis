@@ -44,11 +44,11 @@ impl ArcGISClient {
     /// Then use `from_env()` - no manual `dotenvy::dotenv()` call needed:
     ///
     /// ```no_run
-    /// use arcgis::{ApiKeyAuth, ArcGISClient};
+    /// use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient};
     ///
     /// # fn example() -> arcgis::Result<()> {
-    /// // Automatically loads .env and reads ARCGIS_API_KEY
-    /// let auth = ApiKeyAuth::from_env()?;
+    /// // Automatically loads .env and reads ARCGIS_CONTENT_KEY
+    /// let auth = ApiKeyAuth::from_env(ApiKeyTier::Content)?;
     /// let client = ArcGISClient::new(auth);
     /// # Ok(())
     /// # }

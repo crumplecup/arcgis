@@ -31,26 +31,28 @@ impl<'a> PortalClient<'a> {
     ///     .alias("Object ID")
     ///     .nullable(false)
     ///     .editable(false)
-    ///     .build()?;
+    ///     .build()
+    ///     .expect("Valid field definition");
     ///
     /// let name_field = FieldDefinitionBuilder::default()
     ///     .name("Name")
     ///     .field_type(FieldType::String)
     ///     .alias("Name")
     ///     .length(256)
-    ///     .build()?;
+    ///     .build()
+    ///     .expect("Valid field definition");
     ///
     /// let layer = LayerDefinitionBuilder::default()
     ///     .name("MyPoints")
     ///     .geometry_type(GeometryTypeDefinition::Point)
     ///     .object_id_field("OBJECTID")
     ///     .fields(vec![oid_field, name_field])
-    ///     .build()?;
+    ///     .build()
+    ///     .expect("Valid layer definition");
     ///
-    /// let service_def = ServiceDefinitionBuilder::default()
-    ///     .name("MyFeatureService")
-    ///     .add_layer(layer)
-    ///     .build()?;
+    /// let mut svc_builder = ServiceDefinitionBuilder::default();
+    /// svc_builder.name("MyFeatureService");
+    /// let service_def = svc_builder.add_layer(layer).build().expect("Valid service definition");
     ///
     /// let params = CreateServiceParams::new("MyFeatureService")
     ///     .with_description("A hosted feature service")

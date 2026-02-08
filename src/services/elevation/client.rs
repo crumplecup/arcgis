@@ -23,10 +23,11 @@ use super::types::{
 /// let client = ArcGISClient::new(auth);
 /// let elevation = ElevationClient::new(&client);
 ///
-/// // Get elevation profile along a line
+/// // Get elevation profile along a line (FeatureSet JSON with a polyline)
+/// let line_features = r#"{"geometryType":"esriGeometryPolyline","features":[{"geometry":{"paths":[[[-120,40],[-119,41]]]}}],"spatialReference":{"wkid":4326}}"#;
 /// let params = ProfileParametersBuilder::default()
-///     .input_geometry("{\"paths\":[[[-120,40],[-119,41]]]}")
-///     .geometry_type("esriGeometryPolyline")
+///     .input_line_features(line_features)
+///     .dem_resolution("30m")
 ///     .build()
 ///     .expect("Valid parameters");
 ///
@@ -118,20 +119,19 @@ impl<'a> ElevationClient<'a> {
     /// let client = ArcGISClient::new(auth);
     /// let elevation = ElevationClient::new(&client);
     ///
+    /// let line_features = r#"{"geometryType":"esriGeometryPolyline","features":[{"geometry":{"paths":[[[-120.5,38.5],[-120.0,39.0]]]}}],"spatialReference":{"wkid":4326}}"#;
     /// let params = ProfileParametersBuilder::default()
-    ///     .input_geometry("{\"paths\":[[[-120.5,38.5],[-120.0,39.0]]]}")
-    ///     .geometry_type("esriGeometryPolyline")
+    ///     .input_line_features(line_features)
     ///     .dem_resolution("30m")
-    ///     .return_first_point(true)
-    ///     .return_last_point(true)
     ///     .build()
     ///     .expect("Valid parameters");
     ///
     /// let result = elevation.profile(params).await?;
     ///
-    /// if let Some(first) = result.first_point_z() {
-    ///     tracing::info!(elevation = first, "First point elevation");
-    /// }
+    /// tracing::info!(
+    ///     point_count = result.output_profile().features().len(),
+    ///     "Elevation profile generated"
+    /// );
     /// # Ok(())
     /// # }
     /// ```

@@ -17,7 +17,9 @@ impl<'a> PortalClient<'a> {
     /// # use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient};
     /// # async fn example(portal: &PortalClient<'_>) -> arcgis::Result<()> {
     /// let user = portal.get_self().await?;
-    /// println!("Username: {}", user.username());
+    /// if let Some(name) = user.effective_username() {
+    ///     println!("Username: {}", name);
+    /// }
     /// println!("Role: {:?}", user.role());
     /// println!("Groups: {}", user.groups().len());
     /// # Ok(())

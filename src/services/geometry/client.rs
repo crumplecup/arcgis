@@ -87,13 +87,7 @@ impl<'a> GeometryServiceClient<'a> {
     /// );
     ///
     /// // Project from WGS84 (4326) to Web Mercator (3857)
-    /// let point = ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
+    /// let point = ArcGISPoint::new(-122.4194, 37.7749);
     /// let result = geometry_service
     ///     .project(vec![ArcGISGeometry::Point(point)], 4326, 3857)
     ///     .await?;
@@ -140,13 +134,7 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let point = ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
+    /// let point = ArcGISPoint::new(-122.4194, 37.7749);
     ///
     /// let params = ProjectParameters::builder()
     ///     .geometries(vec![ArcGISGeometry::Point(point)])
@@ -292,13 +280,7 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let point = ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
+    /// let point = ArcGISPoint::new(-122.4194, 37.7749);
     ///
     /// let params = BufferParameters::builder()
     ///     .geometries(vec![ArcGISGeometry::Point(point)])
@@ -608,16 +590,13 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let polygon = ArcGISPolygon {
-    ///     rings: vec![vec![
-    ///         [-122.0, 37.0],
-    ///         [-122.0, 38.0],
-    ///         [-121.0, 38.0],
-    ///         [-121.0, 37.0],
-    ///         [-122.0, 37.0],
-    ///     ]],
-    ///     spatial_reference: None,
-    /// };
+    /// let polygon = ArcGISPolygon::new(vec![vec![
+    ///     vec![-122.0, 37.0],
+    ///     vec![-122.0, 38.0],
+    ///     vec![-121.0, 38.0],
+    ///     vec![-121.0, 37.0],
+    ///     vec![-122.0, 37.0],
+    /// ]]);
     ///
     /// let params = SimplifyParameters::builder()
     ///     .geometries(vec![ArcGISGeometry::Polygon(polygon)])
@@ -694,27 +673,21 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let polygon1 = ArcGISPolygon {
-    ///     rings: vec![vec![
-    ///         [-122.0, 37.0],
-    ///         [-122.0, 38.0],
-    ///         [-121.0, 38.0],
-    ///         [-121.0, 37.0],
-    ///         [-122.0, 37.0],
-    ///     ]],
-    ///     spatial_reference: None,
-    /// };
+    /// let polygon1 = ArcGISPolygon::new(vec![vec![
+    ///     vec![-122.0, 37.0],
+    ///     vec![-122.0, 38.0],
+    ///     vec![-121.0, 38.0],
+    ///     vec![-121.0, 37.0],
+    ///     vec![-122.0, 37.0],
+    /// ]]);
     ///
-    /// let polygon2 = ArcGISPolygon {
-    ///     rings: vec![vec![
-    ///         [-121.5, 37.5],
-    ///         [-121.5, 38.5],
-    ///         [-120.5, 38.5],
-    ///         [-120.5, 37.5],
-    ///         [-121.5, 37.5],
-    ///     ]],
-    ///     spatial_reference: None,
-    /// };
+    /// let polygon2 = ArcGISPolygon::new(vec![vec![
+    ///     vec![-121.5, 37.5],
+    ///     vec![-121.5, 38.5],
+    ///     vec![-120.5, 38.5],
+    ///     vec![-120.5, 37.5],
+    ///     vec![-121.5, 37.5],
+    /// ]]);
     ///
     /// let params = UnionParameters::builder()
     ///     .geometries(vec![ArcGISGeometry::Polygon(polygon1), ArcGISGeometry::Polygon(polygon2)])
@@ -789,16 +762,13 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let polygon = ArcGISPolygon {
-    ///     rings: vec![vec![
-    ///         [-122.0, 37.0],
-    ///         [-122.0, 38.0],
-    ///         [-121.0, 38.0],
-    ///         [-121.0, 37.0],
-    ///         [-122.0, 37.0],
-    ///     ]],
-    ///     spatial_reference: None,
-    /// };
+    /// let polygon = ArcGISPolygon::new(vec![vec![
+    ///     vec![-122.0, 37.0],
+    ///     vec![-122.0, 38.0],
+    ///     vec![-121.0, 38.0],
+    ///     vec![-121.0, 37.0],
+    ///     vec![-122.0, 37.0],
+    /// ]]);
     ///
     /// let params = AreasAndLengthsParameters::builder()
     ///     .polygons(vec![ArcGISGeometry::Polygon(polygon)])
@@ -882,21 +852,8 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let point1 = ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
-    ///
-    /// let point2 = ArcGISPoint {
-    ///     x: -118.2437,
-    ///     y: 34.0522,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
+    /// let point1 = ArcGISPoint::new(-122.4194, 37.7749);
+    /// let point2 = ArcGISPoint::new(-118.2437, 34.0522);
     ///
     /// let params = DistanceParameters::builder()
     ///     .geometry1(ArcGISGeometry::Point(point1))

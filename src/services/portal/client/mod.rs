@@ -27,7 +27,9 @@ use tracing::instrument;
 ///
 /// // Get current user info
 /// let user = portal.get_self().await?;
-/// println!("Logged in as: {}", user.username());
+/// if let Some(name) = user.effective_username() {
+///     println!("Logged in as: {}", name);
+/// }
 ///
 /// // Search for items
 /// let results = portal

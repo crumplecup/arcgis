@@ -267,7 +267,12 @@ async fn demonstrate_workflow_a_direct_service(
         .layer_type("Feature Layer")
         .geometry_type(GeometryTypeDefinition::Point)
         .object_id_field("OBJECTID")
-        .fields(vec![oid_field, city_name_field, country_name_field, population_field])
+        .fields(vec![
+            oid_field,
+            city_name_field,
+            country_name_field,
+            population_field,
+        ])
         .build()
         .context("Failed to build layer definition")?;
 

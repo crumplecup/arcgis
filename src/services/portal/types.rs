@@ -1491,17 +1491,15 @@ impl CreateServiceParams {
     ///     FieldDefinitionBuilder, FieldType, GeometryTypeDefinition
     /// };
     ///
-    /// let service_def = ServiceDefinitionBuilder::default()
-    ///     .name("MyService")
-    ///     .add_layer(
-    ///         LayerDefinitionBuilder::default()
-    ///             .name("Points")
-    ///             .geometry_type(GeometryTypeDefinition::Point)
-    ///             .build()
-    ///             .expect("Valid layer")
-    ///     )
+    /// let layer = LayerDefinitionBuilder::default()
+    ///     .name("Points")
+    ///     .geometry_type(GeometryTypeDefinition::Point)
     ///     .build()
-    ///     .expect("Valid service definition");
+    ///     .expect("Valid layer");
+    ///
+    /// let mut svc_builder = ServiceDefinitionBuilder::default();
+    /// svc_builder.name("MyService");
+    /// let service_def = svc_builder.add_layer(layer).build().expect("Valid service definition");
     ///
     /// let params = CreateServiceParams::new("MyService")
     ///     .with_service_definition(service_def);

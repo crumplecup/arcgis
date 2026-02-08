@@ -17,25 +17,26 @@
 //!
 //! # Prerequisites
 //!
-//! - **ArcGIS Online** or **ArcGIS Enterprise** account
+//! - **ArcGIS Enterprise** account with branch-versioned enterprise geodatabase
 //! - **API keys** with appropriate privileges:
 //!   - Content Management tier (create/delete services)
 //!   - Features tier (edit features)
+//! - **ArcGIS Advanced Editing user type extension** (Enterprise 11.3+)
 //!
 //! ## Environment Variables
 //!
 //! Set these in your `.env` file:
 //!
 //! ```env
-//! # Content management operations
-//! ARCGIS_CONTENT_KEY=your_content_key
+//! # ArcGIS Enterprise portal URL (REQUIRED for branch versioning)
+//! ARCGIS_ENTERPRISE_PORTAL=https://your-server.com/arcgis/sharing/rest
 //!
-//! # Feature editing operations
-//! ARCGIS_FEATURES_KEY=your_features_key
+//! # API key for Enterprise portal operations (content management & feature editing)
+//! ARCGIS_ENTERPRISE_KEY=your_enterprise_api_key
 //! ```
 //!
-//! **That's it!** No manual service setup, no URLs to configure.
-//! The example creates and destroys everything it needs.
+//! **⚠️ Important:** Branch versioning requires ArcGIS Enterprise with an enterprise
+//! geodatabase. This example will NOT work with ArcGIS Online hosted services.
 //!
 //! # Running
 //!
@@ -65,12 +66,12 @@
 //!
 //! # Workflow Phases
 //!
-//! 1. **Service Creation** (ARCGIS_CONTENT_KEY)
+//! 1. **Service Creation** (ARCGIS_ENTERPRISE_KEY)
 //!    - Create empty Feature Service via Portal API
 //!    - Enable branch versioning on creation
 //!    - Extract service URLs from response
 //!
-//! 2. **Version Management** (ARCGIS_FEATURES_KEY)
+//! 2. **Version Management** (ARCGIS_ENTERPRISE_KEY)
 //!    - Create named version from DEFAULT
 //!    - Start edit session with write lock
 //!    - Add/update/delete features in version
@@ -83,7 +84,7 @@
 //!
 //! 4. **Cleanup**
 //!    - Delete named version
-//!    - Delete Feature Service (ARCGIS_CONTENT_KEY)
+//!    - Delete Feature Service (ARCGIS_ENTERPRISE_KEY)
 //!    - No trace left - fully idempotent
 //!
 //! # Why This Example Is Special
@@ -97,12 +98,13 @@
 
 use anyhow::{Context, Result};
 use arcgis::{
-    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISGeometry, ArcGISPoint, ConflictDetection,
-    CreateServiceParams, CreateVersionParams, EditOptions, Feature, FeatureServiceClient,
+    ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, ConflictDetection, CreateServiceParams,
+    CreateVersionParams, EditOptions, EnvConfig, Feature, FeatureServiceClient,
     FieldDefinitionBuilder, FieldType, GeometryTypeDefinition, LayerDefinitionBuilder, LayerId,
     ObjectId, PortalClient, ServiceDefinitionBuilder, SessionId, VersionGuid,
     VersionManagementClient, VersionPermission,
 };
+use secrecy::ExposeSecret;
 use serde_json::json;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -163,11 +165,23 @@ async fn create_branch_versioned_service() -> Result<ServiceInfo> {
     tracing::info!("Creating temporary Feature Service with branch versioning");
     tracing::info!("");
 
-    // Create client with ARCGIS_CONTENT_KEY
-    let content_auth = ApiKeyAuth::from_env(ApiKeyTier::Content)
-        .context("Missing ARCGIS_CONTENT_KEY - add to .env for content management")?;
-    let content_client = ArcGISClient::new(content_auth);
-    let portal = PortalClient::new("https://www.arcgis.com/sharing/rest", &content_client);
+    // Get Enterprise portal URL from environment
+    let config = EnvConfig::global();
+    let portal_url = config
+        .arcgis_enterprise_portal
+        .as_ref()
+        .context("Missing ARCGIS_ENTERPRISE_PORTAL - required for branch versioning. Add to .env:\nARCGIS_ENTERPRISE_PORTAL=https://your-server.com/portal/sharing/rest")?;
+
+    tracing::info!("   Using Enterprise portal: {}", portal_url);
+
+    // Create client with ARCGIS_ENTERPRISE_KEY
+    let enterprise_key = config
+        .arcgis_enterprise_key
+        .as_ref()
+        .context("Missing ARCGIS_ENTERPRISE_KEY - required for Enterprise portal operations. Add to .env:\nARCGIS_ENTERPRISE_KEY=your_enterprise_api_key")?;
+    let enterprise_auth = ApiKeyAuth::new(enterprise_key.expose_secret().to_string());
+    let enterprise_client = ArcGISClient::new(enterprise_auth);
+    let portal = PortalClient::new(portal_url, &enterprise_client);
 
     // Generate unique service name
     let unique_name = format!("demo_versioning_{}", Uuid::new_v4().simple());
@@ -271,7 +285,11 @@ async fn create_branch_versioned_service() -> Result<ServiceInfo> {
         .context("Failed to create Feature Service")?;
 
     if !create_result.success() {
-        anyhow::bail!("Service creation reported failure");
+        tracing::error!(
+            result = ?create_result,
+            "Service creation failed"
+        );
+        anyhow::bail!("Service creation reported failure: {:?}", create_result);
     }
 
     // Extract service URLs
@@ -309,13 +327,18 @@ async fn perform_versioning_operations(service: &ServiceInfo) -> Result<()> {
     tracing::info!("Initializing clients for feature editing");
     tracing::info!("");
 
-    // Create client with ARCGIS_FEATURES_KEY
-    let features_auth = ApiKeyAuth::from_env(ApiKeyTier::Features)
-        .context("Missing ARCGIS_FEATURES_KEY - add to .env for feature editing")?;
-    let features_client = ArcGISClient::new(features_auth);
+    // Create client with ARCGIS_ENTERPRISE_KEY
+    let config = EnvConfig::global();
+    let enterprise_key = config
+        .arcgis_enterprise_key
+        .as_ref()
+        .context("Missing ARCGIS_ENTERPRISE_KEY for feature editing")?;
+    let enterprise_auth = ApiKeyAuth::new(enterprise_key.expose_secret().to_string());
+    let enterprise_client = ArcGISClient::new(enterprise_auth);
 
-    let feature_client = FeatureServiceClient::new(&service.feature_service_url, &features_client);
-    let vm_client = VersionManagementClient::new(&service.version_mgmt_url, &features_client);
+    let feature_client =
+        FeatureServiceClient::new(&service.feature_service_url, &enterprise_client);
+    let vm_client = VersionManagementClient::new(&service.version_mgmt_url, &enterprise_client);
 
     tracing::info!("✅ Clients initialized");
     tracing::info!("");
@@ -349,10 +372,7 @@ async fn create_and_edit_version(
     feature_client: &FeatureServiceClient<'_>,
 ) -> Result<VersionGuid> {
     // Step 1: Create named version
-    let version_name = format!(
-        "edit_branch_{}",
-        &Uuid::new_v4().simple().to_string()[..8]
-    );
+    let version_name = format!("edit_branch_{}", &Uuid::new_v4().simple().to_string()[..8]);
     tracing::info!("   Creating version: {}", version_name);
 
     let create_params = CreateVersionParams::new(&version_name, VersionPermission::Private)
@@ -363,7 +383,7 @@ async fn create_and_edit_version(
         .await
         .context("Failed to create version")?;
 
-    if !create_response.success() {
+    if !create_response.success().is_some_and(|s| s) {
         anyhow::bail!("Version creation failed: {:?}", create_response.error());
     }
 
@@ -534,11 +554,21 @@ async fn delete_service(item_id: &str) -> Result<()> {
     tracing::info!("Deleting Feature Service");
     tracing::info!("");
 
-    // Create client with ARCGIS_CONTENT_KEY
-    let content_auth = ApiKeyAuth::from_env(ApiKeyTier::Content)
-        .context("Missing ARCGIS_CONTENT_KEY for cleanup")?;
-    let content_client = ArcGISClient::new(content_auth);
-    let portal = PortalClient::new("https://www.arcgis.com/sharing/rest", &content_client);
+    // Get Enterprise portal URL and key from environment
+    let config = EnvConfig::global();
+    let portal_url = config
+        .arcgis_enterprise_portal
+        .as_ref()
+        .expect("ARCGIS_ENTERPRISE_PORTAL should be set (was validated in service creation)");
+    let enterprise_key = config
+        .arcgis_enterprise_key
+        .as_ref()
+        .expect("ARCGIS_ENTERPRISE_KEY should be set (was validated in service creation)");
+
+    // Create client with ARCGIS_ENTERPRISE_KEY
+    let enterprise_auth = ApiKeyAuth::new(enterprise_key.expose_secret().to_string());
+    let enterprise_client = ArcGISClient::new(enterprise_auth);
+    let portal = PortalClient::new(portal_url, &enterprise_client);
 
     tracing::info!("   Deleting service item: {}", item_id);
     let delete_result = portal

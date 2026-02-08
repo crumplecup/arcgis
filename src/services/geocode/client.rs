@@ -101,8 +101,8 @@ impl<'a> GeocodeServiceClient<'a> {
     ///
     /// if let Some(best_match) = response.candidates().first() {
     ///     println!("Location: {}, {}",
-    ///         best_match.location().x,
-    ///         best_match.location().y
+    ///         best_match.location().x(),
+    ///         best_match.location().y()
     ///     );
     /// }
     /// # Ok(())
