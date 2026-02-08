@@ -623,13 +623,160 @@ pub struct XssPreventionInfo {
     xss_input_rule: Option<String>,
 }
 
-// Placeholder types for Phase 4+ implementation
-/// Table definition (non-spatial).
+// ==================== Phase 4: Table Definition ====================
+
+/// Table definition within a Feature Service.
 ///
-/// Similar to LayerDefinition but without geometry.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Tables are non-spatial layers — they have fields and relationships
+/// but no geometry. Common uses include related records, lookup tables,
+/// and attachments tables.
+///
+/// # ESRI Documentation
+///
+/// Source: <https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/>
+///
+/// Tables share most properties with layers, but do not have:
+/// - `geometryType` (no spatial data)
+/// - `defaultVisibility` (not rendered on maps)
+///
+/// The `type` field is always `"Table"` for table definitions.
+///
+/// # Example
+///
+/// ```rust
+/// use arcgis::{TableDefinitionBuilder, FieldDefinitionBuilder, FieldType};
+///
+/// let field = FieldDefinitionBuilder::default()
+///     .name("OBJECTID")
+///     .field_type(FieldType::Oid)
+///     .nullable(false)
+///     .editable(false)
+///     .build()
+///     .expect("Valid field");
+///
+/// let table = TableDefinitionBuilder::default()
+///     .id(1u32)
+///     .name("Permits")
+///     .build()
+///     .expect("Valid table");
+///
+/// assert_eq!(table.id(), &1u32);
+/// assert_eq!(table.name(), "Permits");
+/// ```
+#[derive(
+    Debug, Clone, Default, Serialize, Deserialize, derive_builder::Builder, derive_getters::Getters,
+)]
+#[builder(setter(into, strip_option), default)]
+#[serde(rename_all = "camelCase")]
 pub struct TableDefinition {
-    // TODO: Phase 4 - Implement table structure
+    /// Table ID (must be unique within service).
+    #[builder(setter(into))]
+    id: u32,
+
+    /// Table name.
+    #[builder(setter(into))]
+    name: String,
+
+    /// Table type.
+    ///
+    /// Always `"Table"` for table definitions.
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    table_type: Option<String>,
+
+    /// Field definitions.
+    ///
+    /// Must include at least an ObjectID field.
+    /// For versioning, must also include GlobalID field.
+    #[serde(default)]
+    #[builder(default)]
+    fields: Vec<FieldDefinition>,
+
+    /// Name of the ObjectID field.
+    ///
+    /// Default: "OBJECTID". Must match a field in `fields` array.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    object_id_field: Option<String>,
+
+    /// Name of the GlobalID field.
+    ///
+    /// Required for branch versioning. Default: "GlobalID".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    global_id_field: Option<String>,
+
+    /// Display field name (shown in popups).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    display_field: Option<String>,
+
+    /// Table description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    description: Option<String>,
+
+    /// Copyright text.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    copyright_text: Option<String>,
+
+    /// Templates for record creation.
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    #[builder(default)]
+    templates: Vec<FeatureTemplate>,
+
+    /// Indexes on table fields.
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    #[builder(default)]
+    indexes: Vec<Index>,
+
+    /// Editor tracking field configuration.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    edit_fields_info: Option<EditFieldsInfo>,
+
+    /// Relationship classes this table participates in.
+    ///
+    /// Each entry describes a relationship with another layer or table.
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    #[builder(default)]
+    relationships: Vec<LayerRelationship>,
+
+    /// Whether data is branch versioned.
+    ///
+    /// ESRI sets this automatically when GlobalID field is present.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    is_data_branch_versioned: Option<bool>,
+}
+
+impl TableDefinitionBuilder {
+    /// Adds a field to the table.
+    pub fn add_field(mut self, field: FieldDefinition) -> Self {
+        self.fields.get_or_insert_with(Vec::new).push(field);
+        self
+    }
+
+    /// Adds a template to the table.
+    pub fn add_template(mut self, template: FeatureTemplate) -> Self {
+        self.templates.get_or_insert_with(Vec::new).push(template);
+        self
+    }
+
+    /// Adds an index to the table.
+    pub fn add_index(mut self, index: Index) -> Self {
+        self.indexes.get_or_insert_with(Vec::new).push(index);
+        self
+    }
+
+    /// Adds a relationship to the table.
+    pub fn add_relationship(mut self, relationship: LayerRelationship) -> Self {
+        self.relationships
+            .get_or_insert_with(Vec::new)
+            .push(relationship);
+        self
+    }
 }
 
 // ==================== Phase 3: Advanced Layer Features ====================

@@ -79,9 +79,10 @@ pub use portal::{
     PublishParameters, PublishResult, PublishStatus, RangeDomain, RangeDomainBuilder,
     RelationshipCardinality, RelationshipRole, SearchParameters, SearchResult, ServiceDefinition,
     ServiceDefinitionBuilder, ShareItemResult, SharingParameters, SortOrder,
-    SpatialReferenceDefinition, SplitPolicy, TemplatePrototype, TemplatePrototypeBuilder,
-    UnshareItemResult, UpdateGroupParams, UpdateItemParams, UpdateItemResult,
-    UpdateServiceDefinitionParams, UpdateServiceDefinitionResult, UserInfo,
+    SpatialReferenceDefinition, SplitPolicy, TableDefinition, TableDefinitionBuilder,
+    TemplatePrototype, TemplatePrototypeBuilder, UnshareItemResult, UpdateGroupParams,
+    UpdateItemParams, UpdateItemResult, UpdateServiceDefinitionParams,
+    UpdateServiceDefinitionResult, UserInfo,
 };
 pub use routing::{
     BarrierType, ClosestFacilityParameters, ClosestFacilityParametersBuilder,
