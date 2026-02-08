@@ -60,9 +60,14 @@ use serde::{Deserialize, Serialize};
 #[builder(setter(into, strip_option), default)]
 #[serde(rename_all = "camelCase")]
 pub struct ServiceDefinition {
-    /// Service name (REQUIRED).
+    /// Service name (REQUIRED for creation).
     ///
     /// Must be unique within the user's content.
+    ///
+    /// Note: When deserializing from an existing service endpoint (`GET {serviceUrl}?f=json`),
+    /// the name is not included in the JSON response (it is encoded in the URL path).
+    /// In that case this field defaults to an empty string.
+    #[serde(default)]
     #[builder(setter(into))]
     name: String,
 
@@ -212,6 +217,11 @@ pub struct LayerDefinition {
     ///
     /// Must include at least an ObjectID field.
     /// For versioning, must also include GlobalID field.
+    ///
+    /// Note: When deserializing from the service root endpoint (`GET {serviceUrl}?f=json`),
+    /// ESRI returns only layer stubs without field definitions. Use
+    /// `FeatureServiceClient::get_layer_definition()` to retrieve full field definitions.
+    #[serde(default)]
     #[builder(default)]
     fields: Vec<FieldDefinition>,
 

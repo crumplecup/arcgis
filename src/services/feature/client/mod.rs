@@ -2,6 +2,7 @@
 
 mod admin;
 mod attachment;
+mod definition;
 mod edit;
 mod query;
 
