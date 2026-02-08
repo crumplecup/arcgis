@@ -56,7 +56,8 @@
 //! This example demonstrates TWO different workflows for publishing spatial data:
 //!
 //! **Workflow A: Direct Service Creation** (Demonstrated)
-//! - Create empty hosted feature service with schema
+//! - Create empty hosted feature service container
+//! - Add layer definition with schema (addToDefinition)
 //! - Add features programmatically using applyEdits
 //! - Best for: Programmatic data loading, ETL pipelines, dynamic schemas
 //!
@@ -86,9 +87,9 @@
 
 use anyhow::{Context, Result};
 use arcgis::{
-    AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, CreateServiceParams, EditOptions, Feature,
-    FeatureServiceClient, FieldDefinitionBuilder, FieldType, GeometryTypeDefinition,
-    LayerDefinitionBuilder, LayerId, NoAuth, PortalClient, ServiceDefinitionBuilder,
+    AddItemParams, AddToDefinitionParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, CreateServiceParams,
+    EditOptions, Feature, FeatureServiceClient, FieldDefinitionBuilder, FieldType,
+    GeometryTypeDefinition, LayerDefinitionBuilder, LayerId, NoAuth, PortalClient,
     SharingParameters,
 };
 use std::collections::HashMap;
@@ -201,7 +202,7 @@ async fn demonstrate_workflow_a_direct_service(
     tracing::info!("\n========================================");
     tracing::info!("=== WORKFLOW A: Direct Service Creation ===");
     tracing::info!("========================================");
-    tracing::info!("Query → Convert → Create Service → Add Features → Share → Verify → Cleanup");
+    tracing::info!("Query → Convert → Create Service → Add Definition → Add Features → Share → Verify → Cleanup");
     tracing::info!("");
 
     // ========================================================================
@@ -283,17 +284,12 @@ async fn demonstrate_workflow_a_direct_service(
         .build()
         .context("Failed to build layer definition")?;
 
-    let service_def = ServiceDefinitionBuilder::default()
-        .name(&service_name)
-        .layers(vec![layer])
-        .build()
-        .context("Failed to build service definition")?;
-
+    // Note: ESRI's createService creates an empty container regardless of ServiceDefinition
+    // We'll add the layer schema in the next step using addToDefinition
     let create_params = CreateServiceParams::new(&service_name)
         .with_description("Created via direct service creation workflow using Rust SDK")
         .with_capabilities("Query,Create,Update,Delete,Editing")
-        .with_max_record_count(1000)
-        .with_service_definition(service_def);
+        .with_max_record_count(1000);
 
     let create_result = portal.create_service(create_params).await?;
 
@@ -318,14 +314,14 @@ async fn demonstrate_workflow_a_direct_service(
     tracing::info!("   (Hosted services need time to provision on ArcGIS Online)");
     tokio::time::sleep(Duration::from_secs(15)).await;
 
-    // Verify service is accessible before adding features
+    // Verify service is accessible before adding layer definition
     tracing::info!("");
     tracing::info!("🔍 Verifying service is accessible...");
     let service_client = FeatureServiceClient::new(&service_url, client);
     match service_client.get_definition().await {
         Ok(def) => {
             tracing::info!("   ✓ Service is accessible");
-            tracing::info!("   Layers: {}", def.layers().len());
+            tracing::info!("   Layers: {} (empty container)", def.layers().len());
         }
         Err(e) => {
             tracing::warn!("   ⚠ Service not yet accessible: {}", e);
@@ -335,10 +331,48 @@ async fn demonstrate_workflow_a_direct_service(
     }
 
     // ========================================================================
-    // STEP 3: Add features to the service
+    // STEP 3: Add layer definition to the service
     // ========================================================================
     tracing::info!("");
-    tracing::info!("📝 STEP 3: Adding features to the service");
+    tracing::info!("🏗️  STEP 3: Adding layer definition to the service");
+    tracing::info!("");
+    tracing::info!("   Method: addToDefinition");
+    tracing::info!("   Purpose: Define layer schema (fields, geometry type)");
+    tracing::info!("   Note: ESRI creates empty services - layers must be added separately");
+    tracing::info!("");
+
+    let add_def_params = AddToDefinitionParams::new().with_layers(vec![layer]);
+    let add_def_result = portal.add_to_definition(&service_item_id, add_def_params).await?;
+
+    // Assertion: Operation must succeed
+    assert!(
+        *add_def_result.success(),
+        "addToDefinition operation failed"
+    );
+
+    // Assertion: Must have added exactly one layer
+    assert_eq!(
+        add_def_result.layers().len(),
+        1,
+        "Expected 1 layer to be added, got {}",
+        add_def_result.layers().len()
+    );
+
+    tracing::info!("✅ Added layer definition to service");
+    tracing::info!("   Layers added: {}", add_def_result.layers().len());
+    tracing::info!("   Layer ID: {}", add_def_result.layers()[0].id());
+    tracing::info!("   Layer name: {}", add_def_result.layers()[0].name());
+
+    // Wait a moment for layer to be ready
+    tracing::info!("");
+    tracing::info!("⏳ Waiting for layer to initialize (5 seconds)...");
+    tokio::time::sleep(Duration::from_secs(5)).await;
+
+    // ========================================================================
+    // STEP 4: Add features to the service
+    // ========================================================================
+    tracing::info!("");
+    tracing::info!("📝 STEP 4: Adding features to the service");
     tracing::info!("");
     tracing::info!("   Method: applyEdits with add operation");
     tracing::info!("   Features: {} cities from query result", feature_count);
@@ -368,8 +402,31 @@ async fn demonstrate_workflow_a_direct_service(
 
     // Add features to layer 0
     let edit_result = service_client
-        .add_features(LayerId(0), features_to_add, EditOptions::default())
+        .add_features(LayerId(0), features_to_add.clone(), EditOptions::default())
         .await?;
+
+    // Assertion: Must not have zero successes AND zero failures (indicates silent failure)
+    assert!(
+        edit_result.success_count() > 0 || edit_result.failure_count() > 0,
+        "addFeatures returned zero successes and zero failures - silent failure detected!"
+    );
+
+    // Assertion: Should have some successes
+    assert!(
+        edit_result.success_count() > 0,
+        "No features were successfully added. Success: {}, Failures: {}",
+        edit_result.success_count(),
+        edit_result.failure_count()
+    );
+
+    // Assertion: Number of successes should match features we tried to add
+    assert_eq!(
+        edit_result.success_count() as usize,
+        features_to_add.len(),
+        "Expected {} successes, got {}",
+        features_to_add.len(),
+        edit_result.success_count()
+    );
 
     tracing::info!("✅ Added features to service");
     tracing::info!("   Success count: {}", edit_result.success_count());
@@ -392,10 +449,10 @@ async fn demonstrate_workflow_a_direct_service(
     }
 
     // ========================================================================
-    // STEP 4: Share with organization
+    // STEP 5: Share with organization
     // ========================================================================
     tracing::info!("");
-    tracing::info!("🔐 STEP 4: Sharing service with organization");
+    tracing::info!("🔐 STEP 5: Sharing service with organization");
     tracing::info!("");
     tracing::info!("   Access Level: Private → Organization");
     tracing::info!("   Visibility: All organization members");
@@ -410,10 +467,10 @@ async fn demonstrate_workflow_a_direct_service(
     }
 
     // ========================================================================
-    // STEP 5: Verify round-trip by querying new service
+    // STEP 6: Verify round-trip by querying new service
     // ========================================================================
     tracing::info!("");
-    tracing::info!("🔍 STEP 5: Verifying round-trip (query published service)");
+    tracing::info!("🔍 STEP 6: Verifying round-trip (query published service)");
     tracing::info!("");
     tracing::info!("   Endpoint: {} (layer 0)", service_url);
     tracing::info!("   Test: Query all features to verify data integrity");
@@ -437,10 +494,10 @@ async fn demonstrate_workflow_a_direct_service(
     }
 
     // ========================================================================
-    // STEP 6: Cleanup (delete service)
+    // STEP 7: Cleanup (delete service)
     // ========================================================================
     tracing::info!("");
-    tracing::info!("🧹 STEP 6: Cleaning up test resources");
+    tracing::info!("🧹 STEP 7: Cleaning up test resources");
     tracing::info!("");
     tracing::info!("   Deleting: Hosted feature service");
     tracing::info!("   Reason: Avoid cluttering portal with test data");
@@ -461,8 +518,12 @@ async fn demonstrate_workflow_a_direct_service(
         feature_count
     );
     tracing::info!(
-        "   ✓ Created hosted service with schema ({})",
+        "   ✓ Created empty hosted service container ({})",
         service_item_id
+    );
+    tracing::info!(
+        "   ✓ Added layer definition (layer ID: {})",
+        add_def_result.layers()[0].id()
     );
     tracing::info!(
         "   ✓ Added {} features via applyEdits",
