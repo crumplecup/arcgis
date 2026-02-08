@@ -1477,3 +1477,573 @@ impl Default for FieldDefinition {
         }
     }
 }
+
+// ==================== Phase 5: Validation ====================
+
+/// Validation error for service definition constraints.
+///
+/// Each variant carries enough context — entity type, name, ID, and field names —
+/// for an agent or user to locate and fix the issue without re-reading the
+/// entire service definition.
+///
+/// Validation rules enforce ESRI's requirements for Feature Services:
+/// - ObjectID field is required and must be non-nullable and non-editable
+/// - GlobalID field is required when branch versioning is enabled
+/// - Field names must be unique within a layer or table
+/// - Layer and table IDs must be unique within the service
+/// - Named field references (object_id_field, global_id_field, display_field)
+///   must point to existing fields
+///
+/// # Example
+///
+/// ```rust
+/// use arcgis::{LayerDefinitionBuilder, FieldDefinitionBuilder, FieldType, GeometryTypeDefinition};
+///
+/// let layer = LayerDefinitionBuilder::default()
+///     .id(0u32)
+///     .name("Buildings")
+///     .geometry_type(GeometryTypeDefinition::Polygon)
+///     .build()
+///     .expect("Valid layer");
+///
+/// // Layer has no fields yet — validation will catch the missing ObjectID
+/// let errors = layer.validate();
+/// assert!(errors.is_err());
+/// let errs = errors.unwrap_err();
+/// assert_eq!(errs.len(), 1);
+/// println!("{}", errs[0]);
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, derive_more::Display, derive_more::Error)]
+pub enum ServiceDefinitionValidationError {
+    /// No ObjectID field found in the fields array.
+    ///
+    /// # Fix
+    ///
+    /// Add a field with `FieldType::Oid`, `nullable: false`, `editable: false`.
+    ///
+    /// See <https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/>
+    #[display(
+        "{entity_type} '{}' (id={}): no ObjectID field found. \
+         Add a field with FieldType::Oid, nullable: false, editable: false. \
+         See https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/",
+        name,
+        id
+    )]
+    MissingObjectId {
+        /// Whether this is a "Layer" or "Table".
+        entity_type: &'static str,
+        /// Name of the layer or table.
+        name: String,
+        /// ID of the layer or table.
+        id: u32,
+    },
+
+    /// More than one ObjectID field found; only one is allowed.
+    #[display(
+        "{entity_type} '{}' (id={}): {} ObjectID fields found; only one is allowed.",
+        name,
+        id,
+        count
+    )]
+    MultipleObjectIds {
+        /// Whether this is a "Layer" or "Table".
+        entity_type: &'static str,
+        /// Name of the layer or table.
+        name: String,
+        /// ID of the layer or table.
+        id: u32,
+        /// Number of ObjectID fields found.
+        count: usize,
+    },
+
+    /// ObjectID field is nullable or editable, which ESRI prohibits.
+    ///
+    /// # Fix
+    ///
+    /// Set `nullable: false` and `editable: false` on the ObjectID field.
+    #[display(
+        "{entity_type} '{}' (id={}), field '{}': \
+         ObjectID field must have nullable=false and editable=false.",
+        name,
+        id,
+        field_name
+    )]
+    OidFieldInvalidConfig {
+        /// Whether this is a "Layer" or "Table".
+        entity_type: &'static str,
+        /// Name of the layer or table.
+        name: String,
+        /// ID of the layer or table.
+        id: u32,
+        /// Name of the misconfigured ObjectID field.
+        field_name: String,
+    },
+
+    /// Branch versioning is enabled but no GlobalID field exists.
+    ///
+    /// # Fix
+    ///
+    /// Add a field with `FieldType::GlobalId`, `nullable: false`, `editable: false`,
+    /// `length: 38`.
+    ///
+    /// See <https://pro.arcgis.com/en/pro-app/latest/help/data/geodatabases/overview/branch-version-scenarios.htm>
+    #[display(
+        "{entity_type} '{}' (id={}): is_data_branch_versioned is true but no GlobalID field found. \
+         Add a field with FieldType::GlobalId, nullable: false, editable: false, length: 38. \
+         See https://pro.arcgis.com/en/pro-app/latest/help/data/geodatabases/overview/branch-version-scenarios.htm",
+        name,
+        id
+    )]
+    MissingGlobalIdForVersioning {
+        /// Whether this is a "Layer" or "Table".
+        entity_type: &'static str,
+        /// Name of the layer or table.
+        name: String,
+        /// ID of the layer or table.
+        id: u32,
+    },
+
+    /// GlobalID field is nullable or editable, which ESRI prohibits.
+    ///
+    /// # Fix
+    ///
+    /// Set `nullable: false` and `editable: false` on the GlobalID field.
+    #[display(
+        "{entity_type} '{}' (id={}), field '{}': \
+         GlobalID field must have nullable=false and editable=false.",
+        name,
+        id,
+        field_name
+    )]
+    GlobalIdFieldInvalidConfig {
+        /// Whether this is a "Layer" or "Table".
+        entity_type: &'static str,
+        /// Name of the layer or table.
+        name: String,
+        /// ID of the layer or table.
+        id: u32,
+        /// Name of the misconfigured GlobalID field.
+        field_name: String,
+    },
+
+    /// Two or more fields share the same name (case-insensitive).
+    ///
+    /// # Fix
+    ///
+    /// Rename one of the fields so all names are unique.
+    #[display(
+        "{entity_type} '{}' (id={}): duplicate field name '{}'. \
+         Field names must be unique within a layer or table.",
+        name,
+        id,
+        field_name
+    )]
+    DuplicateFieldName {
+        /// Whether this is a "Layer" or "Table".
+        entity_type: &'static str,
+        /// Name of the layer or table.
+        name: String,
+        /// ID of the layer or table.
+        id: u32,
+        /// The duplicated field name.
+        field_name: String,
+    },
+
+    /// A named field reference points to a field that does not exist.
+    ///
+    /// This applies to `object_id_field`, `global_id_field`, and `display_field`.
+    ///
+    /// # Fix
+    ///
+    /// Either add a field with the referenced name or correct the reference.
+    #[display(
+        "{entity_type} '{}' (id={}): {ref_type}_field references '{}' \
+         but no field with that name exists.",
+        name,
+        id,
+        field_name
+    )]
+    FieldRefNotFound {
+        /// Whether this is a "Layer" or "Table".
+        entity_type: &'static str,
+        /// Name of the layer or table.
+        name: String,
+        /// ID of the layer or table.
+        id: u32,
+        /// Which reference field is broken: "object_id", "global_id", or "display".
+        ref_type: &'static str,
+        /// The referenced field name that was not found.
+        field_name: String,
+    },
+
+    /// Two layers, two tables, or a layer and a table share the same ID.
+    ///
+    /// # Fix
+    ///
+    /// Assign unique IDs to each layer and table within the service.
+    #[display(
+        "Duplicate ID {} used by '{}' and '{}'. \
+         Layer and table IDs must be unique within the service.",
+        id,
+        first_name,
+        second_name
+    )]
+    DuplicateId {
+        /// The duplicated ID value.
+        id: u32,
+        /// Name of the first entity with this ID.
+        first_name: String,
+        /// Name of the second entity with this ID.
+        second_name: String,
+    },
+}
+
+/// Context passed to the shared field-validation helper.
+struct FieldValidationCtx<'a> {
+    entity_type: &'static str,
+    name: &'a str,
+    id: u32,
+    fields: &'a [FieldDefinition],
+    object_id_field: &'a Option<String>,
+    global_id_field: &'a Option<String>,
+    display_field: &'a Option<String>,
+    is_data_branch_versioned: &'a Option<bool>,
+}
+
+/// Validate fields common to both layers and tables.
+fn validate_fields(
+    ctx: &FieldValidationCtx<'_>,
+    errors: &mut Vec<ServiceDefinitionValidationError>,
+) {
+    let entity_type = ctx.entity_type;
+    let name = ctx.name;
+    let id = ctx.id;
+    let fields = ctx.fields;
+    let object_id_field = ctx.object_id_field;
+    let global_id_field = ctx.global_id_field;
+    let display_field = ctx.display_field;
+    let is_data_branch_versioned = ctx.is_data_branch_versioned;
+    // Duplicate field names (case-insensitive)
+    let mut seen = std::collections::HashSet::new();
+    for field in fields {
+        let lower = field.name.to_lowercase();
+        if !seen.insert(lower) {
+            errors.push(ServiceDefinitionValidationError::DuplicateFieldName {
+                entity_type,
+                name: name.to_string(),
+                id,
+                field_name: field.name.clone(),
+            });
+        }
+    }
+
+    // ObjectID field validation
+    let oid_fields: Vec<&FieldDefinition> = fields
+        .iter()
+        .filter(|f| f.field_type == FieldType::Oid)
+        .collect();
+
+    match oid_fields.len() {
+        0 => errors.push(ServiceDefinitionValidationError::MissingObjectId {
+            entity_type,
+            name: name.to_string(),
+            id,
+        }),
+        1 => {
+            let oid = oid_fields[0];
+            if oid.nullable == Some(true) || oid.editable == Some(true) {
+                errors.push(ServiceDefinitionValidationError::OidFieldInvalidConfig {
+                    entity_type,
+                    name: name.to_string(),
+                    id,
+                    field_name: oid.name.clone(),
+                });
+            }
+        }
+        count => errors.push(ServiceDefinitionValidationError::MultipleObjectIds {
+            entity_type,
+            name: name.to_string(),
+            id,
+            count,
+        }),
+    }
+
+    // GlobalID validation for branch versioning
+    if is_data_branch_versioned == &Some(true) {
+        let gid_fields: Vec<&FieldDefinition> = fields
+            .iter()
+            .filter(|f| f.field_type == FieldType::GlobalId)
+            .collect();
+
+        if gid_fields.is_empty() {
+            errors.push(
+                ServiceDefinitionValidationError::MissingGlobalIdForVersioning {
+                    entity_type,
+                    name: name.to_string(),
+                    id,
+                },
+            );
+        } else {
+            for gid in &gid_fields {
+                if gid.nullable == Some(true) || gid.editable == Some(true) {
+                    errors.push(
+                        ServiceDefinitionValidationError::GlobalIdFieldInvalidConfig {
+                            entity_type,
+                            name: name.to_string(),
+                            id,
+                            field_name: gid.name.clone(),
+                        },
+                    );
+                }
+            }
+        }
+    }
+
+    // Named field references
+    let field_names: std::collections::HashSet<String> =
+        fields.iter().map(|f| f.name.to_lowercase()).collect();
+
+    if let Some(oid_ref) = object_id_field {
+        if !field_names.contains(&oid_ref.to_lowercase()) {
+            errors.push(ServiceDefinitionValidationError::FieldRefNotFound {
+                entity_type,
+                name: name.to_string(),
+                id,
+                ref_type: "object_id",
+                field_name: oid_ref.clone(),
+            });
+        }
+    }
+
+    if let Some(gid_ref) = global_id_field {
+        if !field_names.contains(&gid_ref.to_lowercase()) {
+            errors.push(ServiceDefinitionValidationError::FieldRefNotFound {
+                entity_type,
+                name: name.to_string(),
+                id,
+                ref_type: "global_id",
+                field_name: gid_ref.clone(),
+            });
+        }
+    }
+
+    if let Some(disp_ref) = display_field {
+        if !field_names.contains(&disp_ref.to_lowercase()) {
+            errors.push(ServiceDefinitionValidationError::FieldRefNotFound {
+                entity_type,
+                name: name.to_string(),
+                id,
+                ref_type: "display",
+                field_name: disp_ref.clone(),
+            });
+        }
+    }
+}
+
+impl LayerDefinition {
+    /// Validates the layer definition against ESRI's requirements.
+    ///
+    /// Returns all validation errors found. An empty `Ok(())` means the
+    /// definition is valid and safe to submit to the ESRI API.
+    ///
+    /// # Validation Rules
+    ///
+    /// - At least one `FieldType::Oid` field must be present
+    /// - Exactly one ObjectID field (not multiple)
+    /// - ObjectID field must have `nullable: false` and `editable: false`
+    /// - If `is_data_branch_versioned` is `true`, a `FieldType::GlobalId` field is required
+    /// - GlobalID field must have `nullable: false` and `editable: false`
+    /// - No duplicate field names (case-insensitive comparison)
+    /// - `object_id_field`, `global_id_field`, and `display_field` references must resolve
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use arcgis::{LayerDefinitionBuilder, FieldDefinitionBuilder, FieldType, GeometryTypeDefinition};
+    ///
+    /// let field = FieldDefinitionBuilder::default()
+    ///     .name("OBJECTID")
+    ///     .field_type(FieldType::Oid)
+    ///     .nullable(false)
+    ///     .editable(false)
+    ///     .build()
+    ///     .expect("Valid field");
+    ///
+    /// let layer = LayerDefinitionBuilder::default()
+    ///     .id(0u32)
+    ///     .name("Buildings")
+    ///     .geometry_type(GeometryTypeDefinition::Polygon)
+    ///     .build()
+    ///     .expect("Valid layer");
+    ///
+    /// // Empty fields — will fail validation
+    /// assert!(layer.validate().is_err());
+    /// ```
+    #[tracing::instrument(skip(self), fields(name = %self.name, id = self.id))]
+    pub fn validate(&self) -> Result<(), Vec<ServiceDefinitionValidationError>> {
+        let mut errors = Vec::new();
+        validate_fields(
+            &FieldValidationCtx {
+                entity_type: "Layer",
+                name: &self.name,
+                id: self.id,
+                fields: &self.fields,
+                object_id_field: &self.object_id_field,
+                global_id_field: &self.global_id_field,
+                display_field: &self.display_field,
+                is_data_branch_versioned: &self.is_data_branch_versioned,
+            },
+            &mut errors,
+        );
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
+}
+
+impl TableDefinition {
+    /// Validates the table definition against ESRI's requirements.
+    ///
+    /// Returns all validation errors found. An empty `Ok(())` means the
+    /// definition is valid and safe to submit to the ESRI API.
+    ///
+    /// Applies the same field-level rules as [`LayerDefinition::validate()`]
+    /// since tables share the same field constraints.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use arcgis::{TableDefinitionBuilder, FieldDefinitionBuilder, FieldType};
+    ///
+    /// let table = TableDefinitionBuilder::default()
+    ///     .id(1u32)
+    ///     .name("Permits")
+    ///     .build()
+    ///     .expect("Valid table");
+    ///
+    /// // Empty fields — will fail validation
+    /// assert!(table.validate().is_err());
+    /// ```
+    #[tracing::instrument(skip(self), fields(name = %self.name, id = self.id))]
+    pub fn validate(&self) -> Result<(), Vec<ServiceDefinitionValidationError>> {
+        let mut errors = Vec::new();
+        validate_fields(
+            &FieldValidationCtx {
+                entity_type: "Table",
+                name: &self.name,
+                id: self.id,
+                fields: &self.fields,
+                object_id_field: &self.object_id_field,
+                global_id_field: &self.global_id_field,
+                display_field: &self.display_field,
+                is_data_branch_versioned: &self.is_data_branch_versioned,
+            },
+            &mut errors,
+        );
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
+}
+
+impl ServiceDefinition {
+    /// Validates the entire service definition against ESRI's requirements.
+    ///
+    /// Validates all layers and tables, then checks service-level constraints.
+    /// Returns all validation errors found across the entire definition.
+    ///
+    /// # Validation Rules
+    ///
+    /// - All layers pass [`LayerDefinition::validate()`]
+    /// - All tables pass [`TableDefinition::validate()`]
+    /// - No duplicate IDs across all layers and tables
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use arcgis::{
+    ///     ServiceDefinitionBuilder, LayerDefinitionBuilder, FieldDefinitionBuilder,
+    ///     FieldType, GeometryTypeDefinition,
+    /// };
+    ///
+    /// let oid = FieldDefinitionBuilder::default()
+    ///     .name("OBJECTID")
+    ///     .field_type(FieldType::Oid)
+    ///     .nullable(false)
+    ///     .editable(false)
+    ///     .build()
+    ///     .expect("Valid OID field");
+    ///
+    /// let mut layer_builder = LayerDefinitionBuilder::default();
+    /// layer_builder
+    ///     .id(0u32)
+    ///     .name("Points")
+    ///     .geometry_type(GeometryTypeDefinition::Point);
+    /// let layer = layer_builder.add_field(oid).build().expect("Valid layer");
+    ///
+    /// let mut svc_builder = ServiceDefinitionBuilder::default();
+    /// svc_builder.name("MyService");
+    /// let svc = svc_builder.add_layer(layer).build().expect("Valid service");
+    ///
+    /// assert!(svc.validate().is_ok());
+    /// ```
+    #[tracing::instrument(
+        skip(self),
+        fields(
+            name = %self.name,
+            layers = self.layers.len(),
+            tables = self.tables.len()
+        )
+    )]
+    pub fn validate(&self) -> Result<(), Vec<ServiceDefinitionValidationError>> {
+        let mut errors = Vec::new();
+
+        // Validate each layer
+        for layer in &self.layers {
+            if let Err(layer_errors) = layer.validate() {
+                errors.extend(layer_errors);
+            }
+        }
+
+        // Validate each table
+        for table in &self.tables {
+            if let Err(table_errors) = table.validate() {
+                errors.extend(table_errors);
+            }
+        }
+
+        // Check for duplicate IDs across layers and tables
+        let mut id_registry: std::collections::HashMap<u32, String> =
+            std::collections::HashMap::new();
+
+        for layer in &self.layers {
+            if let Some(existing) = id_registry.insert(layer.id, layer.name.clone()) {
+                errors.push(ServiceDefinitionValidationError::DuplicateId {
+                    id: layer.id,
+                    first_name: existing,
+                    second_name: layer.name.clone(),
+                });
+            }
+        }
+
+        for table in &self.tables {
+            if let Some(existing) = id_registry.insert(table.id, table.name.clone()) {
+                errors.push(ServiceDefinitionValidationError::DuplicateId {
+                    id: table.id,
+                    first_name: existing,
+                    second_name: table.name.clone(),
+                });
+            }
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
+}

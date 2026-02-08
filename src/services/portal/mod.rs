@@ -47,8 +47,8 @@ pub use service_definition::{
     GeometryTypeDefinition, Index, IndexBuilder, LayerDefinition, LayerDefinitionBuilder,
     LayerRelationship, LayerRelationshipBuilder, MergePolicy, RangeDomain, RangeDomainBuilder,
     RelationshipCardinality, RelationshipRole, ServiceDefinition, ServiceDefinitionBuilder,
-    SpatialReferenceDefinition, SplitPolicy, TableDefinition, TableDefinitionBuilder,
-    TemplatePrototype, TemplatePrototypeBuilder,
+    ServiceDefinitionValidationError, SpatialReferenceDefinition, SplitPolicy, TableDefinition,
+    TableDefinitionBuilder, TemplatePrototype, TemplatePrototypeBuilder,
 };
 pub use types::{
     AddItemParams, AddItemResult, CreateGroupParams, CreateServiceParams, CreateServiceResult,
