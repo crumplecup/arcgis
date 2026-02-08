@@ -19,7 +19,9 @@
 //!
 //! // Get current user
 //! let user = portal.get_self().await?;
-//! println!("User: {}", user.username());
+//! if let Some(name) = user.effective_username() {
+//!     println!("User: {}", name);
+//! }
 //!
 //! // Search for items
 //! let results = portal
@@ -39,9 +41,13 @@ mod types;
 
 pub use client::PortalClient;
 pub use service_definition::{
-    EditorTrackingInfo, FieldDefinition, FieldDefinitionBuilder, FieldType, GeometryTypeDefinition,
-    LayerDefinition, LayerDefinitionBuilder, ServiceDefinition, ServiceDefinitionBuilder,
-    SpatialReferenceDefinition,
+    CodedValue as DomainCodedValue, CodedValueCode, CodedValueDomain, CodedValueDomainBuilder,
+    DrawingTool, EditFieldsInfo, EditFieldsInfoBuilder, EditorTrackingInfo, FeatureTemplate,
+    FeatureTemplateBuilder, FieldDefinition, FieldDefinitionBuilder, FieldType,
+    GeometryTypeDefinition, Index, IndexBuilder, LayerDefinition, LayerDefinitionBuilder,
+    LayerRelationship, LayerRelationshipBuilder, MergePolicy, RangeDomain, RangeDomainBuilder,
+    RelationshipCardinality, RelationshipRole, ServiceDefinition, ServiceDefinitionBuilder,
+    SpatialReferenceDefinition, SplitPolicy, TemplatePrototype, TemplatePrototypeBuilder,
 };
 pub use types::{
     AddItemParams, AddItemResult, CreateGroupParams, CreateServiceParams, CreateServiceResult,

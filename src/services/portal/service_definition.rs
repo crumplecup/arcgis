@@ -13,29 +13,25 @@
 //! # Example: Creating a Branch-Versioned Service
 //!
 //! ```no_run
-//! use arcgis::service_definition::{
+//! use arcgis::{
 //!     ServiceDefinitionBuilder, LayerDefinitionBuilder, FieldDefinitionBuilder,
-//!     GeometryTypeDefinition, FieldType, VersioningType,
+//!     GeometryTypeDefinition, FieldType,
 //! };
 //!
-//! let service_def = ServiceDefinitionBuilder::default()
-//!     .name("MyVersionedService")
-//!     .add_layer(
-//!         LayerDefinitionBuilder::default()
-//!             .id(0)
-//!             .name("Points")
-//!             .geometry_type(GeometryTypeDefinition::Point)
-//!             .add_field(
-//!                 FieldDefinitionBuilder::default()
-//!                     .name("OBJECTID")
-//!                     .field_type(FieldType::Oid)
-//!                     .nullable(false)
-//!                     .editable(false)
-//!                     .build()?
-//!             )
-//!             .build()?
-//!     )
+//! let field = FieldDefinitionBuilder::default()
+//!     .name("OBJECTID")
+//!     .field_type(FieldType::Oid)
+//!     .nullable(false)
+//!     .editable(false)
 //!     .build()?;
+//!
+//! let mut layer_builder = LayerDefinitionBuilder::default();
+//! layer_builder.id(0u32).name("Points").geometry_type(GeometryTypeDefinition::Point);
+//! let layer = layer_builder.add_field(field).build()?;
+//!
+//! let mut svc_builder = ServiceDefinitionBuilder::default();
+//! svc_builder.name("MyVersionedService");
+//! let service_def = svc_builder.add_layer(layer).build()?;
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
@@ -260,6 +256,28 @@ pub struct LayerDefinition {
     #[builder(default)]
     templates: Vec<FeatureTemplate>,
 
+    /// Indexes on layer fields.
+    ///
+    /// ESRI automatically creates indexes on ObjectID and geometry fields.
+    /// Additional indexes can improve query performance on frequently-queried fields.
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    #[builder(default)]
+    indexes: Vec<Index>,
+
+    /// Editor tracking field configuration.
+    ///
+    /// Specifies which fields track creation and edit information.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    edit_fields_info: Option<EditFieldsInfo>,
+
+    /// Relationship classes this layer participates in.
+    ///
+    /// Each entry describes a relationship with another layer or table.
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    #[builder(default)]
+    relationships: Vec<LayerRelationship>,
+
     /// Whether data is branch versioned.
     ///
     /// ESRI sets this automatically when GlobalID field is present.
@@ -278,6 +296,20 @@ impl LayerDefinitionBuilder {
     /// Adds a template to the layer.
     pub fn add_template(mut self, template: FeatureTemplate) -> Self {
         self.templates.get_or_insert_with(Vec::new).push(template);
+        self
+    }
+
+    /// Adds an index to the layer.
+    pub fn add_index(mut self, index: Index) -> Self {
+        self.indexes.get_or_insert_with(Vec::new).push(index);
+        self
+    }
+
+    /// Adds a relationship to the layer.
+    pub fn add_relationship(mut self, relationship: LayerRelationship) -> Self {
+        self.relationships
+            .get_or_insert_with(Vec::new)
+            .push(relationship);
         self
     }
 }
@@ -304,7 +336,13 @@ impl LayerDefinitionBuilder {
 /// - Uppercase for system fields (OBJECTID, GlobalID, Shape)
 /// - Mixed case for user fields (CustomerName, BuildingType)
 #[derive(
-    Debug, Clone, Serialize, Deserialize, derive_builder::Builder, derive_getters::Getters,
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    derive_builder::Builder,
+    derive_getters::Getters,
 )]
 #[builder(setter(into, strip_option), default)]
 #[serde(rename_all = "camelCase")]
@@ -585,7 +623,7 @@ pub struct XssPreventionInfo {
     xss_input_rule: Option<String>,
 }
 
-// Placeholder types for Phase 3+ implementation
+// Placeholder types for Phase 4+ implementation
 /// Table definition (non-spatial).
 ///
 /// Similar to LayerDefinition but without geometry.
@@ -594,21 +632,662 @@ pub struct TableDefinition {
     // TODO: Phase 4 - Implement table structure
 }
 
-/// Domain for constrained field values.
+// ==================== Phase 3: Advanced Layer Features ====================
+
+/// Domain for a field (coded values, numeric range, or inherited from subtype).
 ///
-/// Can be either coded value domain or range domain.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
+/// # ESRI Documentation
+///
+/// Source: <https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/>
+///
+/// Domains constrain the allowed values for a field. ESRI supports three domain types:
+/// - `CodedValue`: Discrete list of allowed values (like enum)
+/// - `Range`: Numeric min/max boundaries
+/// - `Inherited`: Use domain from subtype definition
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
 pub enum Domain {
-    // TODO: Phase 3 - Implement domain types
-    /// Placeholder for future implementation.
-    Placeholder {},
+    /// Coded value domain with discrete allowed values.
+    ///
+    /// Example: Status field with values ["Active", "Inactive", "Pending"]
+    #[serde(rename = "codedValue")]
+    CodedValue(CodedValueDomain),
+
+    /// Range domain with numeric min/max boundaries.
+    ///
+    /// Example: Temperature field with range [-40, 120]
+    #[serde(rename = "range")]
+    Range(RangeDomain),
+
+    /// Inherited domain from subtype.
+    ///
+    /// Used in subtype definitions to inherit the parent field's domain.
+    #[serde(rename = "inherited")]
+    Inherited,
 }
 
-/// Template for feature creation.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Coded value domain with discrete allowed values.
+///
+/// # ESRI Documentation
+///
+/// Maps field values to human-readable names. Commonly used for:
+/// - Status fields (Active/Inactive)
+/// - Category fields (Residential/Commercial/Industrial)
+/// - Priority fields (Low/Medium/High)
+///
+/// # Example from ESRI
+///
+/// ```json
+/// {
+///   "type": "codedValue",
+///   "name": "Priority",
+///   "codedValues": [
+///     {"name": "Low", "code": 1},
+///     {"name": "Medium", "code": 2},
+///     {"name": "High", "code": 3}
+///   ],
+///   "mergePolicy": "esriMPTDefaultValue",
+///   "splitPolicy": "esriSPTDuplicate"
+/// }
+/// ```
+#[derive(
+    Debug,
+    Clone,
+    Default,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    derive_getters::Getters,
+    derive_builder::Builder,
+)]
+#[builder(setter(into, strip_option), default)]
+#[serde(rename_all = "camelCase")]
+pub struct CodedValueDomain {
+    /// Domain name.
+    #[builder(setter(into))]
+    name: String,
+
+    /// Domain description (optional).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    description: Option<String>,
+
+    /// List of coded values (code + name pairs).
+    #[builder(default)]
+    coded_values: Vec<CodedValue>,
+
+    /// Merge policy (how values combine when features merge).
+    ///
+    /// Default: `esriMPTDefaultValue` (use default value on merge).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    merge_policy: Option<MergePolicy>,
+
+    /// Split policy (how values divide when features split).
+    ///
+    /// Default: `esriSPTDuplicate` (duplicate value to both features).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    split_policy: Option<SplitPolicy>,
+}
+
+impl CodedValueDomainBuilder {
+    /// Adds a coded value to the domain.
+    pub fn add_coded_value(mut self, coded_value: CodedValue) -> Self {
+        self.coded_values
+            .get_or_insert_with(Vec::new)
+            .push(coded_value);
+        self
+    }
+}
+
+/// A single coded value (code + name pair).
+///
+/// Maps a code value (stored in database) to a human-readable name (shown in UI).
+///
+/// # Examples
+///
+/// ```rust
+/// use arcgis::{DomainCodedValue, CodedValueCode};
+///
+/// // Numeric code
+/// let status = DomainCodedValue::new("Active".to_string(), CodedValueCode::Number(1.0));
+///
+/// // String code
+/// let reliability = DomainCodedValue::new("Completely Reliable".to_string(), CodedValueCode::String("A".to_string()));
+/// ```
+#[derive(
+    Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters, derive_new::new,
+)]
+pub struct CodedValue {
+    /// Display name (shown to users).
+    name: String,
+
+    /// Code value (stored in database).
+    ///
+    /// Can be either a number or string depending on field type.
+    code: CodedValueCode,
+}
+
+/// Code value (string or number).
+///
+/// # ESRI Specification
+///
+/// ESRI allows codes to be either strings or numbers:
+/// - Integer fields use numeric codes: `{"name": "Active", "code": 1}`
+/// - String fields use string codes: `{"name": "Grade A", "code": "A"}`
+///
+/// This enum provides type-safe representation of both cases.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CodedValueCode {
+    /// String code value.
+    String(String),
+
+    /// Numeric code value (JSON numbers deserialize as f64).
+    Number(f64),
+}
+
+/// Range domain with numeric boundaries.
+///
+/// # ESRI Documentation
+///
+/// Constrains field values to a numeric range [min, max]. Commonly used for:
+/// - Measurements (temperature, pressure, elevation)
+/// - Percentages (0-100)
+/// - Angles (-180 to 180, 0 to 360)
+///
+/// # Example from ESRI
+///
+/// ```json
+/// {
+///   "type": "range",
+///   "name": "Direction",
+///   "description": "Direction of Movement",
+///   "range": [-1, 360],
+///   "mergePolicy": "esriMPTDefaultValue",
+///   "splitPolicy": "esriSPTDuplicate"
+/// }
+/// ```
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    derive_getters::Getters,
+    derive_builder::Builder,
+)]
+#[builder(setter(into, strip_option), default)]
+#[serde(rename_all = "camelCase")]
+pub struct RangeDomain {
+    /// Domain name.
+    #[builder(setter(into))]
+    name: String,
+
+    /// Domain description (optional).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    description: Option<String>,
+
+    /// Range as [min, max].
+    range: [f64; 2],
+
+    /// Merge policy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    merge_policy: Option<MergePolicy>,
+
+    /// Split policy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    split_policy: Option<SplitPolicy>,
+}
+
+impl Default for RangeDomain {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            description: None,
+            range: [0.0, 0.0],
+            merge_policy: None,
+            split_policy: None,
+        }
+    }
+}
+
+/// Merge policy for domain values.
+///
+/// # ESRI Documentation
+///
+/// Defines how attribute values are computed when features are merged:
+/// - `DefaultValue`: Use the field's default value
+/// - `SumValues`: Sum the values from merged features
+/// - `AreaWeighted`: Weight values by feature area
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum MergePolicy {
+    /// Use field's default value.
+    #[serde(rename = "esriMPTDefaultValue")]
+    DefaultValue,
+
+    /// Sum values from merged features.
+    #[serde(rename = "esriMPTSumValues")]
+    SumValues,
+
+    /// Weight values by feature area.
+    #[serde(rename = "esriMPTAreaWeighted")]
+    AreaWeighted,
+}
+
+/// Cardinality of a relationship class.
+///
+/// # ESRI Documentation
+///
+/// Source: <https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/>
+///
+/// Defines how many features on each side of a relationship can be related:
+/// - `OneToOne`: Each origin feature relates to at most one destination feature
+/// - `OneToMany`: Each origin feature can relate to many destination features
+/// - `ManyToMany`: Many origin features can relate to many destination features
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum RelationshipCardinality {
+    /// One origin feature to at most one destination feature.
+    #[serde(rename = "esriRelCardinalityOneToOne")]
+    OneToOne,
+
+    /// One origin feature to many destination features.
+    #[serde(rename = "esriRelCardinalityOneToMany")]
+    OneToMany,
+
+    /// Many origin features to many destination features.
+    #[serde(rename = "esriRelCardinalityManyToMany")]
+    ManyToMany,
+}
+
+/// Role of a layer in a relationship class.
+///
+/// # ESRI Documentation
+///
+/// Source: <https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/>
+///
+/// - `Origin`: The layer holds the primary key of the relationship
+/// - `Destination`: The layer holds the foreign key of the relationship
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum RelationshipRole {
+    /// Layer holds the primary key (origin side).
+    #[serde(rename = "esriRelRoleOrigin")]
+    Origin,
+
+    /// Layer holds the foreign key (destination side).
+    #[serde(rename = "esriRelRoleDestination")]
+    Destination,
+}
+
+/// Relationship to another layer or table in the service.
+///
+/// # ESRI Documentation
+///
+/// Source: <https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/>
+///
+/// Each layer or table can participate in one or more relationship classes.
+/// The `relationships` array in a layer definition lists the relationships
+/// that this layer participates in.
+///
+/// # Example from ESRI
+///
+/// ```json
+/// {
+///   "id": 2,
+///   "role": "esriRelRoleOrigin",
+///   "keyField": "GlobalID",
+///   "cardinality": "esriRelCardinalityOneToMany",
+///   "relatedTableId": 3,
+///   "name": "Buildings_Permits"
+/// }
+/// ```
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    derive_getters::Getters,
+    derive_builder::Builder,
+)]
+#[builder(setter(into, strip_option), default)]
+#[serde(rename_all = "camelCase")]
+pub struct LayerRelationship {
+    /// Relationship class ID (unique within service).
+    id: i32,
+
+    /// Relationship class name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    name: Option<String>,
+
+    /// Role of this layer in the relationship.
+    role: RelationshipRole,
+
+    /// Cardinality of the relationship.
+    cardinality: RelationshipCardinality,
+
+    /// ID of the related layer or table.
+    related_table_id: i32,
+
+    /// Key field name on this layer (foreign or primary key).
+    key_field: String,
+
+    /// Composite key field name (for composite key relationships).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    composite_key_field_name: Option<String>,
+}
+
+impl Default for LayerRelationship {
+    fn default() -> Self {
+        Self {
+            id: 0,
+            name: None,
+            role: RelationshipRole::Origin,
+            cardinality: RelationshipCardinality::OneToMany,
+            related_table_id: 0,
+            key_field: String::new(),
+            composite_key_field_name: None,
+        }
+    }
+}
+
+/// Split policy for domain values.
+///
+/// # ESRI Documentation
+///
+/// Defines how attribute values are computed when features are split:
+/// - `DefaultValue`: Use the field's default value for both parts
+/// - `Duplicate`: Duplicate the value to both parts
+/// - `GeometryRatio`: Ratio values based on geometry proportions
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum SplitPolicy {
+    /// Use field's default value for both parts.
+    #[serde(rename = "esriSPTDefaultValue")]
+    DefaultValue,
+
+    /// Duplicate value to both parts.
+    #[serde(rename = "esriSPTDuplicate")]
+    Duplicate,
+
+    /// Ratio values based on geometry proportions.
+    #[serde(rename = "esriSPTGeometryRatio")]
+    GeometryRatio,
+}
+
+/// Feature template for creating new features.
+///
+/// # ESRI Documentation
+///
+/// Source: <https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/>
+///
+/// Templates provide preset attribute values and drawing tools for feature creation.
+/// Commonly used in:
+/// - Categorized feature types (Residential/Commercial buildings)
+/// - Workflow states (New/In Progress/Complete tasks)
+/// - Standard feature configurations
+///
+/// # Example from ESRI
+///
+/// ```json
+/// {
+///   "name": "Residential Building",
+///   "description": "Single-family residential structure",
+///   "prototype": {
+///     "attributes": {
+///       "BuildingType": "Residential",
+///       "Status": "Planned"
+///     }
+///   },
+///   "drawingTool": "esriFeatureEditToolPolygon"
+/// }
+/// ```
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    derive_getters::Getters,
+    derive_builder::Builder,
+)]
+#[builder(setter(into, strip_option), default)]
+#[serde(rename_all = "camelCase")]
 pub struct FeatureTemplate {
-    // TODO: Phase 3 - Implement template structure
+    /// Template name (required).
+    #[builder(setter(into))]
+    name: String,
+
+    /// Template description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    description: Option<String>,
+
+    /// Prototype feature with default attribute values.
+    prototype: TemplatePrototype,
+
+    /// Drawing tool for this template.
+    drawing_tool: DrawingTool,
+}
+
+impl Default for FeatureTemplate {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            description: None,
+            prototype: TemplatePrototype::default(),
+            drawing_tool: DrawingTool::None,
+        }
+    }
+}
+
+/// Prototype feature with default attributes.
+///
+/// Defines default attribute values for features created from a template.
+#[derive(
+    Debug,
+    Clone,
+    Default,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    derive_getters::Getters,
+    derive_builder::Builder,
+)]
+#[builder(setter(into, strip_option), default)]
+pub struct TemplatePrototype {
+    /// Default attribute values (field name → value).
+    ///
+    /// Example: `{"BuildingType": "Residential", "Status": "Planned"}`
+    #[builder(default)]
+    attributes: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Drawing tool for feature templates.
+///
+/// # ESRI Documentation
+///
+/// Specifies which editing tool to use when creating features from this template.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum DrawingTool {
+    /// No drawing tool.
+    #[serde(rename = "esriFeatureEditToolNone")]
+    None,
+
+    /// Point drawing tool.
+    #[serde(rename = "esriFeatureEditToolPoint")]
+    Point,
+
+    /// Line drawing tool.
+    #[serde(rename = "esriFeatureEditToolLine")]
+    Line,
+
+    /// Polygon drawing tool.
+    #[serde(rename = "esriFeatureEditToolPolygon")]
+    Polygon,
+
+    /// Auto-complete polygon tool.
+    #[serde(rename = "esriFeatureEditToolAutoCompletePolygon")]
+    AutoCompletePolygon,
+
+    /// Circle drawing tool.
+    #[serde(rename = "esriFeatureEditToolCircle")]
+    Circle,
+
+    /// Ellipse drawing tool.
+    #[serde(rename = "esriFeatureEditToolEllipse")]
+    Ellipse,
+
+    /// Rectangle drawing tool.
+    #[serde(rename = "esriFeatureEditToolRectangle")]
+    Rectangle,
+
+    /// Freehand drawing tool.
+    #[serde(rename = "esriFeatureEditToolFreehand")]
+    Freehand,
+}
+
+/// Index on layer fields.
+///
+/// # ESRI Documentation
+///
+/// Source: <https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/>
+///
+/// Indexes improve query performance on frequently-queried fields.
+/// ESRI automatically creates indexes on ObjectID and geometry fields.
+///
+/// # Example from ESRI
+///
+/// ```json
+/// {
+///   "name": "shape_index",
+///   "fields": "shape",
+///   "isAscending": true,
+///   "isUnique": true,
+///   "description": "Spatial index"
+/// }
+/// ```
+#[derive(
+    Debug,
+    Clone,
+    Default,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    derive_getters::Getters,
+    derive_builder::Builder,
+)]
+#[builder(setter(into, strip_option), default)]
+#[serde(rename_all = "camelCase")]
+pub struct Index {
+    /// Index name (required).
+    #[builder(setter(into))]
+    name: String,
+
+    /// Field names in the index.
+    ///
+    /// ESRI serializes as comma-separated string ("field1,field2,field3")
+    /// but we model as Vec<String> for better ergonomics.
+    #[serde(
+        serialize_with = "serialize_index_fields",
+        deserialize_with = "deserialize_index_fields"
+    )]
+    fields: Vec<String>,
+
+    /// Whether index is ascending.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    is_ascending: Option<bool>,
+
+    /// Whether index enforces uniqueness.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    is_unique: Option<bool>,
+
+    /// Index description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    description: Option<String>,
+}
+
+/// Custom serialization for index fields (Vec<String> → "field1,field2,field3").
+fn serialize_index_fields<S>(fields: &[String], serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(&fields.join(","))
+}
+
+/// Custom deserialization for index fields ("field1,field2,field3" → Vec<String>).
+fn deserialize_index_fields<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(s.split(',').map(|s| s.trim().to_string()).collect())
+}
+
+/// Editor tracking field configuration.
+///
+/// # ESRI Documentation
+///
+/// Source: <https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/>
+///
+/// Configures which fields track creation and edit information.
+/// ESRI automatically populates these fields with:
+/// - Username of creator/editor
+/// - Timestamp of creation/edit
+///
+/// # Example from ESRI
+///
+/// ```json
+/// {
+///   "creationDateField": "created_date",
+///   "creatorField": "created_user",
+///   "editDateField": "last_edited_date",
+///   "editorField": "last_edited_user"
+/// }
+/// ```
+#[derive(
+    Debug,
+    Clone,
+    Default,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    derive_getters::Getters,
+    derive_builder::Builder,
+)]
+#[builder(setter(into, strip_option), default)]
+#[serde(rename_all = "camelCase")]
+pub struct EditFieldsInfo {
+    /// Field storing creation date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    creation_date_field: Option<String>,
+
+    /// Field storing creator username.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    creator_field: Option<String>,
+
+    /// Field storing last edit date.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    edit_date_field: Option<String>,
+
+    /// Field storing last editor username.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
+    editor_field: Option<String>,
 }
 
 // Default implementations
@@ -627,6 +1306,9 @@ impl Default for LayerDefinition {
             copyright_text: None,
             default_visibility: None,
             templates: Vec::new(),
+            indexes: Vec::new(),
+            edit_fields_info: None,
+            relationships: Vec::new(),
             is_data_branch_versioned: None,
         }
     }
