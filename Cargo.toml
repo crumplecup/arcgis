@@ -151,14 +151,6 @@ path = "examples/enterprise/geometry_operations.rs"
 
 # Enterprise examples - Portal Operations (Tier 3)
 [[example]]
-name = "branch_versioning_workflow"
-path = "examples/enterprise/branch_versioning_workflow.rs"
-
-[[example]]
-name = "edit_session"
-path = "examples/enterprise/edit_session.rs"
-
-[[example]]
 name = "feature_attachments"
 path = "examples/enterprise/feature_attachments.rs"
 
