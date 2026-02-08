@@ -85,7 +85,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 
 # Protocol Buffers (for PBF format support)
 prost = "0.14"
-bytes = "1.5"
+bytes = "1.11"
 
 # Optional dependencies (enabled by features)
 geo = { version = "0.32", optional = true, features = ["use-serde"] }
