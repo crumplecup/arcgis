@@ -16,8 +16,7 @@ use super::types::{
 /// # Example
 ///
 /// ```no_run
-/// use arcgis::{ApiKeyAuth, ArcGISClient, ImageServiceClient, ArcGISGeometry};
-/// use arcgis::geo_types::{Geometry, Point};
+/// use arcgis::{ApiKeyAuth, ArcGISClient, ImageServiceClient, ArcGISGeometry, ArcGISPoint};
 ///
 /// # async fn example() -> arcgis::Result<()> {
 /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
@@ -28,9 +27,7 @@ use super::types::{
 /// );
 ///
 /// // Identify pixel value at a point
-/// let point = Point::new(-120.0, 40.0);
-/// let geom: Geometry = point.into();
-/// let geometry = ArcGISGeometry::from_geo_types(&geom)?;
+/// let geometry = ArcGISGeometry::Point(ArcGISPoint::new(-120.0, 40.0));
 /// let result = image_service.identify(&geometry).await?;
 /// # Ok(())
 /// # }
@@ -145,8 +142,7 @@ impl<'a> ImageServiceClient<'a> {
     /// # Example
     ///
     /// ```no_run
-    /// use arcgis::{ApiKeyAuth, ArcGISClient, ImageServiceClient, ArcGISGeometry};
-    /// use arcgis::geo_types::{Geometry, Point};
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, ImageServiceClient, ArcGISGeometry, ArcGISPoint};
     ///
     /// # async fn example() -> arcgis::Result<()> {
     /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
@@ -156,9 +152,7 @@ impl<'a> ImageServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let point = Point::new(-120.0, 40.0);
-    /// let geom: Geometry = point.into();
-    /// let geometry = ArcGISGeometry::from_geo_types(&geom)?;
+    /// let geometry = ArcGISGeometry::Point(ArcGISPoint::new(-120.0, 40.0));
     /// let result = image_service.identify(&geometry).await?;
     ///
     /// if let Some(value) = result.value() {
@@ -214,8 +208,7 @@ impl<'a> ImageServiceClient<'a> {
     /// # Example
     ///
     /// ```no_run
-    /// use arcgis::{ApiKeyAuth, ArcGISClient, ImageServiceClient, IdentifyParametersBuilder, ArcGISGeometry};
-    /// use arcgis::geo_types::{Geometry, Point};
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, ImageServiceClient, IdentifyParametersBuilder, ArcGISGeometry, ArcGISPoint};
     ///
     /// # async fn example() -> arcgis::Result<()> {
     /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
@@ -225,9 +218,7 @@ impl<'a> ImageServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let point = Point::new(-120.0, 40.0);
-    /// let geom: Geometry = point.into();
-    /// let geometry = ArcGISGeometry::from_geo_types(&geom)?;
+    /// let geometry = ArcGISGeometry::Point(ArcGISPoint::new(-120.0, 40.0));
     /// let geometry_json = serde_json::to_string(&geometry)?;
     ///
     /// let params = IdentifyParametersBuilder::default()

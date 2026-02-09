@@ -347,7 +347,10 @@ impl Default for AlterVersionParams {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
 pub struct CreateVersionResponse {
     /// Whether the operation succeeded
-    success: bool,
+    ///
+    /// May be absent if the API returns only an error object (e.g., invalid URL)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    success: Option<bool>,
 
     /// The created version's information
     #[serde(skip_serializing_if = "Option::is_none")]

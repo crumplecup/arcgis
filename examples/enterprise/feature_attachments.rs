@@ -231,13 +231,7 @@ async fn create_test_feature(
         serde_json::json!("Attachment Test Feature"),
     );
 
-    let geometry = ArcGISGeometry::Point(ArcGISPoint {
-        x: -122.4194,
-        y: 37.7749,
-        z: None,
-        m: None,
-        spatial_reference: None,
-    });
+    let geometry = ArcGISGeometry::Point(ArcGISPoint::new(-122.4194, 37.7749));
 
     let test_feature = Feature::new(attributes, Some(geometry));
 

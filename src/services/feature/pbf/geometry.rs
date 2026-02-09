@@ -101,13 +101,7 @@ fn decode_point(
     let x = (coords[0] as f64 * x_scale) + x_translate;
     let y = (coords[1] as f64 * y_scale) + y_translate;
 
-    Ok(ArcGISGeometry::Point(ArcGISPoint {
-        x,
-        y,
-        z: None,
-        m: None,
-        spatial_reference: None,
-    }))
+    Ok(ArcGISGeometry::Point(ArcGISPoint::new(x, y)))
 }
 
 /// Decode a Multipoint geometry.
@@ -140,13 +134,10 @@ fn decode_multipoint(
         let x = (x_accum as f64 * x_scale) + x_translate;
         let y = (y_accum as f64 * y_scale) + y_translate;
 
-        points.push([x, y]);
+        points.push(vec![x, y]);
     }
 
-    Ok(ArcGISGeometry::Multipoint(ArcGISMultipoint {
-        points,
-        spatial_reference: None,
-    }))
+    Ok(ArcGISGeometry::Multipoint(ArcGISMultipoint::new(points)))
 }
 
 /// Decode a Polyline geometry.
@@ -162,10 +153,7 @@ fn decode_polyline(
     y_translate: f64,
 ) -> Result<ArcGISGeometry> {
     let paths = decode_paths(coords, lengths, x_scale, y_scale, x_translate, y_translate)?;
-    Ok(ArcGISGeometry::Polyline(ArcGISPolyline {
-        paths,
-        spatial_reference: None,
-    }))
+    Ok(ArcGISGeometry::Polyline(ArcGISPolyline::new(paths)))
 }
 
 /// Decode a Polygon geometry.
@@ -181,10 +169,7 @@ fn decode_polygon(
     y_translate: f64,
 ) -> Result<ArcGISGeometry> {
     let rings = decode_paths(coords, lengths, x_scale, y_scale, x_translate, y_translate)?;
-    Ok(ArcGISGeometry::Polygon(ArcGISPolygon {
-        rings,
-        spatial_reference: None,
-    }))
+    Ok(ArcGISGeometry::Polygon(ArcGISPolygon::new(rings)))
 }
 
 /// Helper to decode paths/rings for polyline/polygon geometries.
@@ -198,7 +183,7 @@ fn decode_paths(
     y_scale: f64,
     x_translate: f64,
     y_translate: f64,
-) -> Result<Vec<Vec<[f64; 2]>>> {
+) -> Result<Vec<Vec<Vec<f64>>>> {
     let mut paths = Vec::new();
     let mut coord_idx = 0;
     let mut x_accum: i64 = 0;
@@ -224,7 +209,7 @@ fn decode_paths(
             let x = (x_accum as f64 * x_scale) + x_translate;
             let y = (y_accum as f64 * y_scale) + y_translate;
 
-            path.push([x, y]);
+            path.push(vec![x, y]);
         }
 
         paths.push(path);

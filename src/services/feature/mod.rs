@@ -23,6 +23,7 @@ pub use types::{
     CodedValue, Domain, Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureSet,
     FeatureStatisticsResponse, FieldCalculation, LayerDomainInfo, QueryDomainsResponse,
     RelatedRecordGroup, RelatedRecordsParams, RelatedRecordsParamsBuilder, RelatedRecordsResponse,
-    ResponseFormat, StatisticDefinition, StatisticType, Subtype, TopFeaturesParams,
-    TopFeaturesParamsBuilder, TopFilter, TruncateResult,
+    RelationshipClass, RelationshipRule, RelationshipsResponse, ResponseFormat,
+    StatisticDefinition, StatisticType, Subtype, TopFeaturesParams, TopFeaturesParamsBuilder,
+    TopFilter, TruncateResult,
 };

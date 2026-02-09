@@ -10,8 +10,7 @@
 //! # Example
 //!
 //! ```no_run
-//! use arcgis::{ApiKeyAuth, ArcGISClient, ImageServiceClient, ArcGISGeometry};
-//! use arcgis::geo_types::{Geometry, Point};
+//! use arcgis::{ApiKeyAuth, ArcGISClient, ImageServiceClient, ArcGISGeometry, ArcGISPoint};
 //!
 //! # async fn example() -> arcgis::Result<()> {
 //! let auth = ApiKeyAuth::new("YOUR_API_KEY");
@@ -22,9 +21,7 @@
 //! );
 //!
 //! // Get pixel value at a location
-//! let point = Point::new(-120.0, 40.0);
-//! let geom: Geometry = point.into();
-//! let geometry = ArcGISGeometry::from_geo_types(&geom)?;
+//! let geometry = ArcGISGeometry::Point(ArcGISPoint::new(-120.0, 40.0));
 //! let value = image_service.identify(&geometry).await?;
 //! # Ok(())
 //! # }

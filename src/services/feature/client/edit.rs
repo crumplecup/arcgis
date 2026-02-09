@@ -2,7 +2,7 @@
 
 use super::super::{EditOptions, EditResult, Feature};
 use super::FeatureServiceClient;
-use crate::{LayerId, ObjectId, Result};
+use crate::{LayerId, ObjectId, Result, check_esri_error};
 use tracing::instrument;
 
 impl<'a> FeatureServiceClient<'a> {
@@ -103,7 +103,9 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let result: EditResult = response.json().await?;
+        let response_text = response.text().await?;
+        check_esri_error(&response_text, "addFeatures")?;
+        let result: EditResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             success_count = result.success_count(),
@@ -211,7 +213,9 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let result: EditResult = response.json().await?;
+        let response_text = response.text().await?;
+        check_esri_error(&response_text, "updateFeatures")?;
+        let result: EditResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             success_count = result.success_count(),
@@ -310,7 +314,9 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let result: EditResult = response.json().await?;
+        let response_text = response.text().await?;
+        check_esri_error(&response_text, "deleteFeatures")?;
+        let result: EditResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             success_count = result.success_count(),
@@ -472,7 +478,9 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let result: EditResult = response.json().await?;
+        let response_text = response.text().await?;
+        check_esri_error(&response_text, "applyEdits")?;
+        let result: EditResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             success_count = result.success_count(),
@@ -583,7 +591,9 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let result: EditResult = response.json().await?;
+        let response_text = response.text().await?;
+        check_esri_error(&response_text, "calculate")?;
+        let result: EditResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             success_count = result.success_count(),
@@ -719,7 +729,9 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let result: EditResult = response.json().await?;
+        let response_text = response.text().await?;
+        check_esri_error(&response_text, "applyEditsWithGlobalIds")?;
+        let result: EditResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             success_count = result.success_count(),

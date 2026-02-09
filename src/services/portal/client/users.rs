@@ -17,7 +17,9 @@ impl<'a> PortalClient<'a> {
     /// # use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient};
     /// # async fn example(portal: &PortalClient<'_>) -> arcgis::Result<()> {
     /// let user = portal.get_self().await?;
-    /// println!("Username: {}", user.username());
+    /// if let Some(name) = user.effective_username() {
+    ///     println!("Username: {}", name);
+    /// }
     /// println!("Role: {:?}", user.role());
     /// println!("Groups: {}", user.groups().len());
     /// # Ok(())
@@ -56,9 +58,15 @@ impl<'a> PortalClient<'a> {
         }
 
         // Parse response
-        let user: UserInfo = response.json().await?;
+        let response_text = response.text().await?;
+        tracing::debug!("Raw getSelf response: {}", response_text);
+        let user: UserInfo = serde_json::from_str(&response_text)?;
 
-        tracing::debug!(username = %user.username(), "Got user info");
+        if let Some(username) = user.effective_username() {
+            tracing::debug!(username = %username, "Got user info");
+        } else {
+            tracing::debug!("Got user info (username not available)");
+        }
 
         Ok(user)
     }

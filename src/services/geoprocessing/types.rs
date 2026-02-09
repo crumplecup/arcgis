@@ -20,13 +20,16 @@ pub struct GPExecuteResult {
 #[serde(rename_all = "camelCase")]
 pub struct GPResultParameter {
     /// Parameter name.
-    param_name: String,
+    #[serde(default)]
+    param_name: Option<String>,
 
     /// Data type of the parameter.
-    data_type: String,
+    #[serde(default)]
+    data_type: Option<String>,
 
     /// Parameter value (type varies by dataType).
-    value: serde_json::Value,
+    #[serde(default)]
+    value: Option<serde_json::Value>,
 }
 
 /// A message from geoprocessing execution.
@@ -43,21 +46,25 @@ pub struct GPMessage {
 
 /// Type of geoprocessing message.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub enum GPMessageType {
     /// Informative message.
+    #[serde(rename = "esriJobMessageTypeInformative")]
     Informative,
 
     /// Warning message.
+    #[serde(rename = "esriJobMessageTypeWarning")]
     Warning,
 
     /// Error message.
+    #[serde(rename = "esriJobMessageTypeError")]
     Error,
 
     /// Empty message.
+    #[serde(rename = "esriJobMessageTypeEmpty")]
     Empty,
 
     /// Abort message.
+    #[serde(rename = "esriJobMessageTypeAbort")]
     Abort,
 }
 

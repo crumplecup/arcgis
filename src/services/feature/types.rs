@@ -1,12 +1,15 @@
 //! Types for Feature Service operations.
 
-use crate::{ArcGISGeometry, GeometryType, ObjectId, SpatialRel};
+use crate::{
+    ArcGISGeometry, GeometryType, ObjectId, RelationshipCardinality, RelationshipRole, SpatialRel,
+};
 use derive_setters::Setters;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Serialization helpers for URL query parameters.
 mod serde_helpers {
+    use crate::ArcGISGeometry;
     use serde::Serializer;
 
     /// Serializes a Vec<String> as a comma-separated string for URL query parameters.
@@ -42,7 +45,7 @@ mod serde_helpers {
 
     /// Serializes geometry as a JSON string for URL query parameters.
     pub fn serialize_geometry<S>(
-        geom: &Option<crate::ArcGISGeometry>,
+        geom: &Option<ArcGISGeometry>,
         serializer: S,
     ) -> Result<S::Ok, S::Error>
     where
@@ -834,4 +837,173 @@ pub struct FieldCalculation {
     /// SQL expression to calculate the field value.
     #[serde(rename = "sqlExpression")]
     sql_expression: String,
+}
+
+// ==================== Relationship Classes ====================
+
+/// Cardinality constraint rule for a relationship class.
+///
+/// # ESRI Documentation
+///
+/// Source: <https://developers.arcgis.com/rest/services-reference/enterprise/relationships-feature-service/>
+///
+/// Rules define minimum and maximum cardinality constraints for subtypes
+/// on each side of the relationship.
+///
+/// # Example from ESRI
+///
+/// ```json
+/// {
+///   "ruleID": 1,
+///   "originSubtypeCode": 0,
+///   "originMinimumCardinality": 0,
+///   "originMaximumCardinality": -1,
+///   "destinationSubtypeCode": 0,
+///   "destinationMinimumCardinality": 0,
+///   "destinationMaximumCardinality": -1
+/// }
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct RelationshipRule {
+    /// Rule identifier.
+    ///
+    /// Note: ESRI uses `ruleID` (not camelCase) for this field.
+    #[serde(rename = "ruleID")]
+    rule_id: i32,
+
+    /// Subtype code on the origin side (0 = all subtypes).
+    origin_subtype_code: i32,
+
+    /// Minimum cardinality on origin side (0 = no minimum).
+    origin_minimum_cardinality: i32,
+
+    /// Maximum cardinality on origin side (-1 = unlimited).
+    origin_maximum_cardinality: i32,
+
+    /// Subtype code on destination side (0 = all subtypes).
+    destination_subtype_code: i32,
+
+    /// Minimum cardinality on destination side (0 = no minimum).
+    destination_minimum_cardinality: i32,
+
+    /// Maximum cardinality on destination side (-1 = unlimited).
+    destination_maximum_cardinality: i32,
+}
+
+/// Full relationship class definition from the relationships resource.
+///
+/// # ESRI Documentation
+///
+/// Source: <https://developers.arcgis.com/rest/services-reference/enterprise/relationships-feature-service/>
+///
+/// Obtained via `GET /FeatureServer/relationships` or `GET /FeatureServer/{layerId}/relationships`.
+/// Contains the complete definition of a relationship class including keys, cardinality,
+/// and optional cardinality rules.
+///
+/// # Attributed Relationships
+///
+/// When `attributed` is `true`, the relationship class has additional fields
+/// stored in a separate relationship table, indicated by `relationship_table_id`
+/// and `key_field_in_relationship_table`.
+///
+/// # Example from ESRI
+///
+/// ```json
+/// {
+///   "id": 2,
+///   "name": "Buildings_Permits",
+///   "cardinality": "esriRelCardinalityOneToMany",
+///   "originLayerId": 0,
+///   "originPrimaryKey": "GlobalID",
+///   "originForeignKey": "BuildingGUID",
+///   "destinationLayerId": 1,
+///   "role": "esriRelRoleOrigin",
+///   "attributed": false,
+///   "catalogID": "{SOME-GUID}",
+///   "rules": []
+/// }
+/// ```
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct RelationshipClass {
+    /// Relationship class identifier.
+    id: i32,
+
+    /// Relationship class name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
+
+    /// Cardinality of the relationship.
+    cardinality: RelationshipCardinality,
+
+    /// ID of the origin layer or table.
+    origin_layer_id: i32,
+
+    /// Primary key field on the origin layer.
+    origin_primary_key: String,
+
+    /// Foreign key field on the origin layer (for one-to-many).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    origin_foreign_key: Option<String>,
+
+    /// ID of the destination layer or table.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    destination_layer_id: Option<i32>,
+
+    /// Primary key field on the destination layer.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    destination_primary_key: Option<String>,
+
+    /// Foreign key field on the destination layer.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    destination_foreign_key: Option<String>,
+
+    /// Label for traversing from destination to origin.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    backward_path_label: Option<String>,
+
+    /// Label for traversing from origin to destination.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    forward_path_label: Option<String>,
+
+    /// Role of the origin layer in this relationship.
+    role: RelationshipRole,
+
+    /// Whether the relationship has attribute fields.
+    ///
+    /// When `true`, additional attributes are stored in `relationship_table_id`.
+    attributed: bool,
+
+    /// ID of the relationship table (for attributed relationships).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    relationship_table_id: Option<i32>,
+
+    /// Key field in the relationship table (for attributed relationships).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    key_field_in_relationship_table: Option<String>,
+
+    /// Catalog GUID for the relationship class.
+    ///
+    /// Note: ESRI uses `catalogID` (not camelCase) for this field.
+    #[serde(rename = "catalogID", skip_serializing_if = "Option::is_none")]
+    catalog_id: Option<String>,
+
+    /// Cardinality constraint rules.
+    #[serde(default)]
+    rules: Vec<RelationshipRule>,
+}
+
+/// Response from the relationships resource.
+///
+/// # ESRI Documentation
+///
+/// Source: <https://developers.arcgis.com/rest/services-reference/enterprise/relationships-feature-service/>
+///
+/// Returned by `GET /FeatureServer/relationships` which lists all relationship
+/// classes across the service.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+pub struct RelationshipsResponse {
+    /// All relationship classes defined in the service.
+    relationships: Vec<RelationshipClass>,
 }

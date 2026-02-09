@@ -5,11 +5,17 @@ use serde::{Deserialize, Serialize};
 /// Information about a portal user.
 ///
 /// Returned by the `getSelf` operation and other user-related queries.
+/// When using OAuth2 client credentials, returns appInfo instead of user details.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct UserInfo {
-    /// Unique username.
-    username: String,
+    /// Unique username (present with user authentication).
+    #[serde(default)]
+    username: Option<String>,
+
+    /// Application info (present with OAuth2 client credentials).
+    #[serde(default)]
+    app_info: Option<AppInfo>,
 
     /// User's full name.
     #[serde(default)]
@@ -88,15 +94,53 @@ pub struct UserInfo {
     org_id: Option<String>,
 }
 
+/// Application information returned for OAuth2 client credentials.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct AppInfo {
+    /// Application ID.
+    app_id: String,
+
+    /// Item ID of the application.
+    item_id: String,
+
+    /// Username of the application owner.
+    app_owner: String,
+
+    /// Organization ID.
+    org_id: String,
+
+    /// Application title.
+    app_title: String,
+
+    /// Privileges assigned to the application.
+    #[serde(default)]
+    privileges: Vec<String>,
+}
+
+impl UserInfo {
+    /// Gets the effective username, checking both user and app contexts.
+    ///
+    /// With user authentication, returns the username field.
+    /// With OAuth2 client credentials, returns appOwner from appInfo.
+    pub fn effective_username(&self) -> Option<&str> {
+        self.username
+            .as_deref()
+            .or_else(|| self.app_info.as_ref().map(|info| info.app_owner.as_str()))
+    }
+}
+
 /// Group membership information.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupMembership {
     /// Group ID.
-    id: String,
+    #[serde(default)]
+    id: Option<String>,
 
     /// Group title.
-    title: String,
+    #[serde(default)]
+    title: Option<String>,
 
     /// User's membership information in the group (can be string or object depending on API response).
     #[serde(default)]
@@ -1287,9 +1331,9 @@ pub struct PublishStatus {
 #[derive(Debug, Clone, Default, derive_getters::Getters, derive_setters::Setters)]
 #[setters(prefix = "with_")]
 pub struct UpdateServiceDefinitionParams {
-    /// Updated service definition as JSON.
+    /// Updated service definition (strongly-typed).
     #[setters(skip)]
-    service_definition: Option<serde_json::Value>,
+    service_definition: Option<crate::ServiceDefinition>,
 
     /// Updated description.
     #[setters(skip)]
@@ -1310,8 +1354,22 @@ impl UpdateServiceDefinitionParams {
         Self::default()
     }
 
-    /// Sets the service definition.
-    pub fn with_service_definition(mut self, definition: serde_json::Value) -> Self {
+    /// Sets the service definition using strongly-typed ServiceDefinition.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{UpdateServiceDefinitionParams, ServiceDefinitionBuilder};
+    ///
+    /// let params = UpdateServiceDefinitionParams::new()
+    ///     .with_service_definition(
+    ///         ServiceDefinitionBuilder::default()
+    ///             .name("MyService")
+    ///             .build()
+    ///             .expect("Valid service definition")
+    ///     );
+    /// ```
+    pub fn with_service_definition(mut self, definition: crate::ServiceDefinition) -> Self {
         self.service_definition = Some(definition);
         self
     }
@@ -1347,6 +1405,117 @@ pub struct UpdateServiceDefinitionResult {
     service_item_id: Option<String>,
 }
 
+/// Parameters for adding layers/tables to an existing hosted feature service.
+///
+/// Use this to add new layers or tables to a service created with [`create_service`](crate::PortalClient::create_service).
+/// ESRI's createService creates an empty service container - you must call addToDefinition
+/// to add the actual layer schemas before you can add features.
+///
+/// # Example
+///
+/// ```no_run
+/// use arcgis::{
+///     AddToDefinitionParams, FieldDefinitionBuilder, FieldType,
+///     LayerDefinitionBuilder, GeometryTypeDefinition,
+/// };
+///
+/// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// // Build a layer definition
+/// let oid_field = FieldDefinitionBuilder::default()
+///     .name("OBJECTID")
+///     .field_type(FieldType::Oid)
+///     .nullable(false)
+///     .editable(false)
+///     .build()?;
+///
+/// let layer = LayerDefinitionBuilder::default()
+///     .id(0u32)
+///     .name("Points")
+///     .geometry_type(GeometryTypeDefinition::Point)
+///     .fields(vec![oid_field])
+///     .build()?;
+///
+/// // Add to an existing service
+/// let params = AddToDefinitionParams::new()
+///     .with_layers(vec![layer]);
+/// # Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone, Default, derive_getters::Getters, derive_setters::Setters)]
+#[setters(prefix = "with_")]
+pub struct AddToDefinitionParams {
+    /// Layers to add to the service.
+    #[setters(skip)]
+    layers: Option<Vec<crate::LayerDefinition>>,
+
+    /// Tables to add to the service.
+    #[setters(skip)]
+    tables: Option<Vec<crate::TableDefinition>>,
+}
+
+impl AddToDefinitionParams {
+    /// Creates a new empty AddToDefinitionParams.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the layers to add.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{AddToDefinitionParams, LayerDefinitionBuilder, GeometryTypeDefinition};
+    ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let layer = LayerDefinitionBuilder::default()
+    ///     .id(0u32)
+    ///     .name("Points")
+    ///     .geometry_type(GeometryTypeDefinition::Point)
+    ///     .build()?;
+    ///
+    /// let params = AddToDefinitionParams::new()
+    ///     .with_layers(vec![layer]);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn with_layers(mut self, layers: Vec<crate::LayerDefinition>) -> Self {
+        self.layers = Some(layers);
+        self
+    }
+
+    /// Sets the tables to add.
+    pub fn with_tables(mut self, tables: Vec<crate::TableDefinition>) -> Self {
+        self.tables = Some(tables);
+        self
+    }
+}
+
+/// Simple layer/table info returned from addToDefinition.
+#[derive(Debug, Clone, Serialize, Deserialize, derive_getters::Getters)]
+pub struct AddedLayerInfo {
+    /// Layer/table name.
+    name: String,
+
+    /// Layer/table ID.
+    id: u32,
+}
+
+/// Result from adding layers/tables to a service definition.
+#[derive(Debug, Clone, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct AddToDefinitionResult {
+    /// Whether the operation succeeded.
+    success: bool,
+
+    /// Layers that were added (if any).
+    #[serde(default)]
+    layers: Vec<AddedLayerInfo>,
+
+    /// Tables that were added (if any).
+    #[serde(default)]
+    tables: Vec<AddedLayerInfo>,
+}
+
 /// Parameters for creating a new hosted feature service.
 #[derive(Debug, Clone, derive_getters::Getters, derive_setters::Setters)]
 #[setters(prefix = "with_")]
@@ -1374,9 +1543,9 @@ pub struct CreateServiceParams {
     #[setters(skip)]
     capabilities: Option<String>,
 
-    /// Service definition as JSON (contains layers, tables, etc.).
+    /// Service definition (strongly-typed, contains layers, tables, etc.).
     #[setters(skip)]
-    service_definition: Option<serde_json::Value>,
+    service_definition: Option<crate::ServiceDefinition>,
 }
 
 impl CreateServiceParams {
@@ -1423,8 +1592,30 @@ impl CreateServiceParams {
         self
     }
 
-    /// Sets the full service definition.
-    pub fn with_service_definition(mut self, definition: serde_json::Value) -> Self {
+    /// Sets the full service definition using strongly-typed ServiceDefinition.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{
+    ///     CreateServiceParams, ServiceDefinitionBuilder, LayerDefinitionBuilder,
+    ///     FieldDefinitionBuilder, FieldType, GeometryTypeDefinition
+    /// };
+    ///
+    /// let layer = LayerDefinitionBuilder::default()
+    ///     .name("Points")
+    ///     .geometry_type(GeometryTypeDefinition::Point)
+    ///     .build()
+    ///     .expect("Valid layer");
+    ///
+    /// let mut svc_builder = ServiceDefinitionBuilder::default();
+    /// svc_builder.name("MyService");
+    /// let service_def = svc_builder.add_layer(layer).build().expect("Valid service definition");
+    ///
+    /// let params = CreateServiceParams::new("MyService")
+    ///     .with_service_definition(service_def);
+    /// ```
+    pub fn with_service_definition(mut self, definition: crate::ServiceDefinition) -> Self {
         self.service_definition = Some(definition);
         self
     }

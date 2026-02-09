@@ -1,6 +1,6 @@
 //! Elevation service client implementation.
 
-use crate::{ArcGISClient, Result};
+use crate::{ArcGISClient, ErrorKind, FeatureSet, GPExecuteResult, Result};
 use tracing::instrument;
 
 use super::types::{
@@ -23,10 +23,11 @@ use super::types::{
 /// let client = ArcGISClient::new(auth);
 /// let elevation = ElevationClient::new(&client);
 ///
-/// // Get elevation profile along a line
+/// // Get elevation profile along a line (FeatureSet JSON with a polyline)
+/// let line_features = r#"{"geometryType":"esriGeometryPolyline","features":[{"geometry":{"paths":[[[-120,40],[-119,41]]]}}],"spatialReference":{"wkid":4326}}"#;
 /// let params = ProfileParametersBuilder::default()
-///     .input_geometry("{\"paths\":[[[-120,40],[-119,41]]]}")
-///     .geometry_type("esriGeometryPolyline")
+///     .input_line_features(line_features)
+///     .dem_resolution("30m")
 ///     .build()
 ///     .expect("Valid parameters");
 ///
@@ -63,7 +64,7 @@ impl<'a> ElevationClient<'a> {
     /// ```
     pub fn new(client: &'a ArcGISClient) -> Self {
         ElevationClient {
-            url: "https://elevation.arcgis.com/arcgis/rest/services/Tools/Elevation/GPServer"
+            url: "https://elevation.arcgis.com/arcgis/rest/services/Tools/ElevationSync/GPServer"
                 .to_string(),
             client,
         }
@@ -118,20 +119,19 @@ impl<'a> ElevationClient<'a> {
     /// let client = ArcGISClient::new(auth);
     /// let elevation = ElevationClient::new(&client);
     ///
+    /// let line_features = r#"{"geometryType":"esriGeometryPolyline","features":[{"geometry":{"paths":[[[-120.5,38.5],[-120.0,39.0]]]}}],"spatialReference":{"wkid":4326}}"#;
     /// let params = ProfileParametersBuilder::default()
-    ///     .input_geometry("{\"paths\":[[[-120.5,38.5],[-120.0,39.0]]]}")
-    ///     .geometry_type("esriGeometryPolyline")
+    ///     .input_line_features(line_features)
     ///     .dem_resolution("30m")
-    ///     .return_first_point(true)
-    ///     .return_last_point(true)
     ///     .build()
     ///     .expect("Valid parameters");
     ///
     /// let result = elevation.profile(params).await?;
     ///
-    /// if let Some(first) = result.first_point_z() {
-    ///     tracing::info!(elevation = first, "First point elevation");
-    /// }
+    /// tracing::info!(
+    ///     point_count = result.output_profile().features().len(),
+    ///     "Elevation profile generated"
+    /// );
     /// # Ok(())
     /// # }
     /// ```
@@ -141,16 +141,68 @@ impl<'a> ElevationClient<'a> {
 
         let profile_url = format!("{}/Profile/execute", self.url);
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&profile_url)
             .query(&[("f", "json")])
-            .query(&params)
-            .send()
-            .await?;
+            .query(&params);
 
-        let result: ProfileResult = response.json().await?;
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        tracing::debug!(url = %profile_url, "Sending profile request");
+
+        let response = request.send().await?;
+        let response_body = response.text().await?;
+
+        tracing::debug!(
+            response_length = response_body.len(),
+            response_body = %response_body,
+            "Received profile response"
+        );
+
+        let gp_result: GPExecuteResult = serde_json::from_str(&response_body)?;
+
+        tracing::debug!(
+            result_count = gp_result.results().len(),
+            message_count = gp_result.messages().len(),
+            "Parsed GP execute result"
+        );
+
+        // Extract the OutputProfile FeatureSet from the GP result
+        let output_param = gp_result.results().first().ok_or_else(|| {
+            tracing::error!("GP result missing results array");
+            crate::Error::from(ErrorKind::Api {
+                code: 0,
+                message: "Elevation profile result missing results array".to_string(),
+            })
+        })?;
+
+        tracing::debug!(
+            param_name = ?output_param.param_name(),
+            data_type = ?output_param.data_type(),
+            "Extracting profile parameter"
+        );
+
+        let feature_set_value = output_param.value().as_ref().ok_or_else(|| {
+            tracing::error!("OutputProfile parameter missing value");
+            crate::Error::from(ErrorKind::Api {
+                code: 0,
+                message: "Elevation profile parameter missing value field".to_string(),
+            })
+        })?;
+
+        let feature_set: FeatureSet = serde_json::from_value(feature_set_value.clone())?;
+
+        tracing::debug!(
+            feature_count = feature_set.features().len(),
+            geometry_type = ?feature_set.geometry_type(),
+            "Extracted profile FeatureSet"
+        );
+
+        let result = ProfileResult::new(feature_set);
 
         tracing::debug!("Profile generated");
 
@@ -206,16 +258,29 @@ impl<'a> ElevationClient<'a> {
 
         let summarize_url = format!("{}/SummarizeElevation/execute", self.url);
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&summarize_url)
             .query(&[("f", "json")])
-            .query(&params)
-            .send()
-            .await?;
+            .query(&params);
 
-        let result: SummarizeElevationResult = response.json().await?;
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        tracing::debug!(url = %summarize_url, "Sending summarize elevation request");
+
+        let response = request.send().await?;
+        let response_body = response.text().await?;
+
+        tracing::debug!(
+            response_length = response_body.len(),
+            response_body = %response_body,
+            "Received summarize elevation response"
+        );
+
+        let result: SummarizeElevationResult = serde_json::from_str(&response_body)?;
 
         tracing::debug!(
             min = ?result.min_elevation(),
@@ -277,16 +342,29 @@ impl<'a> ElevationClient<'a> {
 
         let viewshed_url = format!("{}/Viewshed/execute", self.url);
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&viewshed_url)
             .query(&[("f", "json")])
-            .query(&params)
-            .send()
-            .await?;
+            .query(&params);
 
-        let result: ViewshedResult = response.json().await?;
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        tracing::debug!(url = %viewshed_url, "Sending viewshed request");
+
+        let response = request.send().await?;
+        let response_body = response.text().await?;
+
+        tracing::debug!(
+            response_length = response_body.len(),
+            response_body = %response_body,
+            "Received viewshed response"
+        );
+
+        let result: ViewshedResult = serde_json::from_str(&response_body)?;
 
         tracing::debug!(
             visible_area = ?result.visible_area(),

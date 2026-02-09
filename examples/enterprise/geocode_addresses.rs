@@ -46,7 +46,7 @@
 //! - **Search interfaces**: Provide autocomplete for location search
 
 use anyhow::Result;
-use arcgis::{ApiKeyAuth, ArcGISClient, ArcGISPoint, GeocodeServiceClient};
+use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISPoint, GeocodeServiceClient};
 
 /// ArcGIS World Geocoding Service URL
 const WORLD_GEOCODE_SERVICE: &str =
@@ -67,7 +67,7 @@ async fn main() -> Result<()> {
 
     // Create geocoding service client (automatically loads .env)
     tracing::debug!("Creating geocoding service client");
-    let auth = ApiKeyAuth::from_env()?;
+    let auth = ApiKeyAuth::from_env(ApiKeyTier::Location)?;
     let client = ArcGISClient::new(auth);
     let geocoder = GeocodeServiceClient::new(WORLD_GEOCODE_SERVICE, &client);
 
@@ -104,8 +104,8 @@ async fn demonstrate_forward_geocoding(geocoder: &GeocodeServiceClient<'_>) -> R
             tracing::info!(
                 address = %address,
                 matched_address = %candidate.address(),
-                x = candidate.location().x,
-                y = candidate.location().y,
+                x = *candidate.location().x(),
+                y = *candidate.location().y(),
                 score = candidate.score(),
                 "✅ Geocoded successfully"
             );
@@ -129,13 +129,7 @@ async fn demonstrate_reverse_geocoding(geocoder: &GeocodeServiceClient<'_>) -> R
     ];
 
     for (name, lon, lat) in &locations {
-        let point = ArcGISPoint {
-            x: *lon,
-            y: *lat,
-            z: None,
-            m: None,
-            spatial_reference: None,
-        };
+        let point = ArcGISPoint::new(*lon, *lat);
 
         tracing::debug!(
             name = %name,
@@ -224,8 +218,8 @@ async fn demonstrate_batch_processing(geocoder: &GeocodeServiceClient<'_>) -> Re
                 index = i + 1,
                 address = %address,
                 matched_address = %candidate.address(),
-                x = candidate.location().x,
-                y = candidate.location().y,
+                x = *candidate.location().x(),
+                y = *candidate.location().y(),
                 score = candidate.score(),
                 "✅ Successfully geocoded"
             );
@@ -275,8 +269,8 @@ async fn demonstrate_high_precision(geocoder: &GeocodeServiceClient<'_>) -> Resu
         tracing::info!(
             address = %candidate.address(),
             score = candidate.score(),
-            x = candidate.location().x,
-            y = candidate.location().y,
+            x = *candidate.location().x(),
+            y = *candidate.location().y(),
             "High-quality match"
         );
     }

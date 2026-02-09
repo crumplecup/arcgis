@@ -82,17 +82,14 @@ async fn demonstrate_coordinate_projection(geom_service: &GeometryServiceClient<
     tracing::info!("Project coordinates from WGS84 (4326) to Web Mercator (3857)");
 
     // San Francisco coordinates in WGS84 (latitude/longitude)
-    let sf_point = ArcGISPoint {
-        x: -122.4194, // Longitude
-        y: 37.7749,   // Latitude
-        z: None,
-        m: None,
-        spatial_reference: None,
-    };
+    let sf_point = ArcGISPoint::new(
+        -122.4194, // Longitude
+        37.7749,   // Latitude
+    );
 
     tracing::info!(
-        lon = sf_point.x,
-        lat = sf_point.y,
+        lon = *sf_point.x(),
+        lat = *sf_point.y(),
         "Original coordinates (WGS84)"
     );
 
@@ -106,8 +103,8 @@ async fn demonstrate_coordinate_projection(geom_service: &GeometryServiceClient<
 
     if let Some(ArcGISGeometry::Point(projected)) = result.geometries().first() {
         tracing::info!(
-            x = projected.x,
-            y = projected.y,
+            x = *projected.x(),
+            y = *projected.y(),
             "✅ Projected coordinates (Web Mercator)"
         );
     }
@@ -120,13 +117,7 @@ async fn demonstrate_buffer_creation(geom_service: &GeometryServiceClient<'_>) -
     tracing::info!("\n=== Example 2: Buffer Creation ===");
     tracing::info!("Create a 1000-meter buffer around a point");
 
-    let buffer_point = ArcGISPoint {
-        x: -122.4194,
-        y: 37.7749,
-        z: None,
-        m: None,
-        spatial_reference: None,
-    };
+    let buffer_point = ArcGISPoint::new(-122.4194, 37.7749);
 
     let buffer_params = arcgis::BufferParameters::builder()
         .geometries(vec![ArcGISGeometry::Point(buffer_point)])
@@ -155,22 +146,10 @@ async fn demonstrate_distance_calculation(geom_service: &GeometryServiceClient<'
     tracing::info!("Calculate geodesic distance between San Francisco and Los Angeles");
 
     // San Francisco
-    let sf = ArcGISPoint {
-        x: -122.4194,
-        y: 37.7749,
-        z: None,
-        m: None,
-        spatial_reference: None,
-    };
+    let sf = ArcGISPoint::new(-122.4194, 37.7749);
 
     // Los Angeles
-    let la = ArcGISPoint {
-        x: -118.2437,
-        y: 34.0522,
-        z: None,
-        m: None,
-        spatial_reference: None,
-    };
+    let la = ArcGISPoint::new(-118.2437, 34.0522);
 
     let distance_params = arcgis::DistanceParameters::builder()
         .sr(4326) // WGS84
@@ -211,15 +190,7 @@ async fn demonstrate_batch_projection(geom_service: &GeometryServiceClient<'_>) 
 
     let points: Vec<ArcGISGeometry> = cities
         .iter()
-        .map(|(_, lon, lat)| {
-            ArcGISGeometry::Point(ArcGISPoint {
-                x: *lon,
-                y: *lat,
-                z: None,
-                m: None,
-                spatial_reference: None,
-            })
-        })
+        .map(|(_, lon, lat)| ArcGISGeometry::Point(ArcGISPoint::new(*lon, *lat)))
         .collect();
 
     tracing::info!(point_count = points.len(), "Projecting cities in batch");
@@ -237,8 +208,8 @@ async fn demonstrate_batch_projection(geom_service: &GeometryServiceClient<'_>) 
         if let Some(ArcGISGeometry::Point(projected)) = batch_result.geometries().get(i) {
             tracing::debug!(
                 city = %city_name,
-                x_web_mercator = format!("{:.2}", projected.x),
-                y_web_mercator = format!("{:.2}", projected.y),
+                x_web_mercator = format!("{:.2}", projected.x()),
+                y_web_mercator = format!("{:.2}", projected.y()),
                 "Projected city"
             );
         }
@@ -253,13 +224,10 @@ async fn demonstrate_line_length(geom_service: &GeometryServiceClient<'_>) -> Re
     tracing::info!("Create and project a route line between cities");
 
     // Create a simple polyline connecting SF -> LA
-    let route_line = ArcGISPolyline {
-        paths: vec![vec![
-            [-122.4194, 37.7749], // SF
-            [-118.2437, 34.0522], // LA
-        ]],
-        spatial_reference: None,
-    };
+    let route_line = ArcGISPolyline::new(vec![vec![
+        vec![-122.4194, 37.7749], // SF
+        vec![-118.2437, 34.0522], // LA
+    ]]);
 
     tracing::debug!("Creating route geometry");
 
@@ -274,8 +242,8 @@ async fn demonstrate_line_length(geom_service: &GeometryServiceClient<'_>) -> Re
 
     if let Some(ArcGISGeometry::Polyline(line)) = projected_route.geometries().first() {
         tracing::info!(
-            paths = line.paths.len(),
-            points_in_first_path = line.paths.first().map(|p| p.len()).unwrap_or(0),
+            paths = line.paths().len(),
+            points_in_first_path = line.paths().first().map(|p| p.len()).unwrap_or(0),
             "✅ Route line created and projected"
         );
     }

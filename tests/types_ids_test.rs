@@ -1,8 +1,8 @@
-//! Tests for ID types (LayerId, ObjectId).
+//! Tests for ID types (LayerId, ObjectId, AttachmentId).
 
 mod common;
 
-use arcgis::{LayerId, ObjectId};
+use arcgis::{AttachmentId, LayerId, ObjectId};
 
 #[test]
 fn test_layer_id_creation() -> anyhow::Result<()> {
@@ -80,5 +80,64 @@ fn test_object_id_deserialization() -> anyhow::Result<()> {
     assert_eq!(id.get(), 456);
 
     tracing::info!("test_object_id_deserialization: Completed");
+    Ok(())
+}
+
+#[test]
+fn test_attachment_id_creation() -> anyhow::Result<()> {
+    common::init_tracing();
+    tracing::info!("test_attachment_id_creation: Starting");
+
+    tracing::info!("test_attachment_id_creation: Creating AttachmentId");
+    let id = AttachmentId::new(789);
+
+    tracing::info!(
+        id = id.get(),
+        id_string = %id.to_string(),
+        "test_attachment_id_creation: Verifying AttachmentId"
+    );
+    assert_eq!(id.get(), 789);
+    assert_eq!(id.to_string(), "789");
+
+    tracing::info!("test_attachment_id_creation: Completed");
+    Ok(())
+}
+
+#[test]
+fn test_attachment_id_serialization() -> anyhow::Result<()> {
+    common::init_tracing();
+    tracing::info!("test_attachment_id_serialization: Starting");
+
+    tracing::info!("test_attachment_id_serialization: Creating AttachmentId");
+    let id = AttachmentId::new(101);
+
+    tracing::info!("test_attachment_id_serialization: Serializing to JSON");
+    let json = serde_json::to_string(&id)?;
+
+    tracing::info!(
+        json = %json,
+        "test_attachment_id_serialization: Verifying serialization"
+    );
+    assert_eq!(json, "101");
+
+    tracing::info!("test_attachment_id_serialization: Completed");
+    Ok(())
+}
+
+#[test]
+fn test_attachment_id_from_u32() -> anyhow::Result<()> {
+    common::init_tracing();
+    tracing::info!("test_attachment_id_from_u32: Starting");
+
+    tracing::info!("test_attachment_id_from_u32: Converting u32 to AttachmentId");
+    let id: AttachmentId = 55.into();
+
+    tracing::info!(
+        id = id.get(),
+        "test_attachment_id_from_u32: Verifying conversion"
+    );
+    assert_eq!(id.get(), 55);
+
+    tracing::info!("test_attachment_id_from_u32: Completed");
     Ok(())
 }

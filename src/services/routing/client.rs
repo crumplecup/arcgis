@@ -82,21 +82,13 @@ impl<'a> RoutingServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let stop1 = NALocation::new(ArcGISGeometry::Point(ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// })).with_name("San Francisco");
+    /// let stop1 = NALocation::new(ArcGISGeometry::Point(
+    ///     ArcGISPoint::new(-122.4194, 37.7749)
+    /// )).with_name("San Francisco");
     ///
-    /// let stop2 = NALocation::new(ArcGISGeometry::Point(ArcGISPoint {
-    ///     x: -118.2437,
-    ///     y: 34.0522,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// })).with_name("Los Angeles");
+    /// let stop2 = NALocation::new(ArcGISGeometry::Point(
+    ///     ArcGISPoint::new(-118.2437, 34.0522)
+    /// )).with_name("Los Angeles");
     ///
     /// let params = RouteParameters::builder()
     ///     .stops(vec![stop1, stop2])
@@ -208,13 +200,9 @@ impl<'a> RoutingServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let facility = NALocation::new(ArcGISGeometry::Point(ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// })).with_name("Store");
+    /// let facility = NALocation::new(ArcGISGeometry::Point(
+    ///     ArcGISPoint::new(-122.4194, 37.7749)
+    /// )).with_name("Store");
     ///
     /// let params = ServiceAreaParameters::builder()
     ///     .facilities(vec![facility])
@@ -327,21 +315,13 @@ impl<'a> RoutingServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let incident = NALocation::new(ArcGISGeometry::Point(ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// })).with_name("Emergency");
+    /// let incident = NALocation::new(ArcGISGeometry::Point(
+    ///     ArcGISPoint::new(-122.4194, 37.7749)
+    /// )).with_name("Emergency");
     ///
-    /// let facility = NALocation::new(ArcGISGeometry::Point(ArcGISPoint {
-    ///     x: -122.4,
-    ///     y: 37.8,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// })).with_name("Hospital");
+    /// let facility = NALocation::new(ArcGISGeometry::Point(
+    ///     ArcGISPoint::new(-122.4, 37.8)
+    /// )).with_name("Hospital");
     ///
     /// let params = ClosestFacilityParameters::builder()
     ///     .incidents(vec![incident])
@@ -477,21 +457,13 @@ impl<'a> RoutingServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let origin = NALocation::new(ArcGISGeometry::Point(ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// })).with_name("Warehouse");
+    /// let origin = NALocation::new(ArcGISGeometry::Point(
+    ///     ArcGISPoint::new(-122.4194, 37.7749)
+    /// )).with_name("Warehouse");
     ///
-    /// let destination = NALocation::new(ArcGISGeometry::Point(ArcGISPoint {
-    ///     x: -118.2437,
-    ///     y: 34.0522,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// })).with_name("Customer");
+    /// let destination = NALocation::new(ArcGISGeometry::Point(
+    ///     ArcGISPoint::new(-118.2437, 34.0522)
+    /// )).with_name("Customer");
     ///
     /// let params = ODCostMatrixParameters::builder()
     ///     .origins(vec![origin])

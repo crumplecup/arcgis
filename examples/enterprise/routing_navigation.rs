@@ -41,8 +41,8 @@
 
 use anyhow::Result;
 use arcgis::{
-    ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, ClosestFacilityParameters, NALocation,
-    RouteParameters, RoutingServiceClient, ServiceAreaParameters, TravelDirection,
+    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISGeometry, ArcGISPoint, ClosestFacilityParameters,
+    NALocation, RouteParameters, RoutingServiceClient, ServiceAreaParameters, TravelDirection,
 };
 
 /// World Routing Service endpoints
@@ -66,7 +66,7 @@ async fn main() -> Result<()> {
 
     // Create authenticated client (automatically loads .env)
     tracing::debug!("Creating authenticated client");
-    let auth = ApiKeyAuth::from_env()?;
+    let auth = ApiKeyAuth::from_env(ApiKeyTier::Location)?;
     let client = ArcGISClient::new(auth);
 
     // Demonstrate routing and navigation operations
@@ -233,7 +233,7 @@ async fn demonstrate_closest_facility(client: &ArcGISClient) -> Result<()> {
                     "{} points",
                     match geom {
                         ArcGISGeometry::Polyline(line) =>
-                            line.paths.iter().map(|p| p.len()).sum::<usize>(),
+                            line.paths().iter().map(|p| p.len()).sum::<usize>(),
                         _ => 0,
                     }
                 )
@@ -276,24 +276,16 @@ fn print_best_practices() {
 
 /// Helper to create a route stop/location
 fn create_stop(lon: f64, lat: f64, name: &str) -> NALocation {
-    NALocation::new(ArcGISGeometry::Point(ArcGISPoint {
-        x: lon,
-        y: lat,
-        z: None,
-        m: None,
-        spatial_reference: Some(arcgis::SpatialReference::wkid(4326)),
-    }))
+    NALocation::new(ArcGISGeometry::Point(
+        ArcGISPoint::new(lon, lat).with_spatial_reference(Some(arcgis::SpatialReference::wgs84())),
+    ))
     .with_name(name.to_string())
 }
 
 /// Helper to create a generic location (facility or incident)
 fn create_location(lon: f64, lat: f64, name: &str) -> NALocation {
-    NALocation::new(ArcGISGeometry::Point(ArcGISPoint {
-        x: lon,
-        y: lat,
-        z: None,
-        m: None,
-        spatial_reference: Some(arcgis::SpatialReference::wkid(4326)),
-    }))
+    NALocation::new(ArcGISGeometry::Point(
+        ArcGISPoint::new(lon, lat).with_spatial_reference(Some(arcgis::SpatialReference::wgs84())),
+    ))
     .with_name(name.to_string())
 }

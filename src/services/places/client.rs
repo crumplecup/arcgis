@@ -148,7 +148,7 @@ impl<'a> PlacesClient<'a> {
 
         let search_url = format!("{}/places/near-point", self.url);
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&search_url)
@@ -157,9 +157,13 @@ impl<'a> PlacesClient<'a> {
                 ("y", params.y().to_string()),
                 ("f", "json".to_string()),
             ])
-            .query(&params)
-            .send()
-            .await?;
+            .query(&params);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let result: PlaceSearchResult = response.json().await?;
 
@@ -204,13 +208,13 @@ impl<'a> PlacesClient<'a> {
 
         let details_url = format!("{}/places/{}", self.url, place_id);
 
-        let response = self
-            .client
-            .http()
-            .get(&details_url)
-            .query(&[("f", "json")])
-            .send()
-            .await?;
+        let mut request = self.client.http().get(&details_url).query(&[("f", "json")]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let result: PlaceDetailsResult = response.json().await?;
 
@@ -255,13 +259,17 @@ impl<'a> PlacesClient<'a> {
 
         let categories_url = format!("{}/categories", self.url);
 
-        let response = self
+        let mut request = self
             .client
             .http()
             .get(&categories_url)
-            .query(&[("f", "json")])
-            .send()
-            .await?;
+            .query(&[("f", "json")]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
 
         let result: CategoriesResult = response.json().await?;
 

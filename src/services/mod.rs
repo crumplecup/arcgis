@@ -14,9 +14,9 @@ mod vector_tile;
 mod version_management;
 
 pub use elevation::{
-    DemResolution, ElevationClient, ProfileParameters, ProfileParametersBuilder, ProfileResult,
-    SummarizeElevationParameters, SummarizeElevationParametersBuilder, SummarizeElevationResult,
-    ViewshedParameters, ViewshedParametersBuilder, ViewshedResult,
+    DemResolution, ElevationClient, ElevationPoint, ProfileParameters, ProfileParametersBuilder,
+    ProfileResult, SummarizeElevationParameters, SummarizeElevationParametersBuilder,
+    SummarizeElevationResult, ViewshedParameters, ViewshedParametersBuilder, ViewshedResult,
 };
 pub use feature::{
     AddAttachmentResult, AttachmentInfo, AttachmentInfosResponse, AttachmentSource, CodedValue,
@@ -24,9 +24,10 @@ pub use feature::{
     EditError, EditOptions, EditResult, EditResultItem, Feature, FeatureQueryParams,
     FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet, FeatureStatisticsResponse,
     FieldCalculation, LayerDomainInfo, QueryBuilder, QueryDomainsResponse, RelatedRecordGroup,
-    RelatedRecordsParams, RelatedRecordsParamsBuilder, RelatedRecordsResponse, ResponseFormat,
-    StatisticDefinition, StatisticType, Subtype, TopFeaturesParams, TopFeaturesParamsBuilder,
-    TopFilter, TruncateResult, UpdateAttachmentResult,
+    RelatedRecordsParams, RelatedRecordsParamsBuilder, RelatedRecordsResponse, RelationshipClass,
+    RelationshipRule, RelationshipsResponse, ResponseFormat, StatisticDefinition, StatisticType,
+    Subtype, TopFeaturesParams, TopFeaturesParamsBuilder, TopFilter, TruncateResult,
+    UpdateAttachmentResult,
 };
 pub use geocode::{
     AddressCandidate, BatchCandidateResult, BatchCandidatesResponse, BatchGeocodeResponse,
@@ -67,13 +68,22 @@ pub use places::{
     PlaceSearchParametersBuilder, PlaceSearchResult, PlacesClient,
 };
 pub use portal::{
-    AddItemParams, AddItemResult, CreateGroupParams, CreateServiceParams, CreateServiceResult,
-    DeleteItemResult, DeleteServiceResult, GroupInfo, GroupMembership, GroupMembershipType,
-    GroupResult, GroupSearchParameters, GroupSearchResult, ItemInfo, OverwriteParameters,
-    OverwriteResult, PortalClient, PublishParameters, PublishResult, PublishStatus,
-    SearchParameters, SearchResult, ShareItemResult, SharingParameters, SortOrder,
-    UnshareItemResult, UpdateGroupParams, UpdateItemParams, UpdateItemResult,
-    UpdateServiceDefinitionParams, UpdateServiceDefinitionResult, UserInfo,
+    AddItemParams, AddItemResult, AddToDefinitionParams, AddToDefinitionResult, AddedLayerInfo,
+    CodedValueCode, CodedValueDomain, CodedValueDomainBuilder, CreateGroupParams,
+    CreateServiceParams, CreateServiceResult, DeleteItemResult, DeleteServiceResult,
+    DomainCodedValue, DrawingTool, EditFieldsInfo, EditFieldsInfoBuilder, EditorTrackingInfo,
+    FeatureTemplate, FeatureTemplateBuilder, FieldDefinition, FieldDefinitionBuilder, FieldType,
+    GeometryTypeDefinition, GroupInfo, GroupMembership, GroupMembershipType, GroupResult,
+    GroupSearchParameters, GroupSearchResult, Index, IndexBuilder, ItemInfo, LayerDefinition,
+    LayerDefinitionBuilder, LayerRelationship, LayerRelationshipBuilder, MergePolicy,
+    OverwriteParameters, OverwriteResult, PortalClient, PublishParameters, PublishResult,
+    PublishStatus, RangeDomain, RangeDomainBuilder, RelationshipCardinality, RelationshipRole,
+    SearchParameters, SearchResult, ServiceDefinition, ServiceDefinitionBuilder,
+    ServiceDefinitionValidationError, ShareItemResult, SharingParameters, SortOrder,
+    SpatialReferenceDefinition, SplitPolicy, TableDefinition, TableDefinitionBuilder,
+    TemplatePrototype, TemplatePrototypeBuilder, UnshareItemResult, UpdateGroupParams,
+    UpdateItemParams, UpdateItemResult, UpdateServiceDefinitionParams,
+    UpdateServiceDefinitionResult, UserInfo,
 };
 pub use routing::{
     BarrierType, ClosestFacilityParameters, ClosestFacilityParametersBuilder,

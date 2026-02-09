@@ -2,7 +2,10 @@
 //!
 //! This module provides conversion from GeoJSON responses to ArcGIS FeatureSet format.
 
-use crate::{ArcGISGeometry, Error, ErrorKind, Feature, FeatureSet, Result};
+use crate::{
+    ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline, Error, ErrorKind,
+    Feature, FeatureSet, Result,
+};
 use std::collections::HashMap;
 use tracing::instrument;
 
@@ -80,81 +83,67 @@ fn geometry_from_geojson(geom: &geojson::Geometry) -> Result<ArcGISGeometry> {
     match &geom.value {
         Value::Point(coords) => {
             validate_coords(coords, 2)?;
-            let point = crate::ArcGISPoint {
-                x: coords[0],
-                y: coords[1],
-                z: coords.get(2).copied(),
-                m: None,
-                spatial_reference: None,
+            let point = if let Some(z) = coords.get(2).copied() {
+                ArcGISPoint::with_z(coords[0], coords[1], z)
+            } else {
+                ArcGISPoint::new(coords[0], coords[1])
             };
             Ok(ArcGISGeometry::Point(point))
         }
         Value::MultiPoint(coords) => {
-            let points: Vec<[f64; 2]> = coords
+            let points: Vec<Vec<f64>> = coords
                 .iter()
                 .map(|c| {
                     validate_coords(c, 2)?;
-                    Ok([c[0], c[1]])
+                    Ok(vec![c[0], c[1]])
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            let multipoint = crate::ArcGISMultipoint {
-                points,
-                spatial_reference: None,
-            };
+            let multipoint = ArcGISMultipoint::new(points);
             Ok(ArcGISGeometry::Multipoint(multipoint))
         }
         Value::LineString(coords) => {
-            let path: Vec<[f64; 2]> = coords
+            let path: Vec<Vec<f64>> = coords
                 .iter()
                 .map(|c| {
                     validate_coords(c, 2)?;
-                    Ok([c[0], c[1]])
+                    Ok(vec![c[0], c[1]])
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            let polyline = crate::ArcGISPolyline {
-                paths: vec![path],
-                spatial_reference: None,
-            };
+            let polyline = ArcGISPolyline::new(vec![path]);
             Ok(ArcGISGeometry::Polyline(polyline))
         }
         Value::MultiLineString(lines) => {
-            let paths: Vec<Vec<[f64; 2]>> = lines
+            let paths: Vec<Vec<Vec<f64>>> = lines
                 .iter()
                 .map(|line| {
                     line.iter()
                         .map(|c| {
                             validate_coords(c, 2)?;
-                            Ok([c[0], c[1]])
+                            Ok(vec![c[0], c[1]])
                         })
                         .collect::<Result<Vec<_>>>()
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            let polyline = crate::ArcGISPolyline {
-                paths,
-                spatial_reference: None,
-            };
+            let polyline = ArcGISPolyline::new(paths);
             Ok(ArcGISGeometry::Polyline(polyline))
         }
         Value::Polygon(rings) => {
-            let polygon_rings: Vec<Vec<[f64; 2]>> = rings
+            let polygon_rings: Vec<Vec<Vec<f64>>> = rings
                 .iter()
                 .map(|ring| {
                     ring.iter()
                         .map(|c| {
                             validate_coords(c, 2)?;
-                            Ok([c[0], c[1]])
+                            Ok(vec![c[0], c[1]])
                         })
                         .collect::<Result<Vec<_>>>()
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            let polygon = crate::ArcGISPolygon {
-                rings: polygon_rings,
-                spatial_reference: None,
-            };
+            let polygon = ArcGISPolygon::new(polygon_rings);
             Ok(ArcGISGeometry::Polygon(polygon))
         }
         Value::MultiPolygon(_) => {

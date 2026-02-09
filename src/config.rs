@@ -11,6 +11,8 @@
 //! - `ARCGIS_FEATURES_KEY` - API key with feature editing privileges
 //! - `ARCGIS_CLIENT_ID` - OAuth client ID for client credentials flow
 //! - `ARCGIS_CLIENT_SECRET` - OAuth client secret for client credentials flow
+//! - `ARCGIS_ENTERPRISE_PORTAL` - URL for ArcGIS Enterprise portal (e.g., `https://your-server.com/portal/sharing/rest`)
+//! - `ARCGIS_ENTERPRISE_KEY` - API key for ArcGIS Enterprise portal operations
 //!
 //! # Example
 //!
@@ -72,6 +74,19 @@ pub struct EnvConfig {
     ///
     /// Used by [`crate::ClientCredentialsAuth`] when created via `from_env()`.
     pub arcgis_client_secret: Option<SecretString>,
+
+    /// URL for ArcGIS Enterprise portal sharing REST endpoint.
+    ///
+    /// Example: `https://your-server.com/portal/sharing/rest`
+    ///
+    /// Required for examples that use Enterprise-only features like branch versioning.
+    pub arcgis_enterprise_portal: Option<String>,
+
+    /// API key for ArcGIS Enterprise portal operations.
+    ///
+    /// General-level permissions for Enterprise portal content management and feature editing.
+    /// Separate from ArcGIS Online keys as Enterprise portals use different authentication.
+    pub arcgis_enterprise_key: Option<SecretString>,
 }
 
 impl EnvConfig {
@@ -114,6 +129,15 @@ impl EnvConfig {
             }),
             arcgis_client_secret: std::env::var("ARCGIS_CLIENT_SECRET").ok().map(|s| {
                 tracing::debug!("ARCGIS_CLIENT_SECRET loaded from environment");
+                SecretString::new(s.into())
+            }),
+            arcgis_enterprise_portal: std::env::var("ARCGIS_ENTERPRISE_PORTAL").ok().inspect(
+                |_| {
+                    tracing::debug!("ARCGIS_ENTERPRISE_PORTAL loaded from environment");
+                },
+            ),
+            arcgis_enterprise_key: std::env::var("ARCGIS_ENTERPRISE_KEY").ok().map(|s| {
+                tracing::debug!("ARCGIS_ENTERPRISE_KEY loaded from environment");
                 SecretString::new(s.into())
             }),
         };

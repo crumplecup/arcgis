@@ -1,6 +1,6 @@
 //! Types for map service operations.
 
-use crate::{ArcGISGeometry, GeometryType};
+use crate::{ArcGISGeometry, GeometryType, SpatialReference};
 use derive_getters::Getters;
 use derive_setters::Setters;
 use serde::{Deserialize, Serialize};
@@ -169,18 +169,6 @@ impl TileCoordinate {
     pub fn new(level: u32, row: u32, col: u32) -> Self {
         Self { level, row, col }
     }
-}
-
-/// Spatial reference information.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Getters)]
-#[serde(rename_all = "camelCase")]
-pub struct SpatialReference {
-    /// Well-known ID (WKID).
-    wkid: i32,
-
-    /// Latest WKID (updated/deprecated WKIDs).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    latest_wkid: Option<i32>,
 }
 
 /// Parameters for exporting a map image.
@@ -356,7 +344,7 @@ impl ExportMapParams {
 }
 
 /// Extent returned in export response.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Getters)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
 pub struct ExportExtent {
     /// Minimum X coordinate
     xmin: f64,
@@ -584,7 +572,7 @@ pub struct IdentifyResult {
     geometry: Option<ArcGISGeometry>,
 
     /// Geometry type.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     geometry_type: Option<GeometryType>,
 }
 
@@ -935,7 +923,7 @@ pub struct FindResult {
     geometry: Option<ArcGISGeometry>,
 
     /// Geometry type.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     geometry_type: Option<GeometryType>,
 }
 

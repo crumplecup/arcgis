@@ -18,31 +18,38 @@ pub struct PlaceSearchParameters {
     y: f64,
 
     /// Search radius in meters.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     radius: Option<f64>,
 
     /// POI category IDs to filter by.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     category_ids: Option<String>,
 
     /// Text search query.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     search_text: Option<String>,
 
     /// Maximum number of results per page.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     page_size: Option<u32>,
 
     /// Pagination token for next page.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     page_token: Option<String>,
 
     /// Spatial reference WKID.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "inSR")]
     in_sr: Option<u32>,
 
     /// Output spatial reference WKID.
+    #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "outSR")]
     out_sr: Option<u32>,

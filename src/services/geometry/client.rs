@@ -1,6 +1,6 @@
 //! Geometry Service client for geometric operations.
 
-use crate::{ArcGISClient, ArcGISGeometry, Result};
+use crate::{ArcGISClient, ArcGISEnvelope, ArcGISGeometry, Result};
 use serde::Deserialize;
 use tracing::instrument;
 
@@ -87,13 +87,7 @@ impl<'a> GeometryServiceClient<'a> {
     /// );
     ///
     /// // Project from WGS84 (4326) to Web Mercator (3857)
-    /// let point = ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
+    /// let point = ArcGISPoint::new(-122.4194, 37.7749);
     /// let result = geometry_service
     ///     .project(vec![ArcGISGeometry::Point(point)], 4326, 3857)
     ///     .await?;
@@ -140,13 +134,7 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let point = ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
+    /// let point = ArcGISPoint::new(-122.4194, 37.7749);
     ///
     /// let params = ProjectParameters::builder()
     ///     .geometries(vec![ArcGISGeometry::Point(point)])
@@ -171,11 +159,11 @@ impl<'a> GeometryServiceClient<'a> {
 
         // Determine geometry type from first geometry
         let geometry_type = match params.geometries().first() {
-            Some(crate::ArcGISGeometry::Point(_)) => "esriGeometryPoint",
-            Some(crate::ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
-            Some(crate::ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
-            Some(crate::ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
-            Some(crate::ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
+            Some(ArcGISGeometry::Point(_)) => "esriGeometryPoint",
+            Some(ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
+            Some(ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
+            Some(ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
+            Some(ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
             None => {
                 return Err(crate::Error::from(crate::ErrorKind::Other(
                     "No geometries to project".to_string(),
@@ -189,12 +177,12 @@ impl<'a> GeometryServiceClient<'a> {
         #[serde(rename_all = "camelCase")]
         struct GeometriesWrapper<'a> {
             geometry_type: &'a str,
-            geometries: &'a [crate::ArcGISGeometry],
+            geometries: &'a [ArcGISGeometry],
         }
 
         let wrapper = GeometriesWrapper {
             geometry_type,
-            geometries: params.geometries(),
+            geometries: params.geometries().as_slice(),
         };
         let geometries_json = serde_json::to_string(&wrapper)?;
         tracing::debug!(geometries_json = %geometries_json, "Serialized geometries wrapper");
@@ -231,35 +219,7 @@ impl<'a> GeometryServiceClient<'a> {
         }
 
         let response_text = response.text().await?;
-
-        // Check for ArcGIS error response (HTTP 200 but with error payload)
-        if response_text.contains("\"error\"") {
-            tracing::error!(response = %response_text, "API returned error in response body");
-
-            // Try to parse error details
-            #[derive(serde::Deserialize)]
-            struct ErrorResponse {
-                error: ErrorDetail,
-            }
-            #[derive(serde::Deserialize)]
-            struct ErrorDetail {
-                code: i32,
-                message: String,
-            }
-
-            if let Ok(err_resp) = serde_json::from_str::<ErrorResponse>(&response_text) {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: err_resp.error.code,
-                    message: err_resp.error.message,
-                }));
-            } else {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: 0,
-                    message: response_text,
-                }));
-            }
-        }
-
+        crate::check_esri_error(&response_text, "project")?;
         let result: ProjectResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(
@@ -292,13 +252,7 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let point = ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
+    /// let point = ArcGISPoint::new(-122.4194, 37.7749);
     ///
     /// let params = BufferParameters::builder()
     ///     .geometries(vec![ArcGISGeometry::Point(point)])
@@ -324,14 +278,14 @@ impl<'a> GeometryServiceClient<'a> {
         // Buffer uses simplified format for points: x1,y1,x2,y2,...
         // Unlike project operation which needs wrapper format!
         let geometries_param = match params.geometries().first() {
-            Some(crate::ArcGISGeometry::Point(_)) => {
+            Some(ArcGISGeometry::Point(_)) => {
                 // Simplified point format: x1,y1,x2,y2,...
                 let coords: Vec<String> = params
                     .geometries()
                     .iter()
                     .filter_map(|g| {
-                        if let crate::ArcGISGeometry::Point(p) = g {
-                            Some(format!("{},{}", p.x, p.y))
+                        if let ArcGISGeometry::Point(p) = g {
+                            Some(format!("{},{}", p.x(), p.y()))
                         } else {
                             None
                         }
@@ -342,10 +296,10 @@ impl<'a> GeometryServiceClient<'a> {
             Some(_) => {
                 // For other geometry types, use JSON wrapper format
                 let geometry_type = match params.geometries().first() {
-                    Some(crate::ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
-                    Some(crate::ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
-                    Some(crate::ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
-                    Some(crate::ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
+                    Some(ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
+                    Some(ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
+                    Some(ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
+                    Some(ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
                     _ => unreachable!(),
                 };
 
@@ -353,12 +307,12 @@ impl<'a> GeometryServiceClient<'a> {
                 #[serde(rename_all = "camelCase")]
                 struct GeometriesWrapper<'a> {
                     geometry_type: &'a str,
-                    geometries: &'a [crate::ArcGISGeometry],
+                    geometries: &'a [ArcGISGeometry],
                 }
 
                 let wrapper = GeometriesWrapper {
                     geometry_type,
-                    geometries: params.geometries(),
+                    geometries: params.geometries().as_slice(),
                 };
                 serde_json::to_string(&wrapper)?
             }
@@ -446,35 +400,7 @@ impl<'a> GeometryServiceClient<'a> {
 
         let response_text = response.text().await?;
         tracing::debug!(response = %response_text, "Buffer raw response");
-
-        // Check for ArcGIS error response (HTTP 200 but with error payload)
-        if response_text.contains("\"error\"") {
-            tracing::error!(response = %response_text, "API returned error in response body");
-
-            // Try to parse error details
-            #[derive(serde::Deserialize)]
-            struct ErrorResponse {
-                error: ErrorDetail,
-            }
-            #[derive(serde::Deserialize)]
-            struct ErrorDetail {
-                code: i32,
-                message: String,
-            }
-
-            if let Ok(err_resp) = serde_json::from_str::<ErrorResponse>(&response_text) {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: err_resp.error.code,
-                    message: err_resp.error.message,
-                }));
-            } else {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: 0,
-                    message: response_text,
-                }));
-            }
-        }
-
+        crate::check_esri_error(&response_text, "buffer")?;
         let result: BufferResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(result_count = result.geometries().len(), "buffer completed");
@@ -518,7 +444,7 @@ impl<'a> GeometryServiceClient<'a> {
         &self,
         in_sr: i32,
         out_sr: i32,
-        extent_of_interest: Option<crate::ArcGISEnvelope>,
+        extent_of_interest: Option<ArcGISEnvelope>,
     ) -> Result<Vec<Transformation>> {
         tracing::debug!("Finding datum transformations");
 
@@ -608,16 +534,13 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let polygon = ArcGISPolygon {
-    ///     rings: vec![vec![
-    ///         [-122.0, 37.0],
-    ///         [-122.0, 38.0],
-    ///         [-121.0, 38.0],
-    ///         [-121.0, 37.0],
-    ///         [-122.0, 37.0],
-    ///     ]],
-    ///     spatial_reference: None,
-    /// };
+    /// let polygon = ArcGISPolygon::new(vec![vec![
+    ///     vec![-122.0, 37.0],
+    ///     vec![-122.0, 38.0],
+    ///     vec![-121.0, 38.0],
+    ///     vec![-121.0, 37.0],
+    ///     vec![-122.0, 37.0],
+    /// ]]);
     ///
     /// let params = SimplifyParameters::builder()
     ///     .geometries(vec![ArcGISGeometry::Polygon(polygon)])
@@ -694,27 +617,21 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let polygon1 = ArcGISPolygon {
-    ///     rings: vec![vec![
-    ///         [-122.0, 37.0],
-    ///         [-122.0, 38.0],
-    ///         [-121.0, 38.0],
-    ///         [-121.0, 37.0],
-    ///         [-122.0, 37.0],
-    ///     ]],
-    ///     spatial_reference: None,
-    /// };
+    /// let polygon1 = ArcGISPolygon::new(vec![vec![
+    ///     vec![-122.0, 37.0],
+    ///     vec![-122.0, 38.0],
+    ///     vec![-121.0, 38.0],
+    ///     vec![-121.0, 37.0],
+    ///     vec![-122.0, 37.0],
+    /// ]]);
     ///
-    /// let polygon2 = ArcGISPolygon {
-    ///     rings: vec![vec![
-    ///         [-121.5, 37.5],
-    ///         [-121.5, 38.5],
-    ///         [-120.5, 38.5],
-    ///         [-120.5, 37.5],
-    ///         [-121.5, 37.5],
-    ///     ]],
-    ///     spatial_reference: None,
-    /// };
+    /// let polygon2 = ArcGISPolygon::new(vec![vec![
+    ///     vec![-121.5, 37.5],
+    ///     vec![-121.5, 38.5],
+    ///     vec![-120.5, 38.5],
+    ///     vec![-120.5, 37.5],
+    ///     vec![-121.5, 37.5],
+    /// ]]);
     ///
     /// let params = UnionParameters::builder()
     ///     .geometries(vec![ArcGISGeometry::Polygon(polygon1), ArcGISGeometry::Polygon(polygon2)])
@@ -789,16 +706,13 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let polygon = ArcGISPolygon {
-    ///     rings: vec![vec![
-    ///         [-122.0, 37.0],
-    ///         [-122.0, 38.0],
-    ///         [-121.0, 38.0],
-    ///         [-121.0, 37.0],
-    ///         [-122.0, 37.0],
-    ///     ]],
-    ///     spatial_reference: None,
-    /// };
+    /// let polygon = ArcGISPolygon::new(vec![vec![
+    ///     vec![-122.0, 37.0],
+    ///     vec![-122.0, 38.0],
+    ///     vec![-121.0, 38.0],
+    ///     vec![-121.0, 37.0],
+    ///     vec![-122.0, 37.0],
+    /// ]]);
     ///
     /// let params = AreasAndLengthsParameters::builder()
     ///     .polygons(vec![ArcGISGeometry::Polygon(polygon)])
@@ -882,21 +796,8 @@ impl<'a> GeometryServiceClient<'a> {
     ///     &client
     /// );
     ///
-    /// let point1 = ArcGISPoint {
-    ///     x: -122.4194,
-    ///     y: 37.7749,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
-    ///
-    /// let point2 = ArcGISPoint {
-    ///     x: -118.2437,
-    ///     y: 34.0522,
-    ///     z: None,
-    ///     m: None,
-    ///     spatial_reference: None,
-    /// };
+    /// let point1 = ArcGISPoint::new(-122.4194, 37.7749);
+    /// let point2 = ArcGISPoint::new(-118.2437, 34.0522);
     ///
     /// let params = DistanceParameters::builder()
     ///     .geometry1(ArcGISGeometry::Point(point1))
@@ -921,26 +822,26 @@ impl<'a> GeometryServiceClient<'a> {
 
         // Distance operation requires nested format: {"geometryType":"esriGeometryPoint","geometry":{...}}
         let geometry_type1 = match params.geometry1() {
-            crate::ArcGISGeometry::Point(_) => "esriGeometryPoint",
-            crate::ArcGISGeometry::Multipoint(_) => "esriGeometryMultipoint",
-            crate::ArcGISGeometry::Polyline(_) => "esriGeometryPolyline",
-            crate::ArcGISGeometry::Polygon(_) => "esriGeometryPolygon",
-            crate::ArcGISGeometry::Envelope(_) => "esriGeometryEnvelope",
+            ArcGISGeometry::Point(_) => "esriGeometryPoint",
+            ArcGISGeometry::Multipoint(_) => "esriGeometryMultipoint",
+            ArcGISGeometry::Polyline(_) => "esriGeometryPolyline",
+            ArcGISGeometry::Polygon(_) => "esriGeometryPolygon",
+            ArcGISGeometry::Envelope(_) => "esriGeometryEnvelope",
         };
 
         let geometry_type2 = match params.geometry2() {
-            crate::ArcGISGeometry::Point(_) => "esriGeometryPoint",
-            crate::ArcGISGeometry::Multipoint(_) => "esriGeometryMultipoint",
-            crate::ArcGISGeometry::Polyline(_) => "esriGeometryPolyline",
-            crate::ArcGISGeometry::Polygon(_) => "esriGeometryPolygon",
-            crate::ArcGISGeometry::Envelope(_) => "esriGeometryEnvelope",
+            ArcGISGeometry::Point(_) => "esriGeometryPoint",
+            ArcGISGeometry::Multipoint(_) => "esriGeometryMultipoint",
+            ArcGISGeometry::Polyline(_) => "esriGeometryPolyline",
+            ArcGISGeometry::Polygon(_) => "esriGeometryPolygon",
+            ArcGISGeometry::Envelope(_) => "esriGeometryEnvelope",
         };
 
         #[derive(serde::Serialize)]
         #[serde(rename_all = "camelCase")]
         struct GeometryWrapper<'a> {
             geometry_type: &'a str,
-            geometry: &'a crate::ArcGISGeometry,
+            geometry: &'a ArcGISGeometry,
         }
 
         let geometry1_wrapper = GeometryWrapper {
@@ -1032,34 +933,7 @@ impl<'a> GeometryServiceClient<'a> {
 
         let response_text = response.text().await?;
         tracing::debug!(response = %response_text, "Distance raw response");
-
-        // Check for ArcGIS error response (HTTP 200 but with error payload)
-        if response_text.contains("\"error\"") {
-            tracing::error!(response = %response_text, "API returned error in response body");
-
-            #[derive(serde::Deserialize)]
-            struct ErrorResponse {
-                error: ErrorDetail,
-            }
-            #[derive(serde::Deserialize)]
-            struct ErrorDetail {
-                code: i32,
-                message: String,
-            }
-
-            if let Ok(err_resp) = serde_json::from_str::<ErrorResponse>(&response_text) {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: err_resp.error.code,
-                    message: err_resp.error.message,
-                }));
-            } else {
-                return Err(crate::Error::from(crate::ErrorKind::Api {
-                    code: 0,
-                    message: response_text,
-                }));
-            }
-        }
-
+        crate::check_esri_error(&response_text, "distance")?;
         let result: DistanceResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(distance = result.distance(), "distance completed");
