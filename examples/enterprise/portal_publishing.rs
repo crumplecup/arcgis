@@ -87,9 +87,9 @@
 
 use anyhow::{Context, Result};
 use arcgis::{
-    AddItemParams, AddToDefinitionParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, CreateServiceParams,
-    EditOptions, Feature, FeatureServiceClient, FieldDefinitionBuilder, FieldType,
-    GeometryTypeDefinition, LayerDefinitionBuilder, LayerId, NoAuth, PortalClient,
+    AddItemParams, AddToDefinitionParams, ApiKeyAuth, ApiKeyTier, ArcGISClient,
+    CreateServiceParams, EditOptions, Feature, FeatureServiceClient, FieldDefinitionBuilder,
+    FieldType, GeometryTypeDefinition, LayerDefinitionBuilder, LayerId, NoAuth, PortalClient,
     SharingParameters,
 };
 use std::collections::HashMap;
@@ -202,7 +202,9 @@ async fn demonstrate_workflow_a_direct_service(
     tracing::info!("\n========================================");
     tracing::info!("=== WORKFLOW A: Direct Service Creation ===");
     tracing::info!("========================================");
-    tracing::info!("Query → Convert → Create Service → Add Definition → Add Features → Share → Verify → Cleanup");
+    tracing::info!(
+        "Query → Convert → Create Service → Add Definition → Add Features → Share → Verify → Cleanup"
+    );
     tracing::info!("");
 
     // ========================================================================
@@ -342,7 +344,9 @@ async fn demonstrate_workflow_a_direct_service(
     tracing::info!("");
 
     let add_def_params = AddToDefinitionParams::new().with_layers(vec![layer]);
-    let add_def_result = portal.add_to_definition(&service_item_id, add_def_params).await?;
+    let add_def_result = portal
+        .add_to_definition(&service_item_id, add_def_params)
+        .await?;
 
     // Assertion: Operation must succeed
     assert!(
@@ -421,7 +425,7 @@ async fn demonstrate_workflow_a_direct_service(
 
     // Assertion: Number of successes should match features we tried to add
     assert_eq!(
-        edit_result.success_count() as usize,
+        edit_result.success_count(),
         features_to_add.len(),
         "Expected {} successes, got {}",
         features_to_add.len(),
