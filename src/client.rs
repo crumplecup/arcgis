@@ -32,23 +32,36 @@ impl ArcGISClient {
     ///
     /// # Using Environment Variables
     ///
-    /// The SDK automatically loads `.env` files when using `from_env()` methods.
+    /// The SDK automatically loads `.env` files when using auth helpers.
     /// Store your credentials in a `.env` file (add to `.gitignore`):
     ///
     /// ```text
-    /// ARCGIS_API_KEY=your_api_key_here
+    /// # ArcGIS Online keys (tier-separated)
+    /// ARCGIS_CONTENT_KEY=your_content_key
+    /// ARCGIS_FEATURES_KEY=your_features_key
+    /// ARCGIS_LOCATION_KEY=your_location_key
+    ///
+    /// # ArcGIS Enterprise
+    /// ARCGIS_ENTERPRISE_KEY=your_enterprise_key
+    /// ARCGIS_ENTERPRISE_PORTAL=https://your-server.com/portal/sharing/rest
+    ///
+    /// # OAuth (optional)
     /// ARCGIS_CLIENT_ID=your_client_id
     /// ARCGIS_CLIENT_SECRET=your_client_secret
     /// ```
     ///
-    /// Then use `from_env()` - no manual `dotenvy::dotenv()` call needed:
+    /// Then use the `agol()` or `enterprise()` helpers - no manual `dotenvy::dotenv()` call needed:
     ///
     /// ```no_run
     /// use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient};
     ///
     /// # fn example() -> arcgis::Result<()> {
-    /// // Automatically loads .env and reads ARCGIS_CONTENT_KEY
-    /// let auth = ApiKeyAuth::from_env(ApiKeyTier::Content)?;
+    /// // ArcGIS Online (automatically loads .env and reads ARCGIS_CONTENT_KEY)
+    /// let auth = ApiKeyAuth::agol(ApiKeyTier::Content)?;
+    /// let client = ArcGISClient::new(auth);
+    ///
+    /// // ArcGIS Enterprise (reads ARCGIS_ENTERPRISE_KEY)
+    /// let auth = ApiKeyAuth::enterprise()?;
     /// let client = ArcGISClient::new(auth);
     /// # Ok(())
     /// # }

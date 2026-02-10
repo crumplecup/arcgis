@@ -114,6 +114,71 @@ impl ApiKeyAuth {
         tracing::debug!("Successfully loaded API key from environment: {}", key_name);
         Ok(Self::new(api_key.expose_secret().to_string()))
     }
+
+    /// Creates API Key authentication for ArcGIS Online with the specified tier.
+    ///
+    /// This is a convenience method that delegates to [`ApiKeyAuth::from_env`].
+    /// Automatically loads `.env` file and reads the tier-specific API key.
+    ///
+    /// # Arguments
+    ///
+    /// * `tier` - Which API key tier to use (Content, Features, Location, or Public)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the tier-specific key is not found in environment.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ApiKeyAuth, ApiKeyTier};
+    ///
+    /// // Load content management key for ArcGIS Online
+    /// let auth = ApiKeyAuth::agol(ApiKeyTier::Content)?;
+    /// # Ok::<(), arcgis::Error>(())
+    /// ```
+    #[instrument]
+    pub fn agol(tier: ApiKeyTier) -> Result<Self> {
+        Self::from_env(tier)
+    }
+
+    /// Creates API Key authentication for ArcGIS Enterprise.
+    ///
+    /// Reads `ARCGIS_ENTERPRISE_KEY` from environment variables.
+    /// Automatically loads `.env` file on first access.
+    ///
+    /// # Environment Variables
+    ///
+    /// - `ARCGIS_ENTERPRISE_KEY` - API key for Enterprise portal operations
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `ARCGIS_ENTERPRISE_KEY` is not set.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::ApiKeyAuth;
+    ///
+    /// // Load Enterprise API key
+    /// let auth = ApiKeyAuth::enterprise()?;
+    /// # Ok::<(), arcgis::Error>(())
+    /// ```
+    #[instrument]
+    pub fn enterprise() -> Result<Self> {
+        tracing::debug!("Loading Enterprise API key from environment");
+
+        let config = crate::EnvConfig::global();
+        let api_key = config.arcgis_enterprise_key.as_ref().ok_or_else(|| {
+            tracing::error!("ARCGIS_ENTERPRISE_KEY not found in environment");
+            crate::Error::from(crate::ErrorKind::Env(crate::EnvError::new(
+                std::env::VarError::NotPresent,
+            )))
+        })?;
+
+        tracing::debug!("Successfully loaded Enterprise API key");
+        Ok(Self::new(api_key.expose_secret().to_string()))
+    }
 }
 
 #[async_trait]
