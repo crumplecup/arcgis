@@ -149,6 +149,10 @@ path = "examples/enterprise/routing_navigation.rs"
 name = "geometry_operations"
 path = "examples/enterprise/geometry_operations.rs"
 
+[[example]]
+name = "geometry_advanced"
+path = "examples/enterprise/geometry_advanced.rs"
+
 # Enterprise examples - Portal Operations (Tier 3)
 [[example]]
 name = "feature_attachments"
