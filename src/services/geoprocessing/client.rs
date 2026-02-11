@@ -187,9 +187,16 @@ impl<'a> GeoprocessingServiceClient<'a> {
         tracing::debug!("Submitting asynchronous geoprocessing job");
 
         let submit_url = format!("{}/submitJob", self.url);
+        tracing::debug!(url = %submit_url, "Submitting job to URL");
 
         let mut form: Vec<(&str, String)> = Vec::new();
         form.push(("f", "json".to_string()));
+
+        // Add authentication token if required
+        if let Some(token) = self.client.get_token_if_required().await? {
+            tracing::debug!("Adding authentication token to request");
+            form.push(("token", token));
+        }
 
         // Serialize parameters
         for (key, value) in parameters.iter() {
@@ -199,6 +206,15 @@ impl<'a> GeoprocessingServiceClient<'a> {
                 // For other types (objects, arrays, numbers), JSON-serialize them
                 _ => serde_json::to_string(value)?,
             };
+
+            // Log parameter (truncate long values for readability)
+            let display_value = if value_str.len() > 100 {
+                format!("{}... ({} chars)", &value_str[..100], value_str.len())
+            } else {
+                value_str.clone()
+            };
+            tracing::debug!(param = %key, value = %display_value, "Adding parameter");
+
             form.push((key.as_str(), value_str));
         }
 
@@ -210,7 +226,22 @@ impl<'a> GeoprocessingServiceClient<'a> {
             .send()
             .await?;
 
-        let job_info: GPJobInfo = response.json().await?;
+        let status = response.status();
+        tracing::debug!(status_code = %status, "Received response");
+
+        // Get response text for better error reporting
+        let response_text = response.text().await?;
+        tracing::debug!(response_body = %response_text, "Raw response body");
+
+        // Try to parse as GPJobInfo
+        let job_info: GPJobInfo = serde_json::from_str(&response_text).map_err(|e| {
+            tracing::error!(
+                parse_error = %e,
+                response = %response_text,
+                "Failed to parse job submission response"
+            );
+            e
+        })?;
 
         tracing::info!(
             job_id = %job_info.job_id(),
@@ -251,16 +282,43 @@ impl<'a> GeoprocessingServiceClient<'a> {
         tracing::debug!("Getting job status");
 
         let status_url = format!("{}/jobs/{}", self.url, job_id);
+        tracing::debug!(url = %status_url, "Getting job status from URL");
+
+        // Build query parameters
+        let mut query_params = vec![("f", "json")];
+
+        // Add authentication token if required
+        let token_string;
+        if let Some(token) = self.client.get_token_if_required().await? {
+            tracing::debug!("Adding authentication token to status request");
+            token_string = token;
+            query_params.push(("token", token_string.as_str()));
+        }
 
         let response = self
             .client
             .http()
             .get(&status_url)
-            .query(&[("f", "json")])
+            .query(&query_params)
             .send()
             .await?;
 
-        let job_info: GPJobInfo = response.json().await?;
+        let status = response.status();
+        tracing::debug!(status_code = %status, "Received status response");
+
+        // Get response text for better error reporting
+        let response_text = response.text().await?;
+        tracing::debug!(response_body = %response_text, "Raw status response body");
+
+        // Try to parse as GPJobInfo
+        let job_info: GPJobInfo = serde_json::from_str(&response_text).map_err(|e| {
+            tracing::error!(
+                parse_error = %e,
+                response = %response_text,
+                "Failed to parse job status response"
+            );
+            e
+        })?;
 
         tracing::debug!(status = ?job_info.job_status(), "Job status retrieved");
 
@@ -391,17 +449,29 @@ impl<'a> GeoprocessingServiceClient<'a> {
         tracing::debug!("Getting job messages");
 
         let messages_url = format!("{}/jobs/{}/messages", self.url, job_id);
+        tracing::debug!(url = %messages_url, "Getting job messages from URL");
 
         #[derive(Deserialize)]
         struct MessagesResponse {
             messages: Vec<GPMessage>,
         }
 
+        // Build query parameters
+        let mut query_params = vec![("f", "json")];
+
+        // Add authentication token if required
+        let token_string;
+        if let Some(token) = self.client.get_token_if_required().await? {
+            tracing::debug!("Adding authentication token to messages request");
+            token_string = token;
+            query_params.push(("token", token_string.as_str()));
+        }
+
         let response = self
             .client
             .http()
             .get(&messages_url)
-            .query(&[("f", "json")])
+            .query(&query_params)
             .send()
             .await?;
 
@@ -413,6 +483,82 @@ impl<'a> GeoprocessingServiceClient<'a> {
         );
 
         Ok(messages_response.messages)
+    }
+
+    /// Fetches the actual data for a specific result parameter.
+    ///
+    /// When a job completes, the result parameters may contain `paramUrl` instead of `value`.
+    /// This method fetches the actual data from that URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `job_id` - Job identifier
+    /// * `param_name` - Name of the result parameter (e.g., "OutputSummary")
+    ///
+    /// # Returns
+    ///
+    /// The parameter value as JSON.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, GeoprocessingServiceClient};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// # let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// # let client = ArcGISClient::new(auth);
+    /// # let gp_service = GeoprocessingServiceClient::new("https://server/gp", &client);
+    /// # let job_id = "job123";
+    /// let value = gp_service.get_result_data(job_id, "OutputParameter").await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self), fields(job_id, param_name))]
+    pub async fn get_result_data(&self, job_id: &str, param_name: &str) -> Result<Value> {
+        tracing::debug!("Getting result data for parameter");
+
+        let result_url = format!("{}/jobs/{}/results/{}", self.url, job_id, param_name);
+        tracing::debug!(url = %result_url, "Fetching result data from URL");
+
+        // Build query parameters
+        let mut query_params = vec![("f", "json")];
+
+        // Add authentication token if required
+        let token_string;
+        if let Some(token) = self.client.get_token_if_required().await? {
+            tracing::debug!("Adding authentication token to result data request");
+            token_string = token;
+            query_params.push(("token", token_string.as_str()));
+        }
+
+        let response = self
+            .client
+            .http()
+            .get(&result_url)
+            .query(&query_params)
+            .send()
+            .await?;
+
+        let status = response.status();
+        tracing::debug!(status_code = %status, "Received result data response");
+
+        // Get response text
+        let response_text = response.text().await?;
+        tracing::debug!(response_body = %response_text, "Raw result data response");
+
+        // Parse as JSON
+        let result_json: Value = serde_json::from_str(&response_text).map_err(|e| {
+            tracing::error!(
+                parse_error = %e,
+                response = %response_text,
+                "Failed to parse result data response"
+            );
+            e
+        })?;
+
+        tracing::debug!("Result data retrieved and parsed");
+
+        Ok(result_json)
     }
 
     /// Polls a job until it reaches a terminal state (succeeded, failed, etc.).

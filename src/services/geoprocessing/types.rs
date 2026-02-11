@@ -30,6 +30,10 @@ pub struct GPResultParameter {
     /// Parameter value (type varies by dataType).
     #[serde(default)]
     value: Option<serde_json::Value>,
+
+    /// URL to fetch parameter value (for async jobs).
+    #[serde(default)]
+    param_url: Option<String>,
 }
 
 /// A message from geoprocessing execution.
