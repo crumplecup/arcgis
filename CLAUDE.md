@@ -6,7 +6,7 @@
 | ------------- | ---------------------------------------------------------- | ------------------------------------------------- |
 | **Testing**   | No `#[cfg(test)]` in source files → use `tests/` directory | [Testing](#testing)                               |
 | **Errors**    | Use `derive_more::Display` + `derive_more::Error`          | [Error Handling](#error-handling)                 |
-| **Tracing**   | All public functions have `#[instrument]`                  | [Logging](#logging-and-tracing)                   |
+| **Tracing**   | All functions have `#[instrument]`                  | [Logging](#logging-and-tracing)                   |
 | **Builders**  | Always use builders, never struct literals                 | [Type Construction](#type-construction)           |
 | **Imports**   | `use crate::{Type}` not `use crate::module::Type`          | [Module Organization](#module-organization)       |
 | **lib.rs**    | Only `mod` and `pub use` statements                        | [Module Organization](#module-organization)       |
@@ -24,13 +24,13 @@
 
 - Add the planning document to PLANNING_INDEX.md for tracking.
 
-2. **For each step:**
+1. **For each step:**
    - Generate code
    - Fix cargo check errors/warnings
    - Run all checks (see below)
    - Commit with audit-friendly message
    - Push to branch
-3. **Update** planning document to serve as user guide
+2. **Update** planning document to serve as user guide
 
 ### Pre-Commit Verification
 
