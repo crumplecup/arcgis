@@ -249,161 +249,287 @@ impl ElevationPoint {
     }
 }
 
-/// Parameters for summarizing elevation within a polygon.
+/// Parameters for summarizing elevation statistics.
+///
+/// Computes elevation, slope, and aspect statistics for input features (points, lines, or polygons).
+/// This operation runs asynchronously via the Elevation GPServer.
+///
+/// # Example
+///
+/// ```no_run
+/// use arcgis::{SummarizeElevationParametersBuilder, DemResolution};
+///
+/// let polygon_featureset = r#"{"geometryType":"esriGeometryPolygon","spatialReference":{"wkid":4326},"features":[{"geometry":{"rings":[[[-119.5,37.8],[-119.4,37.8],[-119.4,37.9],[-119.5,37.9],[-119.5,37.8]]]},"attributes":{"OID":1}}]}"#;
+///
+/// let params = SummarizeElevationParametersBuilder::default()
+///     .input_features(polygon_featureset)
+///     .dem_resolution(DemResolution::ThirtyMeter)
+///     .include_slope_aspect(true)
+///     .build()
+///     .expect("Valid parameters");
+/// ```
 #[derive(Debug, Clone, Serialize, derive_builder::Builder, Getters)]
 #[builder(setter(into, strip_option))]
 #[serde(rename_all = "camelCase")]
 pub struct SummarizeElevationParameters {
-    /// Input polygon geometry.
-    #[serde(rename = "InputPolygon")]
-    input_geometry: String,
+    /// Input features as FeatureSet JSON string.
+    ///
+    /// Must be a valid FeatureSet with geometryType, features array, and spatialReference.
+    /// Accepts point, line, or polygon geometries.
+    ///
+    /// Example: `{"geometryType":"esriGeometryPolygon","spatialReference":{"wkid":4326},"features":[...]}`
+    #[serde(rename = "InputFeatures")]
+    input_features: String,
 
-    /// Geometry type.
+    /// Field name for feature IDs (optional).
+    ///
+    /// Used to match input features with output statistics.
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    geometry_type: Option<String>,
+    #[serde(rename = "FeatureIDField")]
+    feature_id_field: Option<String>,
 
-    /// DEM resolution (FINEST, 10m, 30m, 90m).
+    /// DEM resolution.
+    ///
+    /// Use `DemResolution` enum and call `.as_str()` to get the string value.
+    /// Default: 90m
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "DEMResolution")]
     dem_resolution: Option<String>,
 
-    /// Include slope statistics.
+    /// Include slope and aspect statistics in output.
+    ///
+    /// When true, output includes MinSlope, MeanSlope, MaxSlope, and MeanAspect fields.
+    /// Default: false
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    include_slope: Option<bool>,
-
-    /// Include aspect statistics.
-    #[builder(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    include_aspect: Option<bool>,
-
-    /// Spatial reference WKID.
-    #[builder(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "inSR")]
-    in_sr: Option<u32>,
-
-    /// Output spatial reference WKID.
-    #[builder(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "outSR")]
-    out_sr: Option<u32>,
+    #[serde(rename = "IncludeSlopeAspect")]
+    include_slope_aspect: Option<bool>,
 }
 
 /// Result from summarize elevation operation.
+///
+/// Contains elevation statistics extracted from the FeatureSet returned by the GP service.
+/// Statistics are stored in feature attributes.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "PascalCase")]
 pub struct SummarizeElevationResult {
-    /// Summary feature set with statistics.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    output_summary: Option<FeatureSet>,
-
-    /// Minimum elevation.
+    /// Minimum elevation in meters.
     #[serde(skip_serializing_if = "Option::is_none")]
     min_elevation: Option<f64>,
 
-    /// Maximum elevation.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    max_elevation: Option<f64>,
-
-    /// Mean elevation.
+    /// Mean elevation in meters.
     #[serde(skip_serializing_if = "Option::is_none")]
     mean_elevation: Option<f64>,
 
-    /// Area in square meters.
+    /// Maximum elevation in meters.
     #[serde(skip_serializing_if = "Option::is_none")]
-    area: Option<f64>,
+    max_elevation: Option<f64>,
+
+    /// Minimum slope in degrees (when IncludeSlopeAspect=true).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    min_slope: Option<f64>,
+
+    /// Mean slope in degrees (when IncludeSlopeAspect=true).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    mean_slope: Option<f64>,
+
+    /// Maximum slope in degrees (when IncludeSlopeAspect=true).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    max_slope: Option<f64>,
+
+    /// Mean aspect in degrees (when IncludeSlopeAspect=true).
+    ///
+    /// Aspect is the direction the slope faces, measured clockwise from north (0-360 degrees).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    mean_aspect: Option<f64>,
+}
+
+impl SummarizeElevationResult {
+    /// Creates a result by extracting statistics from a GP FeatureSet.
+    ///
+    /// The FeatureSet should contain a single feature with elevation statistics in its attributes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the FeatureSet is empty or missing required attributes.
+    #[instrument(skip(feature_set))]
+    pub fn from_feature_set(feature_set: &FeatureSet) -> Result<Self, ArcGISGeometryError> {
+        tracing::debug!("Parsing SummarizeElevationResult from FeatureSet");
+
+        let features = feature_set.features();
+        if features.is_empty() {
+            let err = ArcGISGeometryError::new(ArcGISGeometryErrorKind::InvalidGeometry(
+                "SummarizeElevation result has no features".to_string(),
+            ));
+            tracing::error!(error = %err, "No features in result");
+            return Err(err);
+        }
+
+        let feature = &features[0];
+        let attrs = feature.attributes();
+
+        // Extract elevation statistics from attributes
+        let result = Self {
+            min_elevation: attrs
+                .get("MinElevation")
+                .and_then(|v: &serde_json::Value| v.as_f64()),
+            mean_elevation: attrs
+                .get("MeanElevation")
+                .and_then(|v: &serde_json::Value| v.as_f64()),
+            max_elevation: attrs
+                .get("MaxElevation")
+                .and_then(|v: &serde_json::Value| v.as_f64()),
+            min_slope: attrs
+                .get("MinSlope")
+                .and_then(|v: &serde_json::Value| v.as_f64()),
+            mean_slope: attrs
+                .get("MeanSlope")
+                .and_then(|v: &serde_json::Value| v.as_f64()),
+            max_slope: attrs
+                .get("MaxSlope")
+                .and_then(|v: &serde_json::Value| v.as_f64()),
+            mean_aspect: attrs
+                .get("MeanAspect")
+                .and_then(|v: &serde_json::Value| v.as_f64()),
+        };
+
+        tracing::debug!(
+            min_elevation = ?result.min_elevation,
+            mean_elevation = ?result.mean_elevation,
+            max_elevation = ?result.max_elevation,
+            "Parsed elevation statistics"
+        );
+
+        Ok(result)
+    }
 }
 
 /// Parameters for viewshed analysis.
+///
+/// Determines visible areas from observer points based on terrain and viewing parameters.
+/// This operation runs asynchronously via the Elevation GPServer.
+///
+/// # Example
+///
+/// ```no_run
+/// use arcgis::{ViewshedParametersBuilder, DemResolution};
+///
+/// let observer_points = r#"{"geometryType":"esriGeometryMultipoint","spatialReference":{"wkid":4326},"points":[[-119.5,37.85]]}"#;
+///
+/// let params = ViewshedParametersBuilder::default()
+///     .input_points(observer_points)
+///     .maximum_distance(5000.0)  // 5 km
+///     .maximum_distance_units("Meters")
+///     .observer_height(1.75)  // Default human eye height
+///     .dem_resolution(DemResolution::ThirtyMeter)
+///     .build()
+///     .expect("Valid parameters");
+/// ```
 #[derive(Debug, Clone, Serialize, derive_builder::Builder, Getters)]
 #[builder(setter(into, strip_option))]
 #[serde(rename_all = "camelCase")]
 pub struct ViewshedParameters {
-    /// Observer point(s) geometry.
+    /// Observer point(s) as FeatureSet JSON string.
+    ///
+    /// Must be a valid FeatureSet with geometryType (esriGeometryPoint or esriGeometryMultipoint),
+    /// features array, and spatialReference.
+    ///
+    /// Example: `{"geometryType":"esriGeometryMultipoint","spatialReference":{"wkid":4326},"points":[[-119.5,37.85]]}`
     #[serde(rename = "InputPoints")]
     input_points: String,
 
-    /// Geometry type.
+    /// Maximum viewing distance (visibility cutoff).
+    ///
+    /// Up to 50 km maximum. Use with `maximum_distance_units` to specify units.
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    geometry_type: Option<String>,
-
-    /// Maximum viewing distance in meters.
-    #[builder(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "MaximumDistance")]
     maximum_distance: Option<f64>,
 
-    /// Maximum horizontal viewing angle (degrees).
+    /// Units for maximum distance.
+    ///
+    /// Valid values: "Meters", "Kilometers", "Feet", "Yards", "Miles"
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    maximum_horizontal_angle: Option<f64>,
+    #[serde(rename = "MaximumDistanceUnits")]
+    maximum_distance_units: Option<String>,
 
-    /// Maximum vertical angle (degrees).
-    #[builder(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    maximum_vertical_angle: Option<f64>,
-
-    /// Observer height above ground (meters).
-    #[builder(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    observer_height: Option<f64>,
-
-    /// Observer offset (additional height).
-    #[builder(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    observer_offset: Option<f64>,
-
-    /// Surface offset (target height above ground).
-    #[builder(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    surface_offset: Option<f64>,
-
-    /// DEM resolution (FINEST, 10m, 30m, 90m).
+    /// DEM resolution.
+    ///
+    /// Use `DemResolution` enum and call `.as_str()` to get the string value.
+    /// Default: 90m
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "DEMResolution")]
     dem_resolution: Option<String>,
 
-    /// Generalize viewshed polygons.
+    /// Observer height above ground.
+    ///
+    /// Default: 1.75 meters (average human eye height)
+    /// Use with `observer_height_units` to specify units.
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    generalize: Option<bool>,
+    #[serde(rename = "ObserverHeight")]
+    observer_height: Option<f64>,
 
-    /// Spatial reference WKID.
+    /// Units for observer height.
+    ///
+    /// Valid values: "Meters", "Kilometers", "Feet", "Yards", "Miles"
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "inSR")]
-    in_sr: Option<u32>,
+    #[serde(rename = "ObserverHeightUnits")]
+    observer_height_units: Option<String>,
 
-    /// Output spatial reference WKID.
+    /// Surface offset (target object height above surface).
+    ///
+    /// Default: 0.0 meters (ground level)
+    /// Use with `surface_offset_units` to specify units.
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "outSR")]
-    out_sr: Option<u32>,
+    #[serde(rename = "SurfaceOffset")]
+    surface_offset: Option<f64>,
+
+    /// Units for surface offset.
+    ///
+    /// Valid values: "Meters", "Kilometers", "Feet", "Yards", "Miles"
+    #[builder(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "SurfaceOffsetUnits")]
+    surface_offset_units: Option<String>,
+
+    /// Generalize viewshed polygons for smoother output.
+    ///
+    /// Default: true
+    #[builder(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "GeneralizeViewshedPolygons")]
+    generalize_viewshed_polygons: Option<bool>,
 }
 
 /// Result from viewshed analysis.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
-#[serde(rename_all = "camelCase")]
+///
+/// Contains the viewshed polygon(s) showing visible areas from observer points.
+#[derive(Debug, Clone, PartialEq, Getters)]
 pub struct ViewshedResult {
     /// Viewshed polygon feature set.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    output_viewshed: Option<FeatureSet>,
+    ///
+    /// Contains polygon features representing areas visible from observer points.
+    /// Attributes include: Frequency, DEMResolution, Product Name, Source, Source URL
+    output_viewshed: FeatureSet,
+}
 
-    /// Visible area in square meters.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    visible_area: Option<f64>,
+impl ViewshedResult {
+    /// Creates a viewshed result from a FeatureSet.
+    pub fn new(output_viewshed: FeatureSet) -> Self {
+        Self { output_viewshed }
+    }
 
-    /// Total area analyzed in square meters.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    total_area: Option<f64>,
-
-    /// Percentage visible (0-100).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    percent_visible: Option<f64>,
+    /// Gets the number of viewshed polygons.
+    pub fn viewshed_count(&self) -> usize {
+        self.output_viewshed.features().len()
+    }
 }
 
 /// DEM resolution options.
