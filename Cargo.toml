@@ -177,3 +177,7 @@ path = "examples/enterprise/elevation_analysis.rs"
 [[example]]
 name = "elevation_async_analysis"
 path = "examples/enterprise/elevation_async_analysis.rs"
+
+[[example]]
+name = "advanced_queries"
+path = "examples/enterprise/advanced_queries.rs"
