@@ -173,3 +173,7 @@ path = "examples/enterprise/portal_publishing.rs"
 [[example]]
 name = "elevation_analysis"
 path = "examples/enterprise/elevation_analysis.rs"
+
+[[example]]
+name = "elevation_async_analysis"
+path = "examples/enterprise/elevation_async_analysis.rs"
