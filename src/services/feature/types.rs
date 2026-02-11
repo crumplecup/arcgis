@@ -59,6 +59,40 @@ mod serde_helpers {
             None => serializer.serialize_none(),
         }
     }
+
+    /// Serializes Vec<StatisticDefinition> as a JSON string for URL query parameters.
+    pub fn serialize_statistics<S>(
+        stats: &Option<Vec<super::StatisticDefinition>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match stats {
+            Some(s) => {
+                let json = serde_json::to_string(s).map_err(serde::ser::Error::custom)?;
+                serializer.serialize_str(&json)
+            }
+            None => serializer.serialize_none(),
+        }
+    }
+
+    /// Serializes TopFilter as a JSON string for URL query parameters.
+    pub fn serialize_top_filter<S>(
+        filter: &Option<super::TopFilter>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match filter {
+            Some(f) => {
+                let json = serde_json::to_string(f).map_err(serde::ser::Error::custom)?;
+                serializer.serialize_str(&json)
+            }
+            None => serializer.serialize_none(),
+        }
+    }
 }
 
 /// Response format for feature service queries.
@@ -244,7 +278,11 @@ pub struct FeatureQueryParams {
     ///
     /// When specified, only these query parameters can be used:
     /// groupByFieldsForStatistics, orderByFields, time, returnDistinctValues, where.
-    #[serde(rename = "outStatistics", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "outStatistics",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serde_helpers::serialize_statistics"
+    )]
     out_statistics: Option<Vec<StatisticDefinition>>,
 
     /// HAVING clause for filtering aggregated results.
@@ -603,7 +641,10 @@ pub struct TopFilter {
 #[builder(setter(into, strip_option), default)]
 pub struct TopFeaturesParams {
     /// Required: Top filter specification (group by, count, order by).
-    #[serde(rename = "topFilter")]
+    #[serde(
+        rename = "topFilter",
+        serialize_with = "serde_helpers::serialize_top_filter"
+    )]
     top_filter: Option<TopFilter>,
 
     /// WHERE clause for the query filter.
