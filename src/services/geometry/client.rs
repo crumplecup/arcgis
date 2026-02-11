@@ -498,18 +498,31 @@ impl<'a> GeometryServiceClient<'a> {
         }
 
         #[derive(Deserialize)]
+        struct GeoTransformGroup {
+            #[serde(rename = "geoTransforms")]
+            geo_transforms: Vec<Transformation>,
+        }
+
+        #[derive(Deserialize)]
         struct TransformationsResponse {
-            transformations: Vec<Transformation>,
+            transformations: Vec<GeoTransformGroup>,
         }
 
         let response_data: TransformationsResponse = response.json().await?;
 
+        // Flatten the nested structure
+        let all_transformations: Vec<Transformation> = response_data
+            .transformations
+            .into_iter()
+            .flat_map(|group| group.geo_transforms)
+            .collect();
+
         tracing::info!(
-            transformation_count = response_data.transformations.len(),
+            transformation_count = all_transformations.len(),
             "findTransformations completed"
         );
 
-        Ok(response_data.transformations)
+        Ok(all_transformations)
     }
 
     /// Simplifies geometries to remove topological errors.

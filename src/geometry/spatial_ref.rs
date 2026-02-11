@@ -43,6 +43,22 @@ pub struct SpatialReference {
 }
 
 impl SpatialReference {
+    /// Creates a builder for SpatialReference.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use arcgis::SpatialReference;
+    /// let sr = SpatialReference::builder()
+    ///     .wkid(4269)
+    ///     .build()
+    ///     .unwrap();
+    /// assert_eq!(*sr.wkid(), Some(4269));
+    /// ```
+    pub fn builder() -> SpatialReferenceBuilder {
+        SpatialReferenceBuilder::default()
+    }
+
     /// Creates WGS84 (EPSG:4326) spatial reference.
     ///
     /// This is the standard geographic coordinate system used by GPS.
