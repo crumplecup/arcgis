@@ -76,6 +76,34 @@ where
     state.end()
 }
 
+/// Helper to serialize polygons as plain array (no geometryType wrapper).
+///
+/// Used for areasAndLengths which expects plain array format:
+/// ```json
+/// [{"rings": [...]}, {"rings": [...]}]
+/// ```
+fn serialize_plain_polygons<S>(geoms: &[ArcGISGeometry], serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    use serde::ser::SerializeSeq;
+
+    let mut seq = serializer.serialize_seq(Some(geoms.len()))?;
+    for geom in geoms {
+        match geom {
+            ArcGISGeometry::Polygon(polygon) => {
+                seq.serialize_element(polygon)?;
+            }
+            _ => {
+                return Err(serde::ser::Error::custom(
+                    "areasAndLengths only accepts Polygon geometries",
+                ));
+            }
+        }
+    }
+    seq.end()
+}
+
 /// Response from project operation.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
 pub struct ProjectResult {
@@ -196,10 +224,24 @@ impl SimplifyParameters {
     }
 }
 
+/// Deserializes plain polygon objects into ArcGISGeometry::Polygon variants.
+///
+/// The API returns geometries as plain objects like `{"rings": [...]}`,
+/// but we need them wrapped in the ArcGISGeometry enum.
+fn deserialize_plain_polygons<'de, D>(deserializer: D) -> Result<Vec<ArcGISGeometry>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    let polygons: Vec<crate::ArcGISPolygon> = Vec::deserialize(deserializer)?;
+    Ok(polygons.into_iter().map(ArcGISGeometry::Polygon).collect())
+}
+
 /// Response from simplify operation.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
 pub struct SimplifyResult {
-    /// Simplified geometries.
+    /// Simplified geometries (as plain polygons, not enum-wrapped).
+    #[serde(deserialize_with = "deserialize_plain_polygons")]
     geometries: Vec<ArcGISGeometry>,
 }
 
@@ -225,10 +267,29 @@ impl UnionParameters {
     }
 }
 
+/// Deserializes a plain polygon object into ArcGISGeometry::Polygon variant.
+///
+/// The API returns geometry as a plain object like `{"rings": [...]}`,
+/// but we need it wrapped in the ArcGISGeometry enum.
+fn deserialize_plain_polygon<'de, D>(deserializer: D) -> Result<ArcGISGeometry, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    let polygon: crate::ArcGISPolygon = crate::ArcGISPolygon::deserialize(deserializer)?;
+    Ok(ArcGISGeometry::Polygon(polygon))
+}
+
 /// Response from union operation.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
 pub struct UnionResult {
-    /// Unioned geometry.
+    /// Type of the resulting geometry.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    geometry_type: Option<String>,
+
+    /// Unioned geometry (as plain polygon, not enum-wrapped).
+    #[serde(deserialize_with = "deserialize_plain_polygon")]
     geometry: ArcGISGeometry,
 }
 
@@ -240,7 +301,8 @@ pub struct UnionResult {
 #[serde(rename_all = "camelCase")]
 pub struct AreasAndLengthsParameters {
     /// Polygon geometries to calculate (REQUIRED).
-    #[serde(serialize_with = "serialize_geometries")]
+    /// Note: API expects plain array of polygons, not wrapped with geometryType.
+    #[serde(serialize_with = "serialize_plain_polygons")]
     polygons: Vec<ArcGISGeometry>,
 
     /// Spatial reference of input geometries (REQUIRED).

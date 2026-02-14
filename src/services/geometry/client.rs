@@ -573,8 +573,27 @@ impl<'a> GeometryServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending simplify request");
 
-        let params_json = serde_json::to_string(&params)?;
-        let mut form = vec![("geometries", params_json.as_str()), ("f", "json")];
+        // Build geometries JSON with geometryType wrapper
+        let geometry_type = match params.geometries().first() {
+            Some(crate::ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
+            Some(crate::ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
+            Some(crate::ArcGISGeometry::Point(_)) => "esriGeometryPoint",
+            Some(crate::ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
+            Some(crate::ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
+            None => "esriGeometryPolygon",
+        };
+
+        let geometries_wrapper = serde_json::json!({
+            "geometryType": geometry_type,
+            "geometries": params.geometries()
+        });
+        let geometries_json = serde_json::to_string(&geometries_wrapper)?;
+        let sr_str = params.sr().to_string();
+        let mut form = vec![
+            ("geometries", geometries_json.as_str()),
+            ("sr", sr_str.as_str()),
+            ("f", "json"),
+        ];
 
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;
@@ -599,7 +618,11 @@ impl<'a> GeometryServiceClient<'a> {
             }));
         }
 
-        let result: SimplifyResult = response.json().await?;
+        // Debug: log response body
+        let body = response.text().await?;
+        tracing::debug!(response_body = %body, "simplify response");
+
+        let result: SimplifyResult = serde_json::from_str(&body)?;
 
         tracing::info!(
             result_count = result.geometries().len(),
@@ -664,8 +687,27 @@ impl<'a> GeometryServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending union request");
 
-        let params_json = serde_json::to_string(&params)?;
-        let mut form = vec![("geometries", params_json.as_str()), ("f", "json")];
+        // Build geometries JSON with geometryType wrapper
+        let geometry_type = match params.geometries().first() {
+            Some(crate::ArcGISGeometry::Polygon(_)) => "esriGeometryPolygon",
+            Some(crate::ArcGISGeometry::Polyline(_)) => "esriGeometryPolyline",
+            Some(crate::ArcGISGeometry::Point(_)) => "esriGeometryPoint",
+            Some(crate::ArcGISGeometry::Multipoint(_)) => "esriGeometryMultipoint",
+            Some(crate::ArcGISGeometry::Envelope(_)) => "esriGeometryEnvelope",
+            None => "esriGeometryPolygon",
+        };
+
+        let geometries_wrapper = serde_json::json!({
+            "geometryType": geometry_type,
+            "geometries": params.geometries()
+        });
+        let geometries_json = serde_json::to_string(&geometries_wrapper)?;
+        let sr_str = params.sr().to_string();
+        let mut form = vec![
+            ("geometries", geometries_json.as_str()),
+            ("sr", sr_str.as_str()),
+            ("f", "json"),
+        ];
 
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;
@@ -690,7 +732,11 @@ impl<'a> GeometryServiceClient<'a> {
             }));
         }
 
-        let result: UnionResult = response.json().await?;
+        // Debug: log response body
+        let body = response.text().await?;
+        tracing::debug!(response_body = %body, "union response");
+
+        let result: UnionResult = serde_json::from_str(&body)?;
 
         tracing::info!("union completed");
 
@@ -751,8 +797,46 @@ impl<'a> GeometryServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending areasAndLengths request");
 
-        let params_json = serde_json::to_string(&params)?;
-        let mut form = vec![("polygons", params_json.as_str()), ("f", "json")];
+        // Serialize polygons as plain array (no geometryType wrapper for this operation)
+        let polygons_json = serde_json::to_string(params.polygons())?;
+        let sr_str = params.sr().to_string();
+
+        // Store optional parameter strings to keep them alive
+        let length_unit_str = params.length_unit().as_ref().map(|u| {
+            serde_json::to_string(u)
+                .unwrap()
+                .trim_matches('"')
+                .to_string()
+        });
+        let area_unit_str = params.area_unit().as_ref().map(|u| {
+            serde_json::to_string(u)
+                .unwrap()
+                .trim_matches('"')
+                .to_string()
+        });
+        let calc_type_str = params.calculation_type().as_ref().map(|c| {
+            serde_json::to_string(c)
+                .unwrap()
+                .trim_matches('"')
+                .to_string()
+        });
+
+        let mut form = vec![
+            ("polygons", polygons_json.as_str()),
+            ("sr", sr_str.as_str()),
+            ("f", "json"),
+        ];
+
+        // Add optional parameters
+        if let Some(ref unit) = length_unit_str {
+            form.push(("lengthUnit", unit.as_str()));
+        }
+        if let Some(ref unit) = area_unit_str {
+            form.push(("areaUnit", unit.as_str()));
+        }
+        if let Some(ref calc) = calc_type_str {
+            form.push(("calculationType", calc.as_str()));
+        }
 
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;

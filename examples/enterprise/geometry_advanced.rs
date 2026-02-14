@@ -25,14 +25,14 @@
 //! cargo run --example geometry_advanced
 //! ```
 
-use anyhow::{ensure, Context, Result};
+use anyhow::{Context, Result, ensure};
 use arcgis::{
-    ArcGISClient, ArcGISEnvelope, ArcGISGeometry, ArcGISPoint, ArcGISPolygon,
-    AreasAndLengthsParameters, AreaUnit, CalculationType, GeometryServiceClient, LinearUnit,
-    NoAuth, ProjectParameters, SimplifyParameters, SpatialReference, UnionParameters,
+    ArcGISClient, ArcGISEnvelope, ArcGISGeometry, ArcGISPoint, ArcGISPolygon, AreaUnit,
+    AreasAndLengthsParameters, CalculationType, GeometryServiceClient, LinearUnit, NoAuth,
+    ProjectParameters, SimplifyParameters, SpatialReference, UnionParameters,
 };
 use tracing::{debug, info};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -49,16 +49,16 @@ async fn main() -> Result<()> {
     let client = ArcGISClient::new(auth);
 
     // Create geometry service client
-    let service_url = "https://utility.arcgisonline.com/arcgis/rest/services/Geometry/GeometryServer";
+    let service_url =
+        "https://utility.arcgisonline.com/arcgis/rest/services/Geometry/GeometryServer";
     let service = GeometryServiceClient::new(service_url, &client);
 
     info!("Connected to ArcGIS Geometry Service");
 
     // Demonstrate each advanced operation
-    // TODO: These operations have API serialization issues - need investigation
-    // demonstrate_simplify(&service).await?;
-    // demonstrate_union(&service).await?;
-    // demonstrate_areas_and_lengths(&service).await?;
+    demonstrate_simplify(&service).await?;
+    demonstrate_union(&service).await?;
+    demonstrate_areas_and_lengths(&service).await?;
     demonstrate_datum_transformations(&service).await?;
 
     info!("✓ All advanced geometry operations completed successfully");
@@ -197,7 +197,10 @@ async fn demonstrate_union(service: &GeometryServiceClient<'_>) -> Result<()> {
                 ring_count
             );
 
-            info!("✓ Union successful: 2 polygons merged into {} ring(s)", ring_count);
+            info!(
+                "✓ Union successful: 2 polygons merged into {} ring(s)",
+                ring_count
+            );
         }
         _ => anyhow::bail!("Expected polygon result from union, got different geometry type"),
     }
@@ -259,11 +262,7 @@ async fn demonstrate_areas_and_lengths(service: &GeometryServiceClient<'_>) -> R
     let perimeter = result.lengths()[0];
 
     // Verify area is reasonable (should be positive and within expected range)
-    ensure!(
-        area > 0.0,
-        "Area must be positive, got {}",
-        area
-    );
+    ensure!(area > 0.0, "Area must be positive, got {}", area);
 
     // For a 1° square at ~34°N latitude:
     // - Expected area: roughly 111km * 92km = ~10,200 km²
@@ -288,10 +287,7 @@ async fn demonstrate_areas_and_lengths(service: &GeometryServiceClient<'_>) -> R
         perimeter
     );
 
-    info!(
-        "✓ Area: {:.2} km², Perimeter: {:.2} km",
-        area, perimeter
-    );
+    info!("✓ Area: {:.2} km², Perimeter: {:.2} km", area, perimeter);
 
     Ok(())
 }
@@ -307,13 +303,12 @@ async fn demonstrate_datum_transformations(service: &GeometryServiceClient<'_>) 
     // These are commonly used coordinate systems in North America
     let in_sr = 4269; // NAD83
     let out_sr = 4326; // WGS84
-    let extent = ArcGISEnvelope::new(-120.0, 30.0, -115.0, 35.0)
-        .with_spatial_reference(Some(
-            SpatialReference::builder()
-                .wkid(4269u32)
-                .build()
-                .context("Failed to build spatial reference")?,
-        ));
+    let extent = ArcGISEnvelope::new(-120.0, 30.0, -115.0, 35.0).with_spatial_reference(Some(
+        SpatialReference::builder()
+            .wkid(4269u32)
+            .build()
+            .context("Failed to build spatial reference")?,
+    ));
 
     debug!(
         in_sr = in_sr,
@@ -431,9 +426,7 @@ async fn demonstrate_datum_transformations(service: &GeometryServiceClient<'_>) 
                 transformation_wkid
             );
         }
-        _ => anyhow::bail!(
-            "Expected point result from projection, got different geometry type"
-        ),
+        _ => anyhow::bail!("Expected point result from projection, got different geometry type"),
     }
 
     Ok(())
