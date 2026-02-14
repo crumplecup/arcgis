@@ -661,7 +661,8 @@ fn default_true() -> bool {
 /// Result from updating an item.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
 pub struct UpdateItemResult {
-    /// Whether the operation succeeded.
+    /// Whether the operation succeeded (defaults to true if not present).
+    #[serde(default = "default_true")]
     success: bool,
 
     /// ID of the updated item.
@@ -745,6 +746,7 @@ pub struct ShareItemResult {
 #[serde(rename_all = "camelCase")]
 pub struct UnshareItemResult {
     /// Whether the operation succeeded.
+    #[serde(default)]
     success: bool,
 
     /// Item ID that was unshared.
