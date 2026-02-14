@@ -175,6 +175,10 @@ name = "portal_publishing"
 path = "examples/enterprise/portal_publishing.rs"
 
 [[example]]
+name = "portal_item_lifecycle"
+path = "examples/enterprise/portal_item_lifecycle.rs"
+
+[[example]]
 name = "elevation_analysis"
 path = "examples/enterprise/elevation_analysis.rs"
 
