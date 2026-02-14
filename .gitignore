@@ -47,5 +47,11 @@ Desktop.ini
 
 # Linux
 .directory
+
+# Logs
+*.log
+*.log.*
+logs/
+
 # Example output files
 map_*.png
