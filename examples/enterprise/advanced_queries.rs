@@ -132,18 +132,13 @@ async fn demonstrate_statistical_aggregations(
     tracing::debug!("Creating statistic definitions for aggregation");
 
     // Define statistics to calculate
-    let stats = vec![
-        StatisticDefinition::new(
-            StatisticType::Count,
-            "objectid".to_string(),
-            "total_requests".to_string(),
-        ),
-    ];
+    let stats = vec![StatisticDefinition::new(
+        StatisticType::Count,
+        "objectid".to_string(),
+        "total_requests".to_string(),
+    )];
 
-    tracing::debug!(
-        stat_count = stats.len(),
-        "Prepared statistic definitions"
-    );
+    tracing::debug!(stat_count = stats.len(), "Prepared statistic definitions");
 
     // Query with statistics and grouping
     tracing::debug!("Executing statistics query with GROUP BY");
@@ -221,9 +216,9 @@ async fn demonstrate_top_features(
     // Create top filter
     tracing::debug!("Creating TopFilter specification");
     let top_filter = TopFilter::new(
-        vec!["district".to_string()],       // Group by district
-        5,                                   // Top 5 from each district
-        vec!["objectid DESC".to_string()],  // Order by ID (proxy for recent)
+        vec!["district".to_string()],      // Group by district
+        5,                                 // Top 5 from each district
+        vec!["objectid DESC".to_string()], // Order by ID (proxy for recent)
     );
 
     tracing::debug!(
@@ -253,7 +248,7 @@ async fn demonstrate_top_features(
     let feature_count = result.features().len();
     tracing::info!(
         total_features = feature_count,
-        expected_max = 5 * 10,  // 5 per district, ~10 districts
+        expected_max = 5 * 10, // 5 per district, ~10 districts
         "Top features query completed"
     );
     tracing::debug!(
@@ -344,7 +339,7 @@ async fn demonstrate_pagination_strategies(
     tracing::info!("Efficiently paginate through large result sets");
 
     let page_size = 100;
-    let max_pages = 3;  // Limit for demo
+    let max_pages = 3; // Limit for demo
 
     tracing::debug!(
         page_size = page_size,
@@ -530,7 +525,7 @@ async fn demonstrate_related_records(
     tracing::debug!("Building RelatedRecordsParams");
     let params = RelatedRecordsParams::builder()
         .object_ids(object_ids.clone())
-        .relationship_id(0u32)  // Relationship ID (service-specific)
+        .relationship_id(0u32) // Relationship ID (service-specific)
         .out_fields(vec!["*".to_string()])
         .return_geometry(false)
         .build()
@@ -546,10 +541,7 @@ async fn demonstrate_related_records(
     let result = service.query_related_records(layer_id, params).await?;
 
     let group_count = result.related_record_groups().len();
-    tracing::info!(
-        groups = group_count,
-        "Related records query completed"
-    );
+    tracing::info!(groups = group_count, "Related records query completed");
 
     // Display results
     for group in result.related_record_groups().iter().take(3) {
@@ -594,18 +586,12 @@ async fn demonstrate_domain_lookups(service: &FeatureServiceClient<'_>) -> Resul
 
     let layers = vec![LayerId::new(0)];
 
-    tracing::debug!(
-        layer_count = layers.len(),
-        "Querying domains for layers"
-    );
+    tracing::debug!(layer_count = layers.len(), "Querying domains for layers");
 
     let result = service.query_domains(layers).await?;
 
     let layer_count = result.layers().len();
-    tracing::info!(
-        layers_with_domains = layer_count,
-        "Domain query completed"
-    );
+    tracing::info!(layers_with_domains = layer_count, "Domain query completed");
 
     anyhow::ensure!(
         layer_count > 0,
@@ -614,11 +600,7 @@ async fn demonstrate_domain_lookups(service: &FeatureServiceClient<'_>) -> Resul
 
     for layer_info in result.layers() {
         let domain_count = layer_info.domains().len();
-        let subtype_count = layer_info
-            .subtypes()
-            .as_ref()
-            .map(|s| s.len())
-            .unwrap_or(0);
+        let subtype_count = layer_info.subtypes().as_ref().map(|s| s.len()).unwrap_or(0);
 
         tracing::info!(
             layer_id = ?layer_info.id(),
