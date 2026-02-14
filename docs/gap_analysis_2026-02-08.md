@@ -6,8 +6,8 @@
 ## Executive Summary
 - **Total Services:** 14
 - **Total Methods Implemented:** 110
-- **Methods Demonstrated in Examples:** 39
-- **Overall Coverage:** **35%**
+- **Methods Demonstrated in Examples:** 46 ⬆️
+- **Overall Coverage:** **42%** ⬆️
 - **Services with 100% Coverage:** 1 (RoutingServiceClient) ✅
 - **Services with ZERO Coverage:** 2 (PlacesClient, VersionManagementClient) ❌
 
@@ -18,12 +18,12 @@
 | RoutingServiceClient | 4 | 4 | 100% | ✅ Complete |
 | ImageServiceClient | 6 | 4 | 67% | 🟢 Good |
 | VectorTileServiceClient | 6 | 4 | 67% | 🟢 Good |
+| **PortalClient** | 22 | 13 | **59%** ⬆️ | 🟢 Good |
 | GeocodeServiceClient | 9 | 5 | 56% | 🟡 Decent |
 | **FeatureServiceClient** | 18 | 9 | **50%** | 🔴 High Priority |
 | MapServiceClient | 11 | 5 | 45% | 🟡 Decent |
 | **GeometryServiceClient** | 9 | 3 | **33%** | 🔴 High Priority |
 | ElevationClient | 3 | 1 | 33% | 🟢 OK (premium limited) |
-| **PortalClient** | 22 | 6 | **27%** | 🔴 High Priority |
 | **GeoprocessingServiceClient** | 7 | 1 | **14%** | 🔴 High Priority |
 | PlacesClient | 3 | 0 | 0% | 🟡 Medium (platform limited) |
 | VersionManagementClient | 13 | 0 | 0% | 🟢 Low (enterprise feature) |
@@ -192,8 +192,8 @@
 
 ### 9. PortalClient
 - **Total Methods:** 22
-- **Demonstrated Methods:** 6 (27% coverage)
-- **Examples Using This:** portal_content_management.rs, portal_publishing.rs, feature_attachments.rs
+- **Demonstrated Methods:** 13 (59% coverage) ⬆️
+- **Examples Using This:** portal_content_management.rs, portal_publishing.rs, feature_attachments.rs, portal_item_lifecycle.rs
 
 **✅ Demonstrated:**
 - `search()` - Search content (portal_content_management.rs)
@@ -202,17 +202,17 @@
 - `add_to_definition()` - Add layers to service (portal_publishing.rs)
 - `publish()` - Publish feature service (portal_publishing.rs)
 - `delete_service()` - Delete service (feature_attachments.rs)
+- `get_item()` - Get item metadata (portal_item_lifecycle.rs) **NEW**
+- `add_item()` - Add new item (portal_item_lifecycle.rs) **NEW**
+- `update_item()` - Update item metadata (portal_item_lifecycle.rs) **NEW**
+- `delete_item()` - Delete item (portal_item_lifecycle.rs) **NEW**
+- `share_item()` - Share item with groups (portal_item_lifecycle.rs) **NEW**
+- `unshare_item()` - Unshare item (portal_item_lifecycle.rs) **NEW**
+- `get_self()` - Get current user info (used internally by item operations) **NEW**
 
 **❌ NOT Demonstrated:**
-- `get_self()` - Get current user info
-- `get_item()` - Get item metadata **← High Priority**
-- `add_item()` - Add new item **← High Priority**
-- `update_item()` - Update item metadata **← High Priority**
-- `delete_item()` - Delete item **← High Priority**
-- `get_item_data()` - Download item data **← High Priority**
-- `update_item_data()` - Upload item data **← High Priority**
-- `share_item()` - Share item with groups **← High Priority**
-- `unshare_item()` - Unshare item
+- `get_item_data()` - Download item data **⚠️ Needs research - workflow unclear**
+- `update_item_data()` - Upload item data **⚠️ Needs research - workflow unclear**
 - `get_group()` - Get group details
 - `create_group()` - Create new group
 - `update_group()` - Update group
@@ -224,6 +224,14 @@
 - `get_publish_status()` - Check publish job status
 - `update_service_definition()` - Update service definition
 - `overwrite_service()` - Overwrite hosted service
+
+**Notes:**
+- portal_item_lifecycle.rs demonstrates metadata-only item management workflow
+- File data upload/download (`update_item_data`/`get_item_data`) needs further research:
+  - Unclear which parameter (`text` vs `file`) works for different item types
+  - GeoJson items may require publishing as Feature Services instead
+  - API returns success=true but data not retrievable via `/data` endpoint
+  - May need to use Resources endpoint or different workflow entirely
 
 ---
 
@@ -561,17 +569,20 @@ assert_eq!(result.success_count(), 10, "Expected 10 successes, got {}", result.s
 
 ## Conclusion
 
-**Current State:** 35% coverage (39/110 methods demonstrated)
-**Target State:** 60% coverage with 4 new examples
+**Current State:** 42% coverage (46/110 methods demonstrated) ⬆️
+**Target State:** 60% coverage with remaining examples
 **Stretch Goal:** 70%+ coverage with additional polish
+
+**Completed:**
+- ✅ `portal_item_lifecycle.rs` - Metadata-based item lifecycle (+7 methods)
 
 **Next Steps:**
 1. Create `geoprocessing_async.rs` (highest impact)
 2. Create `feature_service_advanced.rs` (most requested workflows)
 3. Create `geometry_advanced.rs` (core operations)
-4. Create `portal_item_lifecycle.rs` (content management)
+4. Research `update_item_data`/`get_item_data` correct workflows
 
-**Impact:** These 4 examples would demonstrate an additional **~29 methods**, bringing coverage from 35% → 61% and validating all critical workflows.
+**Impact:** The remaining 3 examples would demonstrate an additional **~22 methods**, bringing coverage from 42% → 62% and validating all critical workflows.
 
 ---
 
