@@ -30,9 +30,9 @@ pub use feature::{
     UpdateAttachmentResult,
 };
 pub use geocode::{
-    AddressCandidate, BatchCandidateResult, BatchCandidatesResponse, BatchGeocodeResponse,
-    BatchLocation, Category, Extent, GeocodeAddress, GeocodeResponse, GeocodeServiceClient,
-    LocationType, ReverseGeocodeResponse, SuggestResponse, Suggestion,
+    AddressCandidate, BatchGeocodeResponse, BatchLocation, Category, Extent, GeocodeAddress,
+    GeocodeResponse, GeocodeServiceClient, LocationType, ReverseGeocodeResponse,
+    SuggestResponse, Suggestion,
 };
 pub use geometry::{
     AreaUnit, AreasAndLengthsParameters, AreasAndLengthsParametersBuilder, AreasAndLengthsResult,

@@ -75,15 +75,8 @@ async fn main() -> Result<()> {
     let geocoder = GeocodeServiceClient::new(WORLD_GEOCODE_SERVICE, &client);
 
     // Demonstrate batch geocoding operations
-    // NOTE: demonstrate_batch_geocode() currently fails due to BatchLocation
-    // deserialization issue - API response structure doesn't match type definition
-    // demonstrate_batch_geocode(&geocoder).await?;
-
+    demonstrate_batch_geocode(&geocoder).await?;
     demonstrate_advanced_options(&geocoder).await?;
-
-    // NOTE: demonstrate_batch_candidates() returns 0 results - API may not support
-    // batch findAddressCandidates or requires different format
-    // demonstrate_batch_candidates(&geocoder).await?;
 
     tracing::info!("\n✅ All batch geocoding examples completed successfully!");
     print_best_practices();
@@ -266,110 +259,18 @@ async fn demonstrate_advanced_options(geocoder: &GeocodeServiceClient<'_>) -> Re
     Ok(())
 }
 
-/// Demonstrates batch candidate search with find_address_candidates_by_batch().
-async fn demonstrate_batch_candidates(geocoder: &GeocodeServiceClient<'_>) -> Result<()> {
-    tracing::info!("\n=== Example 3: Batch Candidate Search ===");
-    tracing::info!("Get multiple match candidates for each address in batch");
-    tracing::info!("");
-
-    // Prepare addresses with varying specificity
-    let addresses = vec![
-        GeocodeAddress::new("380 New York St, Redlands, CA"), // Specific
-        GeocodeAddress::new("Main Street"),                     // Ambiguous
-        GeocodeAddress::new("Eiffel Tower"),                    // POI
-    ];
-
-    tracing::info!(
-        address_count = addresses.len(),
-        "Finding candidates for {} addresses",
-        addresses.len()
-    );
-
-    let response = geocoder.find_address_candidates_by_batch(addresses).await?;
-
-    // Validate response structure
-    anyhow::ensure!(
-        !response.candidates().is_empty(),
-        "Batch candidates should return results"
-    );
-
-    anyhow::ensure!(
-        response.candidates().len() == 3,
-        "Expected 3 candidate results, got {}",
-        response.candidates().len()
-    );
-
-    tracing::info!(
-        "✅ Successfully retrieved candidates for {} addresses",
-        response.candidates().len()
-    );
-    tracing::info!("");
-
-    // Display candidates for each address
-    for (idx, result) in response.candidates().iter().enumerate() {
-        tracing::info!("   {}. \"{}\":", idx + 1, result.address());
-        tracing::info!("      Found {} candidates", result.candidates().len());
-
-        // Validate result structure
-        anyhow::ensure!(
-            !result.address().is_empty(),
-            "Result {} should have an address",
-            idx
-        );
-
-        if !result.candidates().is_empty() {
-            // Show top 3 candidates
-            for (cand_idx, candidate) in result.candidates().iter().take(3).enumerate() {
-                tracing::info!(
-                    "        {}. {} [score: {:.1}]",
-                    cand_idx + 1,
-                    candidate.address(),
-                    *candidate.score()
-                );
-
-                // Validate candidate
-                anyhow::ensure!(
-                    !candidate.address().is_empty(),
-                    "Candidate should have address"
-                );
-
-                anyhow::ensure!(
-                    *candidate.score() >= 0.0 && *candidate.score() <= 100.0,
-                    "Candidate score should be 0-100"
-                );
-            }
-
-            if result.candidates().len() > 3 {
-                tracing::info!("        ... and {} more", result.candidates().len() - 3);
-            }
-        } else {
-            tracing::warn!("        No candidates found");
-        }
-
-        tracing::info!("");
-    }
-
-    tracing::info!("💡 Batch candidates use cases:");
-    tracing::info!("   • Address validation with multiple match options");
-    tracing::info!("   • User confirmation workflows (show top 3 matches)");
-    tracing::info!("   • Fuzzy matching for partial addresses");
-    tracing::info!("   • Quality assessment before bulk import");
-
-    Ok(())
-}
-
 /// Prints best practices for batch geocoding.
 fn print_best_practices() {
     tracing::info!("\n💡 Batch Geocoding Best Practices:");
-    tracing::info!("   - Use geocode_addresses() for simple bulk geocoding");
-    tracing::info!("   - Use find_address_candidates_by_batch() when you need match options");
+    tracing::info!("   - Use geocode_addresses() for bulk geocoding");
+    tracing::info!("   - Use find_address_candidates() in a loop for multiple match options");
     tracing::info!("   - Batch operations are more efficient than individual requests");
     tracing::info!("   - Process in chunks of 100-1000 addresses per request");
     tracing::info!("   - Always validate scores before accepting results");
     tracing::info!("");
     tracing::info!("📊 Credit Usage:");
     tracing::info!("   - geocode_addresses: ~0.004 credits per address");
-    tracing::info!("   - find_address_candidates_by_batch: Similar to geocode_addresses");
+    tracing::info!("   - find_address_candidates: ~0.004 credits per address");
     tracing::info!("   - Batch operations have no additional overhead");
     tracing::info!("   - Cache results to avoid re-geocoding");
     tracing::info!("");
@@ -383,7 +284,7 @@ fn print_best_practices() {
     tracing::info!("   - Accept scores ≥90 automatically");
     tracing::info!("   - Flag scores 70-89 for manual review");
     tracing::info!("   - Reject scores <70");
-    tracing::info!("   - Use find_address_candidates_by_batch for ambiguous addresses");
+    tracing::info!("   - Use find_address_candidates for ambiguous addresses");
     tracing::info!("");
     tracing::info!("⚙️  Error Handling:");
     tracing::info!("   - Check each result individually (some may fail)");

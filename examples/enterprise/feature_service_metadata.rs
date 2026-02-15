@@ -74,9 +74,7 @@ async fn main() -> Result<()> {
     let service = FeatureServiceClient::new(SF311_SERVICE, &client);
 
     // Demonstrate metadata operations
-    // NOTE: demonstrate_service_definition() currently fails due to ServiceDefinition
-    // deserialization issue with initialExtent field format mismatch
-    // demonstrate_service_definition(&service).await?;
+    demonstrate_service_definition(&service).await?;
     demonstrate_layer_definition(&service).await?;
 
     tracing::info!("\n✅ All metadata examples completed successfully!");

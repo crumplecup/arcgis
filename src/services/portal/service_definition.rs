@@ -51,6 +51,7 @@
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
+use crate::ArcGISEnvelope;
 use serde::{Deserialize, Serialize};
 
 /// Top-level service definition for a hosted Feature Service.
@@ -136,10 +137,12 @@ pub struct ServiceDefinition {
     #[builder(default)]
     spatial_reference: Option<SpatialReferenceDefinition>,
 
-    /// Initial extent as [[xmin, ymin], [xmax, ymax]].
+    /// Initial extent (bounding box) of the service.
+    ///
+    /// Contains xmin, ymin, xmax, ymax coordinates and optional spatial reference.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[builder(default)]
-    initial_extent: Option<Vec<Vec<f64>>>,
+    initial_extent: Option<ArcGISEnvelope>,
 
     /// Whether geometry updates are allowed.
     ///

@@ -245,7 +245,6 @@ pub struct BatchGeocodeResponse {
 
 /// A single result from batch geocoding.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
-#[serde(rename_all = "camelCase")]
 pub struct BatchLocation {
     /// Address that was geocoded.
     address: String,
@@ -261,23 +260,3 @@ pub struct BatchLocation {
     attributes: HashMap<String, serde_json::Value>,
 }
 
-/// Response from batch findAddressCandidates.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
-pub struct BatchCandidatesResponse {
-    /// Array of candidate results for each input address.
-    candidates: Vec<BatchCandidateResult>,
-
-    /// Spatial reference of results.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    spatial_reference: Option<SpatialReference>,
-}
-
-/// Candidates for a single address in batch processing.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
-pub struct BatchCandidateResult {
-    /// The input address.
-    address: String,
-
-    /// All candidates found for this address.
-    candidates: Vec<AddressCandidate>,
-}
