@@ -533,7 +533,7 @@ impl<'a> FeatureServiceClient<'a> {
     /// # Ok(())
     /// # }
     /// ```
-    #[instrument(skip(self, where_clause, calc_expression, options), fields(layer_id = %layer_id))]
+    #[instrument(skip(self, where_clause, calc_expression, options), fields(layer_id = %layer_id, calc_count = calc_expression.len()))]
     pub async fn calculate_records(
         &self,
         layer_id: LayerId,
@@ -548,7 +548,13 @@ impl<'a> FeatureServiceClient<'a> {
         let where_str = where_clause.into();
         let calc_json = serde_json::to_string(&calc_expression)?;
 
-        tracing::debug!(url = %url, where_clause = %where_str, "Sending calculate request");
+        tracing::debug!(
+            url = %url,
+            where_clause = %where_str,
+            calc_expression_count = calc_expression.len(),
+            rollback_on_failure = ?options.rollback_on_failure,
+            "Sending calculate request"
+        );
 
         let mut form = vec![
             ("where", where_str.as_str()),
@@ -559,9 +565,11 @@ impl<'a> FeatureServiceClient<'a> {
         // Add optional parameters
         let session_id_str = options.session_id.as_ref().map(|s| s.to_string());
         if let Some(ref session_id) = session_id_str {
+            tracing::debug!(session_id = %session_id, "Using edit session");
             form.push(("sessionId", session_id.as_str()));
         }
         if let Some(ref gdb_version) = options.gdb_version {
+            tracing::debug!(gdb_version = %gdb_version, "Using geodatabase version");
             form.push(("gdbVersion", gdb_version.as_str()));
         }
         if let Some(rollback) = options.rollback_on_failure {
@@ -592,12 +600,26 @@ impl<'a> FeatureServiceClient<'a> {
         }
 
         let response_text = response.text().await?;
+        tracing::debug!(
+            response_length = response_text.len(),
+            "Received calculate response"
+        );
+
         check_esri_error(&response_text, "calculate")?;
-        let result: crate::CalculateResult = serde_json::from_str(&response_text)?;
+
+        let result: crate::CalculateResult = serde_json::from_str(&response_text).map_err(|e| {
+            tracing::error!(
+                error = %e,
+                response_preview = %&response_text[..response_text.len().min(500)],
+                "Failed to deserialize CalculateResult"
+            );
+            e
+        })?;
 
         tracing::info!(
             success = result.success(),
             updated_count = ?result.updated_feature_count(),
+            edit_moment = ?result.edit_moment(),
             "Calculate completed"
         );
 

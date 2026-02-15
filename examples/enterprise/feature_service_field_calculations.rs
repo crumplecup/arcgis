@@ -22,19 +22,42 @@
 //!
 //! # Usage
 //!
-//! This example requires authentication with a feature service that allows editing.
-//! Set the following environment variables in your `.env` file:
+//! This example requires authentication with a feature service that you own and control.
+//! **Important**: Public sample servers do not accept API key editing operations.
+//!
+//! ## Setup
+//!
+//! 1. Create your own hosted feature service in ArcGIS Online:
+//!    - Log into https://www.arcgis.com
+//!    - Go to Content → New Item → Feature Layer
+//!    - Create a simple layer with text fields (e.g., "eventtype", "description")
+//!    - Enable editing in the settings
+//!    - Copy the Feature Service URL (ends with /FeatureServer)
+//!
+//! 2. Set environment variables in your `.env` file:
 //!
 //! ```env
 //! ARCGIS_FEATURES_KEY=your_api_key_with_edit_privileges
-//! FEATURE_SERVICE_URL=https://your-server/arcgis/rest/services/YourService/FeatureServer
+//! FEATURE_SERVICE_URL=https://services.arcgis.com/YOUR_ORG/arcgis/rest/services/YOUR_SERVICE/FeatureServer
 //! LAYER_ID=0
 //! ```
 //!
-//! Run with:
+//! 3. Run the example:
+//!
 //! ```bash
 //! cargo run --example feature_service_field_calculations
+//!
+//! # With debug logging to see request/response details:
+//! RUST_LOG=debug cargo run --example feature_service_field_calculations
 //! ```
+//!
+//! ## Troubleshooting
+//!
+//! - **Error 498 "Invalid Token"**: Your API key doesn't have permissions for this service.
+//!   Make sure you own the service and the API key has editing privileges.
+//!
+//! - **Error 400 "Field does not exist"**: The layer schema doesn't match the example.
+//!   Update the field names in the example to match your layer's fields.
 
 use anyhow::{Context, Result};
 use arcgis::{
@@ -68,12 +91,21 @@ async fn main() -> Result<()> {
          This key is used for feature editing operations (add/update/delete/calculate).",
     )?;
 
-    // Get optional service URL and layer ID from environment
-    let service_url = std::env::var("FEATURE_SERVICE_URL").unwrap_or_else(|_| {
-        // Default to a public editable test service (if available)
-        // Note: In production, use a service you control
-        "https://sampleserver6.arcgisonline.com/arcgis/rest/services/LocalGovernment/Events/FeatureServer".to_string()
-    });
+    // Get service URL - REQUIRED for this example
+    let service_url = std::env::var("FEATURE_SERVICE_URL").context(
+        "FEATURE_SERVICE_URL not set. This example requires a feature service you own.\n\
+         \n\
+         Public sample servers reject API key editing operations.\n\
+         \n\
+         To run this example:\n\
+         1. Create a hosted feature service in ArcGIS Online (https://www.arcgis.com)\n\
+         2. Enable editing and add some text fields (eventtype, description)\n\
+         3. Set FEATURE_SERVICE_URL in .env:\n\
+         \n\
+         FEATURE_SERVICE_URL=https://services.arcgis.com/YOUR_ORG/arcgis/rest/services/YOUR_SERVICE/FeatureServer\n\
+         \n\
+         See example documentation for detailed setup instructions.",
+    )?;
 
     let layer_id_str = std::env::var("LAYER_ID").unwrap_or_else(|_| "0".to_string());
     let layer_id = LayerId::new(layer_id_str.parse::<u32>()?);
@@ -85,6 +117,10 @@ async fn main() -> Result<()> {
 
     tracing::info!("Connected to feature service: {}", service_url);
     tracing::info!("Using layer ID: {}", layer_id);
+    tracing::info!("");
+    tracing::info!("⚠️  Note: This example will add, modify, and delete features.");
+    tracing::info!("   Make sure you have a backup if using a production service.");
+    tracing::info!("");
 
     // ========================================
     // Setup: Add test features for calculation
