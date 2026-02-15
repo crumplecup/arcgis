@@ -232,7 +232,7 @@ impl<'a> ImageServiceClient<'a> {
     /// # Ok(())
     /// # }
     /// ```
-    #[instrument(skip(self, params))]
+    #[instrument(skip(self, params), fields(geometry_type))]
     pub async fn identify_with_params(
         &self,
         params: IdentifyParameters,
@@ -241,13 +241,37 @@ impl<'a> ImageServiceClient<'a> {
 
         let identify_url = format!("{}/identify", self.url);
 
-        let params_json = serde_json::to_string(&params)?;
+        // Build query parameters
+        let mut query_params = vec![
+            ("f", "json".to_string()),
+            ("geometry", params.geometry().to_string()),
+            ("geometryType", params.geometry_type().to_string()),
+        ];
+
+        // Add optional parameters
+        if let Some(sr) = params.geometry_sr() {
+            query_params.push(("geometrySR", sr.to_string()));
+        }
+        if let Some(return_geom) = params.return_geometry() {
+            query_params.push(("returnGeometry", return_geom.to_string()));
+        }
+        if let Some(return_catalog) = params.return_catalog_items() {
+            query_params.push(("returnCatalogItems", return_catalog.to_string()));
+        }
+        if let Some(mosaic_rule) = params.mosaic_rule() {
+            let mosaic_json = serde_json::to_string(mosaic_rule)?;
+            query_params.push(("mosaicRule", mosaic_json));
+        }
+        if let Some(rendering_rule) = params.rendering_rule() {
+            let rendering_json = serde_json::to_string(rendering_rule)?;
+            query_params.push(("renderingRule", rendering_json));
+        }
 
         let response = self
             .client
             .http()
             .get(&identify_url)
-            .query(&[("f", "json"), ("params", &params_json)])
+            .query(&query_params)
             .send()
             .await?;
 

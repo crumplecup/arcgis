@@ -181,23 +181,28 @@ pub struct IdentifyParameters {
 
     /// Mosaic rule.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     mosaic_rule: Option<MosaicRule>,
 
     /// Rendering rule.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     rendering_rule: Option<RenderingRule>,
 
     /// Spatial reference of input geometry.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "geometrySR")]
+    #[builder(default)]
     geometry_sr: Option<u32>,
 
     /// Return geometry.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_geometry: Option<bool>,
 
     /// Return catalog items.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     return_catalog_items: Option<bool>,
 }
 

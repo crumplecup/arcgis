@@ -167,6 +167,10 @@ name = "image_service_raster"
 path = "examples/enterprise/image_service_raster.rs"
 
 [[example]]
+name = "image_service_identify_advanced"
+path = "examples/enterprise/image_service_identify_advanced.rs"
+
+[[example]]
 name = "geoprocessing_tools"
 path = "examples/enterprise/geoprocessing_tools.rs"
 
