@@ -41,5 +41,6 @@ pub use parameters::{
     GPParameter, GPRasterDataLayer, GPString,
 };
 pub use types::{
-    GPExecuteResult, GPJobInfo, GPJobStatus, GPMessage, GPMessageType, GPResultParameter,
+    GPExecuteResult, GPJobInfo, GPJobStatus, GPMessage, GPMessageType, GPProgress,
+    GPResultParameter,
 };

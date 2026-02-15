@@ -44,8 +44,8 @@ pub use geometry::{
 };
 pub use geoprocessing::{
     GPBoolean, GPDataFile, GPDate, GPDouble, GPExecuteResult, GPFeatureRecordSetLayer, GPJobInfo,
-    GPJobStatus, GPLinearUnit, GPLong, GPMessage, GPMessageType, GPParameter, GPRasterDataLayer,
-    GPResultParameter, GPString, GeoprocessingServiceClient,
+    GPJobStatus, GPLinearUnit, GPLong, GPMessage, GPMessageType, GPParameter, GPProgress,
+    GPRasterDataLayer, GPResultParameter, GPString, GeoprocessingServiceClient,
 };
 pub use image::{
     ExportImageParameters, ExportImageParametersBuilder, ExportImageResult, HistogramParameters,

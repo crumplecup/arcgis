@@ -76,9 +76,17 @@ pub enum GPMessageType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum GPJobStatus {
+    /// Job has been created but not yet submitted.
+    #[serde(rename = "esriJobNew")]
+    New,
+
     /// Job has been submitted but not yet started.
     #[serde(rename = "esriJobSubmitted")]
     Submitted,
+
+    /// Job is being submitted.
+    #[serde(rename = "esriJobSubmitting")]
+    Submitting,
 
     /// Job is waiting in the queue.
     #[serde(rename = "esriJobWaiting")]
@@ -134,9 +142,31 @@ impl GPJobStatus {
     pub fn is_running(&self) -> bool {
         matches!(
             self,
-            GPJobStatus::Submitted | GPJobStatus::Waiting | GPJobStatus::Executing
+            GPJobStatus::New
+                | GPJobStatus::Submitted
+                | GPJobStatus::Submitting
+                | GPJobStatus::Waiting
+                | GPJobStatus::Executing
         )
     }
+}
+
+/// Progress information for a running geoprocessing job.
+///
+/// Available in ArcGIS Server 10.8.1+.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct GPProgress {
+    /// Type of progress indicator ("default" or "step").
+    #[serde(rename = "type")]
+    progress_type: String,
+
+    /// Progress message.
+    message: String,
+
+    /// Completion percentage (only for "step" type).
+    #[serde(default)]
+    percent: Option<f64>,
 }
 
 /// Information about an asynchronous geoprocessing job.
@@ -156,4 +186,12 @@ pub struct GPJobInfo {
     /// Results (only present when job succeeds).
     #[serde(default)]
     results: HashMap<String, GPResultParameter>,
+
+    /// Input parameters submitted with the job.
+    #[serde(default)]
+    inputs: HashMap<String, GPResultParameter>,
+
+    /// Progress information (available in ArcGIS Server 10.8.1+).
+    #[serde(default)]
+    progress: Option<GPProgress>,
 }
