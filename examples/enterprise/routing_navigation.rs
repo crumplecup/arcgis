@@ -7,10 +7,12 @@
 //! # What You'll Learn
 //!
 //! - **Multi-stop routing**: Optimize routes through multiple cities
-//! - **Service areas**: Generate drive-time polygons (30-minute zones)
+//! - **Service areas**: Generate drive-time polygons (15, 30, 45-minute zones)
 //! - **Closest facility**: Find nearest services (gas stations, rest stops)
+//! - **OD cost matrix**: Calculate travel times between multiple origins/destinations
 //! - **Error handling**: Graceful handling of routing failures
 //! - **Builder patterns**: Construct complex routing parameters
+//! - **Comprehensive assertions**: Validate all API responses
 //!
 //! # Prerequisites
 //!
@@ -42,7 +44,8 @@
 use anyhow::Result;
 use arcgis::{
     ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISGeometry, ArcGISPoint, ClosestFacilityParameters,
-    NALocation, RouteParameters, RoutingServiceClient, ServiceAreaParameters, TravelDirection,
+    NALocation, ODCostMatrixParameters, RouteParameters, RoutingServiceClient,
+    ServiceAreaParameters, TravelDirection,
 };
 
 /// World Routing Service endpoints
@@ -50,6 +53,7 @@ const ROUTE_SERVICE: &str =
     "https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World";
 const SERVICE_AREA_SERVICE: &str = "https://route-api.arcgis.com/arcgis/rest/services/World/ServiceAreas/NAServer/ServiceArea_World";
 const CLOSEST_FACILITY_SERVICE: &str = "https://route-api.arcgis.com/arcgis/rest/services/World/ClosestFacility/NAServer/ClosestFacility_World";
+const OD_COST_MATRIX_SERVICE: &str = "https://route-api.arcgis.com/arcgis/rest/services/World/OriginDestinationCostMatrix/NAServer/OriginDestinationCostMatrix_World";
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -73,6 +77,7 @@ async fn main() -> Result<()> {
     demonstrate_multi_stop_route(&client).await?;
     demonstrate_service_area(&client).await?;
     demonstrate_closest_facility(&client).await?;
+    demonstrate_od_cost_matrix(&client).await?;
 
     tracing::info!("\n✅ All routing examples completed successfully!");
     print_best_practices();
@@ -163,14 +168,39 @@ async fn demonstrate_service_area(client: &ArcGISClient) -> Result<()> {
         "✅ Service area polygons generated"
     );
 
+    // Validate results
+    anyhow::ensure!(
+        !service_area_result.service_area_polygons().is_empty(),
+        "Should generate at least one service area polygon"
+    );
+
+    anyhow::ensure!(
+        service_area_result.service_area_polygons().len() == 3,
+        "Should generate 3 polygons (for 15, 30, 45 min breaks), got {}",
+        service_area_result.service_area_polygons().len()
+    );
+
     tracing::info!("📊 Drive-time zones from San Francisco:");
     for (i, polygon) in service_area_result
         .service_area_polygons()
         .iter()
         .enumerate()
     {
+        anyhow::ensure!(
+            polygon.geometry().is_some(),
+            "Polygon {} should have geometry",
+            i + 1
+        );
+
         if let Some(from_break) = polygon.from_break() {
             if let Some(to_break) = polygon.to_break() {
+                anyhow::ensure!(
+                    from_break < to_break,
+                    "from_break ({}) should be less than to_break ({})",
+                    from_break,
+                    to_break
+                );
+
                 tracing::info!(
                     "   Zone {}: {}-{} minute drive time",
                     i + 1,
@@ -207,6 +237,7 @@ async fn demonstrate_closest_facility(client: &ArcGISClient) -> Result<()> {
         .default_target_facility_count(1) // Find closest 1
         .return_routes(true)
         .travel_direction(TravelDirection::ToFacility) // From incident to facility
+        .accumulate_attribute_names(vec!["Miles".to_string()]) // Request distance attribute
         .build()?;
 
     tracing::debug!("Finding nearest gas station");
@@ -219,9 +250,45 @@ async fn demonstrate_closest_facility(client: &ArcGISClient) -> Result<()> {
         "✅ Found closest facility route"
     );
 
+    // Validate results
+    anyhow::ensure!(
+        !closest_result.routes().is_empty(),
+        "Should find at least one route to closest facility"
+    );
+
+    anyhow::ensure!(
+        closest_result.routes().len() == 1,
+        "Should find exactly 1 route (defaultTargetFacilityCount=1), got {}",
+        closest_result.routes().len()
+    );
+
+    anyhow::ensure!(
+        !closest_result.facilities().is_empty(),
+        "Should have facilities in result"
+    );
+
+    anyhow::ensure!(
+        !closest_result.incidents().is_empty(),
+        "Should have incidents in result"
+    );
+
     if let Some(route) = closest_result.routes().first() {
         let distance_miles = route.total_length().unwrap_or(0.0);
         let time_minutes = route.total_time().unwrap_or(0.0);
+
+        anyhow::ensure!(
+            distance_miles > 0.0,
+            "Route distance should be positive, got {}",
+            distance_miles
+        );
+
+        anyhow::ensure!(
+            time_minutes > 0.0,
+            "Route time should be positive, got {}",
+            time_minutes
+        );
+
+        anyhow::ensure!(route.geometry().is_some(), "Route should have geometry");
 
         tracing::info!("⛽ Closest gas station:");
         tracing::info!("   Distance: {:.2} miles away", distance_miles);
@@ -246,6 +313,100 @@ async fn demonstrate_closest_facility(client: &ArcGISClient) -> Result<()> {
     Ok(())
 }
 
+/// Demonstrates origin-destination cost matrix calculation.
+///
+/// MINIMAL API USAGE: Only 2 origins × 2 destinations = 4 cost calculations.
+async fn demonstrate_od_cost_matrix(client: &ArcGISClient) -> Result<()> {
+    tracing::info!("\n=== Example 4: Travel Cost Matrix ===");
+    tracing::info!("Calculate all travel times between offices (2 origins × 2 destinations)");
+    tracing::info!("⚠️  Minimal usage: 2x2 matrix to conserve API credits");
+
+    let od_matrix_client = RoutingServiceClient::new(OD_COST_MATRIX_SERVICE, client);
+
+    // Origins: Company offices in Bay Area
+    let origin_sf = create_location(-122.4194, 37.7749, "SF Office");
+    let origin_oakland = create_location(-122.2711, 37.8044, "Oakland Office");
+
+    // Destinations: Client sites
+    let dest_san_jose = create_location(-121.8863, 37.3382, "San Jose Client");
+    let dest_palo_alto = create_location(-122.1430, 37.4419, "Palo Alto Client");
+
+    let od_params = ODCostMatrixParameters::builder()
+        .origins(vec![origin_sf, origin_oakland])
+        .destinations(vec![dest_san_jose, dest_palo_alto])
+        .accumulate_attribute_names(vec!["Miles".to_string()]) // Request distance attribute
+        .build()?;
+
+    tracing::debug!("Calculating OD cost matrix");
+    let od_result = od_matrix_client.generate_od_cost_matrix(od_params).await?;
+
+    tracing::info!(
+        od_line_count = od_result.od_lines().len(),
+        "✅ Cost matrix calculated"
+    );
+
+    // Validate results
+    anyhow::ensure!(
+        !od_result.od_lines().is_empty(),
+        "Should generate OD cost matrix lines"
+    );
+
+    anyhow::ensure!(
+        od_result.od_lines().len() == 4,
+        "Should generate 4 OD lines (2 origins × 2 destinations), got {}",
+        od_result.od_lines().len()
+    );
+
+    tracing::info!("📊 Travel time matrix:");
+    tracing::info!("   From → To                          Time    Distance");
+    tracing::info!("   ================================================");
+
+    for od_line in od_result.od_lines() {
+        let time_mins = od_line.total_time().unwrap_or(0.0);
+        let distance_miles = od_line.total_distance().unwrap_or(0.0);
+
+        anyhow::ensure!(
+            time_mins > 0.0,
+            "Travel time should be positive, got {}",
+            time_mins
+        );
+
+        anyhow::ensure!(
+            distance_miles > 0.0,
+            "Distance should be positive, got {}",
+            distance_miles
+        );
+
+        let origin_name = od_result
+            .origins()
+            .get(od_line.origin_id().unwrap_or(0) as usize - 1)
+            .and_then(|o| o.name().as_deref())
+            .unwrap_or("Unknown");
+
+        let dest_name = od_result
+            .destinations()
+            .get(od_line.destination_id().unwrap_or(0) as usize - 1)
+            .and_then(|d| d.name().as_deref())
+            .unwrap_or("Unknown");
+
+        tracing::info!(
+            "   {} → {}  {:>6.1} min  {:>7.2} mi",
+            origin_name,
+            dest_name,
+            time_mins,
+            distance_miles
+        );
+    }
+
+    tracing::info!("");
+    tracing::info!("💡 Use cases: Multi-location logistics, delivery route optimization");
+    tracing::info!("   - Compare all origin-destination pairs efficiently");
+    tracing::info!("   - No routes/directions - just travel costs (faster/cheaper)");
+    tracing::info!("   - Perfect for fleet dispatching and territory analysis");
+
+    Ok(())
+}
+
 /// Prints best practices for routing and navigation.
 fn print_best_practices() {
     tracing::info!("\n💡 Routing Best Practices:");
@@ -259,6 +420,7 @@ fn print_best_practices() {
     tracing::info!("   - Route: Multi-stop trip planning, delivery routes");
     tracing::info!("   - Service Area: Coverage analysis, accessibility zones");
     tracing::info!("   - Closest Facility: Emergency response, nearest service finder");
+    tracing::info!("   - OD Cost Matrix: Multi-location logistics, fleet dispatching");
     tracing::info!("");
     tracing::info!("⚡ Performance Tips:");
     tracing::info!("   - Batch multiple route calculations when possible");
@@ -271,6 +433,7 @@ fn print_best_practices() {
     tracing::info!("   - Optimized route (10+ stops): ~1.0 credits");
     tracing::info!("   - Service area: ~0.5 credits per facility");
     tracing::info!("   - Closest facility: ~0.5 credits");
+    tracing::info!("   - OD cost matrix (2×2): ~0.5 credits");
     tracing::info!("   ⚠️  Monitor your ArcGIS Online quota!");
 }
 

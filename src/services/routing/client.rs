@@ -393,12 +393,31 @@ impl<'a> RoutingServiceClient<'a> {
             ));
         }
 
+        // Always request facilities and incidents in response for validation
+        form.push(("returnFacilities", "true"));
+        form.push(("returnIncidents", "true"));
+
         if let Some(travel_direction) = params.travel_direction() {
             let direction_str = match travel_direction {
                 crate::TravelDirection::FromFacility => "esriNATravelDirectionFromFacility",
                 crate::TravelDirection::ToFacility => "esriNATravelDirectionToFacility",
             };
             form.push(("travelDirection", direction_str));
+        }
+
+        // Handle impedance attribute
+        let impedance_str;
+        if let Some(impedance) = params.impedance_attribute() {
+            impedance_str = serde_json::to_string(impedance)?;
+            let impedance_value = impedance_str.trim_matches('"');
+            form.push(("impedanceAttributeName", impedance_value));
+        }
+
+        // Handle accumulate attributes
+        let accumulate_str;
+        if let Some(accumulate) = params.accumulate_attribute_names() {
+            accumulate_str = accumulate.join(",");
+            form.push(("accumulateAttributeNames", accumulate_str.as_str()));
         }
 
         // Add token if required by auth provider
@@ -428,6 +447,8 @@ impl<'a> RoutingServiceClient<'a> {
 
         tracing::info!(
             route_count = result.routes().len(),
+            facility_count = result.facilities().len(),
+            incident_count = result.incidents().len(),
             "solve closest facility completed"
         );
 
@@ -482,7 +503,7 @@ impl<'a> RoutingServiceClient<'a> {
     ) -> Result<ODCostMatrixResult> {
         tracing::debug!("Generating OD cost matrix");
 
-        let url = format!("{}/generateOriginDestinationCostMatrix", self.base_url);
+        let url = format!("{}/solveODCostMatrix", self.base_url);
 
         tracing::debug!(url = %url, "Sending OD cost matrix request");
 
@@ -519,6 +540,21 @@ impl<'a> RoutingServiceClient<'a> {
 
         if let Some(ref out_sr) = out_sr_str {
             form.push(("outSR", out_sr.as_str()));
+        }
+
+        // Handle impedance attribute
+        let impedance_str;
+        if let Some(impedance) = params.impedance_attribute() {
+            impedance_str = serde_json::to_string(impedance)?;
+            let impedance_value = impedance_str.trim_matches('"');
+            form.push(("impedanceAttributeName", impedance_value));
+        }
+
+        // Handle accumulate attributes
+        let accumulate_str;
+        if let Some(accumulate) = params.accumulate_attribute_names() {
+            accumulate_str = accumulate.join(",");
+            form.push(("accumulateAttributeNames", accumulate_str.as_str()));
         }
 
         // Add token if required by auth provider

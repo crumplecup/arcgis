@@ -58,6 +58,51 @@ impl NALocation {
         self.curb_approach = Some(approach);
         self
     }
+
+    /// Extracts an NALocation from a FeatureSet Feature.
+    ///
+    /// Infallible - missing fields are represented as None.
+    pub(crate) fn from_feature(feature: &crate::Feature) -> Self {
+        tracing::debug!("Converting FeatureSet feature to NALocation");
+
+        let attrs = feature.attributes();
+
+        let name = attrs
+            .get("Name")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        let curb_approach = attrs
+            .get("CurbApproach")
+            .and_then(|v| v.as_i64())
+            .and_then(|i| match i {
+                0 => Some(CurbApproach::EitherSide),
+                1 => Some(CurbApproach::RightSide),
+                2 => Some(CurbApproach::LeftSide),
+                3 => Some(CurbApproach::NoUTurn),
+                _ => None,
+            });
+
+        // Convert old geometry type to new via JSON (temporary during migration)
+        let geometry = feature
+            .geometry()
+            .as_ref()
+            .and_then(|old_geom| {
+                serde_json::to_value(old_geom)
+                    .ok()
+                    .and_then(|v| serde_json::from_value(v).ok())
+            })
+            .unwrap_or(ArcGISGeometry::Point(crate::ArcGISPoint::new(0.0, 0.0)));
+
+        Self {
+            geometry,
+            name,
+            curb_approach,
+            bearing: None,
+            bearing_tolerance: None,
+            nav_latency: None,
+        }
+    }
 }
 
 /// Curb approach for navigating to a location.
@@ -549,20 +594,28 @@ pub struct Route {
     #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
 
-    /// Total length.
+    /// Total length (miles).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Total_Miles")]
+    #[serde(alias = "total_length")] // Accept both for backwards compatibility
     total_length: Option<f64>,
 
     /// Total time (minutes).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Total_TravelTime")]
+    #[serde(alias = "total_time")] // Accept both for backwards compatibility
     total_time: Option<f64>,
 
     /// Total drive time (minutes).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Total_DriveTime")]
+    #[serde(alias = "total_drive_time")] // Accept both for backwards compatibility
     total_drive_time: Option<f64>,
 
     /// Total wait time (minutes).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Total_WaitTime")]
+    #[serde(alias = "total_wait_time")] // Accept both for backwards compatibility
     total_wait_time: Option<f64>,
 
     /// Route geometry (polyline).
@@ -1099,46 +1152,26 @@ impl ClosestFacilityParameters {
 }
 
 /// Helper to deserialize closest facility feature sets.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(bound(deserialize = "T: serde::Deserialize<'de>"))]
-struct ClosestFacilityFeatureSet<T> {
-    #[serde(default)]
-    features: Vec<T>,
-}
-
-impl<T> Default for ClosestFacilityFeatureSet<T> {
-    fn default() -> Self {
-        Self {
-            features: Vec::new(),
-        }
-    }
-}
-
 /// Result from closest facility calculation.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ClosestFacilityResult {
     /// Routes from incidents to facilities.
-    #[serde(default)]
-    routes: ClosestFacilityFeatureSet<Route>,
+    routes: Vec<Route>,
 
-    /// Facilities that were analyzed.
-    #[serde(default)]
+    /// Facilities that were analyzed (returned as feature set).
     facilities: Vec<NALocation>,
 
-    /// Incidents that were analyzed.
-    #[serde(default)]
+    /// Incidents that were analyzed (returned as feature set).
     incidents: Vec<NALocation>,
 
     /// Messages from the solve operation.
-    #[serde(default)]
     messages: Vec<NAMessage>,
 }
 
 impl ClosestFacilityResult {
     /// Gets the routes.
     pub fn routes(&self) -> &[Route] {
-        &self.routes.features
+        &self.routes
     }
 
     /// Gets the facilities.
@@ -1154,6 +1187,105 @@ impl ClosestFacilityResult {
     /// Gets the messages.
     pub fn messages(&self) -> &[NAMessage] {
         &self.messages
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for ClosestFacilityResult {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::{MapAccess, Visitor};
+        use std::fmt;
+
+        struct ClosestFacilityResultVisitor;
+
+        impl<'de> Visitor<'de> for ClosestFacilityResultVisitor {
+            type Value = ClosestFacilityResult;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a ClosestFacilityResult with FeatureSet routes, facilities, and incidents")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: MapAccess<'de>,
+            {
+                let mut routes_fs: Option<crate::FeatureSet> = None;
+                let mut facilities_fs: Option<crate::FeatureSet> = None;
+                let mut incidents_fs: Option<crate::FeatureSet> = None;
+                let mut messages: Option<Vec<NAMessage>> = None;
+
+                while let Some(key) = map.next_key::<String>()? {
+                    match key.as_str() {
+                        "routes" => {
+                            routes_fs = Some(map.next_value()?);
+                        }
+                        "facilities" => {
+                            facilities_fs = Some(map.next_value()?);
+                        }
+                        "incidents" => {
+                            incidents_fs = Some(map.next_value()?);
+                        }
+                        "messages" => {
+                            messages = Some(map.next_value()?);
+                        }
+                        _ => {
+                            // Skip unknown fields
+                            let _: serde::de::IgnoredAny = map.next_value()?;
+                        }
+                    }
+                }
+
+                let routes_fs = routes_fs.unwrap_or_default();
+                let facilities_fs = facilities_fs.unwrap_or_default();
+                let incidents_fs = incidents_fs.unwrap_or_default();
+                let messages = messages.unwrap_or_default();
+
+                tracing::debug!(
+                    route_feature_count = routes_fs.features().len(),
+                    facility_feature_count = facilities_fs.features().len(),
+                    incident_feature_count = incidents_fs.features().len(),
+                    "Deserializing ClosestFacilityResult from FeatureSets"
+                );
+
+                // Convert FeatureSet features to Route objects using from_feature
+                let routes: Vec<Route> = routes_fs
+                    .features()
+                    .iter()
+                    .map(Route::from_feature)
+                    .collect();
+
+                // Convert FeatureSet features to NALocation objects
+                let facilities: Vec<NALocation> = facilities_fs
+                    .features()
+                    .iter()
+                    .map(NALocation::from_feature)
+                    .collect();
+
+                let incidents: Vec<NALocation> = incidents_fs
+                    .features()
+                    .iter()
+                    .map(NALocation::from_feature)
+                    .collect();
+
+                tracing::debug!(
+                    route_count = routes.len(),
+                    facility_count = facilities.len(),
+                    incident_count = incidents.len(),
+                    "Successfully deserialized ClosestFacilityResult"
+                );
+
+                Ok(ClosestFacilityResult {
+                    routes,
+                    facilities,
+                    incidents,
+                    messages,
+                })
+            }
+        }
+
+        deserializer.deserialize_map(ClosestFacilityResultVisitor)
     }
 }
 
@@ -1238,25 +1370,97 @@ impl ODCostMatrixParameters {
     }
 }
 
-/// Result from origin-destination cost matrix calculation.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+// Internal structure matching the API response
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct ODCostMatrixResponse {
+    #[serde(default, rename = "odCostMatrix")]
+    od_cost_matrix: ODCostMatrixData,
+    #[serde(default)]
+    messages: Vec<NAMessage>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct ODCostMatrixData {
+    #[serde(default)]
+    cost_attribute_names: Vec<String>,
+    #[serde(flatten)]
+    matrix: std::collections::HashMap<String, std::collections::HashMap<String, Vec<f64>>>,
+}
+
+/// Result from origin-destination cost matrix calculation.
+#[derive(Debug, Clone, PartialEq, Getters)]
 pub struct ODCostMatrixResult {
     /// Origin-destination cost matrix lines.
-    #[serde(default, rename = "odLines")]
     od_lines: Vec<ODLine>,
 
     /// Origins that were analyzed.
-    #[serde(default)]
     origins: Vec<NALocation>,
 
     /// Destinations that were analyzed.
-    #[serde(default)]
     destinations: Vec<NALocation>,
 
     /// Messages from the solve operation.
-    #[serde(default)]
     messages: Vec<NAMessage>,
+}
+
+impl<'de> serde::Deserialize<'de> for ODCostMatrixResult {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let response = ODCostMatrixResponse::deserialize(deserializer)?;
+
+        // Convert nested map to Vec<ODLine>
+        let mut od_lines = Vec::new();
+        for (origin_id_str, destinations) in response.od_cost_matrix.matrix {
+            // Skip costAttributeNames entry
+            if origin_id_str == "costAttributeNames" {
+                continue;
+            }
+
+            let origin_id = origin_id_str.parse::<i32>().ok();
+            for (dest_id_str, costs) in destinations {
+                let destination_id = dest_id_str.parse::<i32>().ok();
+
+                // Map cost values by name
+                let mut total_time = None;
+                let mut total_distance = None;
+
+                for (i, name) in response.od_cost_matrix.cost_attribute_names.iter().enumerate() {
+                    if i < costs.len() {
+                        match name.as_str() {
+                            "TravelTime" | "Minutes" => total_time = Some(costs[i]),
+                            "Miles" | "Kilometers" => total_distance = Some(costs[i]),
+                            _ => {}
+                        }
+                    }
+                }
+
+                od_lines.push(ODLine {
+                    origin_id,
+                    destination_id,
+                    total_time,
+                    total_distance,
+                    origin_name: None,
+                    destination_name: None,
+                });
+            }
+        }
+
+        tracing::debug!(
+            od_line_count = od_lines.len(),
+            "Deserialized OD cost matrix result"
+        );
+
+        Ok(ODCostMatrixResult {
+            od_lines,
+            origins: Vec::new(),
+            destinations: Vec::new(),
+            messages: response.messages,
+        })
+    }
 }
 
 /// An origin-destination cost matrix line.
