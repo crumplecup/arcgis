@@ -19,15 +19,15 @@ pub use elevation::{
     SummarizeElevationResult, ViewshedParameters, ViewshedParametersBuilder, ViewshedResult,
 };
 pub use feature::{
-    AddAttachmentResult, AttachmentInfo, AttachmentInfosResponse, AttachmentSource, CodedValue,
-    DeleteAttachmentResult, DeleteAttachmentsResponse, Domain, DownloadResult, DownloadTarget,
-    EditError, EditOptions, EditResult, EditResultItem, Feature, FeatureQueryParams,
-    FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet, FeatureStatisticsResponse,
-    FieldCalculation, LayerDomainInfo, QueryBuilder, QueryDomainsResponse, RelatedRecordGroup,
-    RelatedRecordsParams, RelatedRecordsParamsBuilder, RelatedRecordsResponse, RelationshipClass,
-    RelationshipRule, RelationshipsResponse, ResponseFormat, StatisticDefinition, StatisticType,
-    Subtype, TopFeaturesParams, TopFeaturesParamsBuilder, TopFilter, TruncateResult,
-    UpdateAttachmentResult,
+    AddAttachmentResult, AttachmentInfo, AttachmentInfosResponse, AttachmentSource,
+    CalculateResult, CodedValue, DeleteAttachmentResult, DeleteAttachmentsResponse, Domain,
+    DownloadResult, DownloadTarget, EditError, EditOptions, EditResult, EditResultItem, Feature,
+    FeatureQueryParams, FeatureQueryParamsBuilder, FeatureServiceClient, FeatureSet,
+    FeatureStatisticsResponse, FieldCalculation, LayerDomainInfo, QueryBuilder,
+    QueryDomainsResponse, RelatedRecordGroup, RelatedRecordsParams, RelatedRecordsParamsBuilder,
+    RelatedRecordsResponse, RelationshipClass, RelationshipRule, RelationshipsResponse,
+    ResponseFormat, StatisticDefinition, StatisticType, Subtype, TopFeaturesParams,
+    TopFeaturesParamsBuilder, TopFilter, TruncateResult, UpdateAttachmentResult,
 };
 pub use geocode::{
     AddressCandidate, BatchGeocodeRecord, BatchGeocodeResponse, BatchLocation, Category, Extent,

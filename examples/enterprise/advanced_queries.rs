@@ -516,10 +516,7 @@ async fn demonstrate_feature_count(
     // Count with complex WHERE clause
     tracing::debug!("Counting features with complex criteria");
     let complex_count = service
-        .query_feature_count(
-            layer_id,
-            "req_type IS NOT NULL AND district IS NOT NULL",
-        )
+        .query_feature_count(layer_id, "req_type IS NOT NULL AND district IS NOT NULL")
         .await?;
 
     tracing::info!(
@@ -664,7 +661,10 @@ async fn demonstrate_query_with_params(
             );
         }
 
-        tracing::info!("✅ query_with_params verified: {} results returned", result_count);
+        tracing::info!(
+            "✅ query_with_params verified: {} results returned",
+            result_count
+        );
     } else {
         tracing::warn!(
             "No results for Downtown district - this district may not exist in sample data. \

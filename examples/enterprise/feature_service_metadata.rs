@@ -171,10 +171,7 @@ async fn demonstrate_layer_definition(service: &FeatureServiceClient<'_>) -> Res
     tracing::info!("   Field count: {}", layer_def.fields().len());
 
     // Validate layer metadata
-    anyhow::ensure!(
-        !layer_def.name().is_empty(),
-        "Layer should have a name"
-    );
+    anyhow::ensure!(!layer_def.name().is_empty(), "Layer should have a name");
 
     anyhow::ensure!(
         !layer_def.fields().is_empty(),
@@ -320,7 +317,10 @@ async fn demonstrate_layer_definition(service: &FeatureServiceClient<'_>) -> Res
     );
 
     for (idx, field) in string_fields.iter().take(5).enumerate() {
-        let length = field.length().map(|l| l.to_string()).unwrap_or_else(|| "N/A".to_string());
+        let length = field
+            .length()
+            .map(|l| l.to_string())
+            .unwrap_or_else(|| "N/A".to_string());
         tracing::info!(
             "     {}. {} (max length: {})",
             idx + 1,

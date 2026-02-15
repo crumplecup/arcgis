@@ -77,9 +77,7 @@ async fn main() -> Result<()> {
 }
 
 /// Demonstrates get_job_status() for manual polling.
-async fn demonstrate_manual_status_polling(
-    service: &GeoprocessingServiceClient<'_>,
-) -> Result<()> {
+async fn demonstrate_manual_status_polling(service: &GeoprocessingServiceClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 1: Manual Status Polling (get_job_status) ===");
     tracing::info!("Testing get_job_status() method with comprehensive validation");
     tracing::info!("");
@@ -97,10 +95,7 @@ async fn demonstrate_manual_status_polling(
     tracing::info!("");
 
     // Validate initial job info
-    anyhow::ensure!(
-        !job_id.is_empty(),
-        "Job ID should not be empty"
-    );
+    anyhow::ensure!(!job_id.is_empty(), "Job ID should not be empty");
 
     anyhow::ensure!(
         job_info.job_status().is_running() || job_info.job_status().is_terminal(),
@@ -318,9 +313,7 @@ async fn demonstrate_messages_retrieval(service: &GeoprocessingServiceClient<'_>
 }
 
 /// Demonstrates get_job_result() and get_result_data().
-async fn demonstrate_result_data_access(
-    service: &GeoprocessingServiceClient<'_>,
-) -> Result<()> {
+async fn demonstrate_result_data_access(service: &GeoprocessingServiceClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 3: Result Data Access (get_job_result, get_result_data) ===");
     tracing::info!("Testing result retrieval methods");
     tracing::info!("");
@@ -346,10 +339,7 @@ async fn demonstrate_result_data_access(
     let result = service.get_job_result(&job_id).await?;
 
     // Validate result
-    anyhow::ensure!(
-        result.job_id() == &job_id,
-        "Result job_id should match"
-    );
+    anyhow::ensure!(result.job_id() == &job_id, "Result job_id should match");
 
     anyhow::ensure!(
         *result.job_status() == GPJobStatus::Succeeded,
@@ -381,7 +371,10 @@ async fn demonstrate_result_data_access(
         if param.value().is_some() {
             tracing::info!("     ✅ Value present");
         } else if param.param_url().is_some() {
-            tracing::info!("     ✅ URL present: {}", param.param_url().as_ref().unwrap());
+            tracing::info!(
+                "     ✅ URL present: {}",
+                param.param_url().as_ref().unwrap()
+            );
 
             // Test get_result_data() if paramUrl is present
             tracing::info!("     Testing get_result_data() for this parameter...");
@@ -407,9 +400,7 @@ async fn demonstrate_result_data_access(
 }
 
 /// Demonstrates synchronous execution with execute().
-async fn demonstrate_synchronous_execution(
-    service: &GeoprocessingServiceClient<'_>,
-) -> Result<()> {
+async fn demonstrate_synchronous_execution(service: &GeoprocessingServiceClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 4: Synchronous Execution (execute) ===");
     tracing::info!("Testing execute() method for sync tasks");
     tracing::info!("");
@@ -463,10 +454,7 @@ async fn demonstrate_synchronous_execution(
 
             // This validates that the method itself works - it's calling the API
             // and getting a response (even if it's an error response)
-            anyhow::ensure!(
-                !error_msg.is_empty(),
-                "Error should have a message"
-            );
+            anyhow::ensure!(!error_msg.is_empty(), "Error should have a message");
 
             tracing::info!("");
             tracing::info!("💡 execute() validation:");

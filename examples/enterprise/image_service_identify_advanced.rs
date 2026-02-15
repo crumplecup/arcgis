@@ -235,7 +235,11 @@ async fn demonstrate_spatial_reference(service: &ImageServiceClient<'_>) -> Resu
     tracing::info!("🌐 Result with Web Mercator input (EPSG:3857):");
     if let Some(value) = result.value() {
         tracing::info!("   Land Cover Class: {}", value);
-        tracing::info!("   Input Coords (Web Mercator): x={}, y={}", point_wm.x(), point_wm.y());
+        tracing::info!(
+            "   Input Coords (Web Mercator): x={}, y={}",
+            point_wm.x(),
+            point_wm.y()
+        );
         tracing::info!("   ✅ geometry_sr parameter accepted by service");
 
         // NoData is valid for out-of-bounds, but numeric classes should be in range

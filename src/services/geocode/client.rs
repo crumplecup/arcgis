@@ -726,5 +726,4 @@ impl<'a> GeocodeServiceClient<'a> {
 
         Ok(batch_response)
     }
-
 }

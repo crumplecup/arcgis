@@ -12,7 +12,10 @@
 //! This example uses a "Web Mapping Application" item type which requires only
 //! metadata and a URL - no file uploads or complex data handling.
 
-use arcgis::{AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, PortalClient, Result, SharingParameters, UpdateItemParams};
+use arcgis::{
+    AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, PortalClient, Result, SharingParameters,
+    UpdateItemParams,
+};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -131,7 +134,9 @@ async fn main() -> Result<()> {
     if *unshare_result.success() {
         tracing::info!("✅ Unshared from organization");
     } else {
-        tracing::warn!("⚠️  Unshare returned success=false (may be API key permission restriction)");
+        tracing::warn!(
+            "⚠️  Unshare returned success=false (may be API key permission restriction)"
+        );
     }
     tracing::info!("");
 

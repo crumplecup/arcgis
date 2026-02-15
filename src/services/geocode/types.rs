@@ -358,4 +358,3 @@ pub struct BatchLocation {
     #[serde(default)]
     attributes: HashMap<String, serde_json::Value>,
 }
-

@@ -205,3 +205,7 @@ path = "examples/enterprise/feature_service_metadata.rs"
 [[example]]
 name = "geocoding_batch_operations"
 path = "examples/enterprise/geocoding_batch_operations.rs"
+
+[[example]]
+name = "feature_service_field_calculations"
+path = "examples/enterprise/feature_service_field_calculations.rs"

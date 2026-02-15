@@ -868,16 +868,76 @@ pub struct Subtype {
 
 /// Field calculation expression for calculateRecords operation.
 ///
-/// Defines a field and the SQL expression to calculate its value.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_new::new)]
+/// Defines a field and either a scalar value or SQL expression to calculate its value.
+/// Either `value` or `sql_expression` must be provided, but not both.
+///
+/// # Example
+///
+/// ```rust
+/// use arcgis::FieldCalculation;
+/// use serde_json::json;
+///
+/// // Using a scalar value
+/// let calc1 = FieldCalculation::with_value("Quality", json!(3));
+///
+/// // Using a SQL expression
+/// let calc2 = FieldCalculation::with_sql_expression("Area", "SHAPE_AREA * 0.0001");
+/// ```
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FieldCalculation {
     /// Name of the field to update.
     field: String,
 
+    /// Scalar value to assign to the field.
+    ///
+    /// Mutually exclusive with `sql_expression`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    value: Option<serde_json::Value>,
+
     /// SQL expression to calculate the field value.
-    #[serde(rename = "sqlExpression")]
-    sql_expression: String,
+    ///
+    /// Mutually exclusive with `value`.
+    #[serde(rename = "sqlExpression", skip_serializing_if = "Option::is_none")]
+    sql_expression: Option<String>,
+}
+
+impl FieldCalculation {
+    /// Creates a field calculation with a scalar value.
+    pub fn with_value(field: impl Into<String>, value: serde_json::Value) -> Self {
+        Self {
+            field: field.into(),
+            value: Some(value),
+            sql_expression: None,
+        }
+    }
+
+    /// Creates a field calculation with a SQL expression.
+    pub fn with_sql_expression(
+        field: impl Into<String>,
+        sql_expression: impl Into<String>,
+    ) -> Self {
+        Self {
+            field: field.into(),
+            value: None,
+            sql_expression: Some(sql_expression.into()),
+        }
+    }
+
+    /// Returns the field name.
+    pub fn field(&self) -> &str {
+        &self.field
+    }
+
+    /// Returns the scalar value, if set.
+    pub fn value(&self) -> Option<&serde_json::Value> {
+        self.value.as_ref()
+    }
+
+    /// Returns the SQL expression, if set.
+    pub fn sql_expression(&self) -> Option<&str> {
+        self.sql_expression.as_deref()
+    }
 }
 
 // ==================== Relationship Classes ====================

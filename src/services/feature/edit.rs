@@ -196,6 +196,24 @@ pub struct EditOptions {
     pub session_id: Option<SessionId>,
 }
 
+/// Result of a calculate operation.
+///
+/// Returned by the Calculate endpoint when performing bulk field calculations.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct CalculateResult {
+    /// Whether the calculation succeeded
+    success: bool,
+
+    /// Number of features updated
+    #[serde(default)]
+    updated_feature_count: Option<i64>,
+
+    /// Timestamp of the edit (epoch milliseconds)
+    #[serde(default)]
+    edit_moment: Option<i64>,
+}
+
 impl Default for EditOptions {
     fn default() -> Self {
         Self {

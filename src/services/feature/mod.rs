@@ -17,7 +17,7 @@ pub use attachment::{
     UpdateAttachmentResult,
 };
 pub use client::FeatureServiceClient;
-pub use edit::{EditError, EditOptions, EditResult, EditResultItem};
+pub use edit::{CalculateResult, EditError, EditOptions, EditResult, EditResultItem};
 pub use query::QueryBuilder;
 pub use types::{
     CodedValue, Domain, Feature, FeatureQueryParams, FeatureQueryParamsBuilder, FeatureSet,

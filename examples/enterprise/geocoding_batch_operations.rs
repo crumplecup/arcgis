@@ -118,7 +118,10 @@ async fn demonstrate_batch_geocode(geocoder: &GeocodeServiceClient<'_>) -> Resul
         response.locations().len()
     );
 
-    tracing::info!("✅ Successfully geocoded {} addresses", response.locations().len());
+    tracing::info!(
+        "✅ Successfully geocoded {} addresses",
+        response.locations().len()
+    );
     tracing::info!("");
 
     // Display results
@@ -206,11 +209,7 @@ async fn demonstrate_advanced_options(geocoder: &GeocodeServiceClient<'_>) -> Re
     let precise_address = "380 New York St, Redlands, CA";
 
     let response_rooftop = geocoder
-        .find_address_candidates_with_options(
-            precise_address,
-            Some(5),
-            Some(LocationType::Rooftop),
-        )
+        .find_address_candidates_with_options(precise_address, Some(5), Some(LocationType::Rooftop))
         .await?;
 
     anyhow::ensure!(

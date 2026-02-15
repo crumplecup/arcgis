@@ -540,7 +540,7 @@ impl<'a> FeatureServiceClient<'a> {
         where_clause: impl Into<String>,
         calc_expression: Vec<crate::FieldCalculation>,
         options: EditOptions,
-    ) -> Result<EditResult> {
+    ) -> Result<crate::CalculateResult> {
         tracing::debug!("Calculating field values");
 
         let url = format!("{}/{}/calculate", self.base_url, layer_id);
@@ -593,11 +593,11 @@ impl<'a> FeatureServiceClient<'a> {
 
         let response_text = response.text().await?;
         check_esri_error(&response_text, "calculate")?;
-        let result: EditResult = serde_json::from_str(&response_text)?;
+        let result: crate::CalculateResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(
-            success_count = result.success_count(),
-            failure_count = result.failure_count(),
+            success = result.success(),
+            updated_count = ?result.updated_feature_count(),
             "Calculate completed"
         );
 
