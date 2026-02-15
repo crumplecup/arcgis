@@ -189,3 +189,7 @@ path = "examples/enterprise/elevation_async_analysis.rs"
 [[example]]
 name = "advanced_queries"
 path = "examples/enterprise/advanced_queries.rs"
+
+[[example]]
+name = "feature_service_metadata"
+path = "examples/enterprise/feature_service_metadata.rs"
