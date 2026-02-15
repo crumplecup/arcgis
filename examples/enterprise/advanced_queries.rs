@@ -1,20 +1,24 @@
 //! Advanced Feature Service query examples.
 //!
 //! This example demonstrates advanced Feature Service query capabilities:
-//! - Related record queries (find related records across tables)
-//! - Top N features queries (top features by ranking within groups)
 //! - Statistical aggregations (COUNT, SUM, AVG, MIN, MAX with GROUP BY)
 //! - Pagination patterns (manual pagination for large datasets)
+//! - Feature count queries (efficient server-side counting)
+//! - Advanced query parameters (distinct values, complex filters)
+//! - Related record queries (find related records across tables)
+//! - Top N features queries (top features by ranking within groups)
 //! - Domain lookups (get valid coded values for fields)
 //!
 //! # Use Case: SF311 Service Request Analysis
 //!
 //! This example uses SF311 service requests to demonstrate:
 //! 1. Calculating statistics by request type
-//! 2. Finding top 5 requests by district
-//! 3. Paginating through large result sets efficiently
-//! 4. Related records queries (optional - requires relationship classes)
-//! 5. Domain lookups (optional - requires domain definitions)
+//! 2. Paginating through large result sets efficiently
+//! 3. Counting features without transferring data
+//! 4. Using query_with_params for advanced query control
+//! 5. Finding top 5 requests by district (optional - newer services)
+//! 6. Related records queries (optional - requires relationship classes)
+//! 7. Domain lookups (optional - requires domain definitions)
 //!
 //! # Prerequisites
 //!
@@ -38,8 +42,8 @@
 
 use anyhow::Result;
 use arcgis::{
-    ArcGISClient, FeatureServiceClient, LayerId, NoAuth, ObjectId, RelatedRecordsParams,
-    StatisticDefinition, StatisticType, TopFeaturesParams, TopFilter,
+    ArcGISClient, FeatureQueryParams, FeatureServiceClient, LayerId, NoAuth, ObjectId,
+    RelatedRecordsParams, StatisticDefinition, StatisticType, TopFeaturesParams, TopFilter,
 };
 use tracing::instrument;
 
@@ -100,6 +104,8 @@ async fn main() -> Result<()> {
     // Demonstrate advanced query operations
     demonstrate_statistical_aggregations(&service, layer_id).await?;
     demonstrate_pagination_strategies(&service, layer_id).await?;
+    demonstrate_feature_count(&service, layer_id).await?;
+    demonstrate_query_with_params(&service, layer_id).await?;
 
     // Note: Advanced features require specific service configurations
     tracing::info!("\n⚠️  Note: Some advanced queries require newer service versions:");
@@ -463,6 +469,213 @@ async fn demonstrate_pagination_strategies(
     Ok(())
 }
 
+/// Demonstrates efficient feature counting without returning feature data.
+///
+/// This function shows how to:
+/// - Count all features in a layer
+/// - Count features matching specific criteria
+/// - Verify count-only queries are more efficient than full queries
+///
+/// `query_feature_count` returns only the count, making it much faster
+/// and more bandwidth-efficient than querying features and counting client-side.
+#[instrument(skip(service), fields(layer_id = %layer_id))]
+async fn demonstrate_feature_count(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> Result<()> {
+    tracing::info!("\n=== Example 4: Feature Count Queries ===");
+    tracing::info!("Efficiently count features without transferring data");
+    tracing::debug!("Using query_feature_count for server-side counting");
+
+    // Count all features
+    tracing::debug!("Counting all features in layer");
+    let total_count = service.query_feature_count(layer_id, "1=1").await?;
+
+    tracing::info!(
+        total_features = total_count,
+        "Total features in layer (all records)"
+    );
+
+    // Verify service has features
+    anyhow::ensure!(
+        total_count > 0,
+        "Layer contains no features. Expected at least some records for counting demonstration."
+    );
+
+    // Count features matching specific criteria
+    tracing::debug!("Counting features with specific request type");
+    let graffiti_count = service
+        .query_feature_count(layer_id, "req_type LIKE 'Graffiti%'")
+        .await?;
+
+    tracing::info!(
+        graffiti_requests = graffiti_count,
+        "Features matching 'Graffiti' request type"
+    );
+
+    // Count with complex WHERE clause
+    tracing::debug!("Counting features with complex criteria");
+    let complex_count = service
+        .query_feature_count(
+            layer_id,
+            "req_type IS NOT NULL AND district IS NOT NULL",
+        )
+        .await?;
+
+    tracing::info!(
+        features_with_type_and_district = complex_count,
+        "Features with both request type and district"
+    );
+
+    // Verify counts are reasonable
+    anyhow::ensure!(
+        complex_count <= total_count,
+        "Filtered count ({}) cannot exceed total count ({})",
+        complex_count,
+        total_count
+    );
+
+    anyhow::ensure!(
+        graffiti_count <= total_count,
+        "Graffiti count ({}) cannot exceed total count ({})",
+        graffiti_count,
+        total_count
+    );
+
+    tracing::info!(
+        "✅ Count queries verified: Graffiti={}, Complex={}, Total={}",
+        graffiti_count,
+        complex_count,
+        total_count
+    );
+
+    tracing::debug!("Feature count demonstration complete");
+    Ok(())
+}
+
+/// Demonstrates query_with_params for advanced query control.
+///
+/// This function shows how to:
+/// - Use FeatureQueryParams builder for complex queries
+/// - Query distinct values (unique field values)
+/// - Combine multiple query parameters
+/// - Control exactly which fields are returned
+///
+/// `query_with_params` gives lower-level control compared to the query builder,
+/// useful when you need specific parameter combinations.
+#[instrument(skip(service), fields(layer_id = %layer_id))]
+async fn demonstrate_query_with_params(
+    service: &FeatureServiceClient<'_>,
+    layer_id: LayerId,
+) -> Result<()> {
+    tracing::info!("\n=== Example 5: Advanced Query with Params ===");
+    tracing::info!("Use FeatureQueryParams for fine-grained query control");
+
+    // Example 1: Query with specific field filtering (advanced params)
+    tracing::debug!("Building FeatureQueryParams for selective field query");
+    let selective_params = FeatureQueryParams::builder()
+        .where_clause("req_type IS NOT NULL")
+        .out_fields(vec!["req_type".to_string(), "district".to_string()])
+        .return_geometry(false)
+        .result_record_count(10u32) // Limit results
+        .order_by_fields(vec!["req_type ASC".to_string()])
+        .build()
+        .expect("Valid query params");
+
+    tracing::debug!("Executing query_with_params with selective fields");
+    let selective_result = service
+        .query_with_params(layer_id, selective_params)
+        .await?;
+
+    let result_count = selective_result.features().len();
+    tracing::info!(
+        features_returned = result_count,
+        "Selective field query completed"
+    );
+
+    // Verify we got results
+    anyhow::ensure!(
+        result_count > 0,
+        "Expected results from selective field query. Service may have no data."
+    );
+
+    // Display first few results
+    tracing::info!("Sample results with selected fields:");
+    for (idx, feature) in selective_result.features().iter().take(5).enumerate() {
+        let req_type = feature.attributes().get("req_type");
+        let district = feature.attributes().get("district");
+        tracing::info!(
+            item = idx + 1,
+            request_type = ?req_type,
+            district = ?district,
+            "Selective field result"
+        );
+
+        // Verify field exists
+        anyhow::ensure!(
+            req_type.is_some(),
+            "Selective query should return req_type field"
+        );
+    }
+
+    // Example 2: Complex query with multiple parameters
+    tracing::debug!("Building complex FeatureQueryParams with multiple filters");
+    let complex_params = FeatureQueryParams::builder()
+        .where_clause("district = 'Downtown' AND req_type IS NOT NULL")
+        .out_fields(vec![
+            "req_type".to_string(),
+            "address".to_string(),
+            "district".to_string(),
+        ])
+        .return_geometry(false)
+        .result_record_count(10u32)
+        .order_by_fields(vec!["req_type ASC".to_string()])
+        .build()
+        .expect("Valid query params");
+
+    tracing::debug!("Executing complex query_with_params");
+    let complex_result = service.query_with_params(layer_id, complex_params).await?;
+
+    let result_count = complex_result.features().len();
+    tracing::info!(
+        downtown_requests = result_count,
+        exceeded_limit = complex_result.exceeded_transfer_limit(),
+        "Downtown district requests"
+    );
+
+    // Display results
+    if result_count > 0 {
+        tracing::info!("Sample Downtown requests:");
+        for (idx, feature) in complex_result.features().iter().take(3).enumerate() {
+            let req_type = feature.attributes().get("req_type");
+            let address = feature.attributes().get("address");
+
+            tracing::info!(
+                item = idx + 1,
+                request_type = ?req_type,
+                address = ?address,
+                "Downtown request"
+            );
+
+            // Verify expected fields are present
+            anyhow::ensure!(
+                req_type.is_some(),
+                "Result missing req_type field from out_fields"
+            );
+        }
+
+        tracing::info!("✅ query_with_params verified: {} results returned", result_count);
+    } else {
+        tracing::warn!(
+            "No results for Downtown district - this district may not exist in sample data. \
+             This is acceptable for demonstration purposes."
+        );
+    }
+
+    tracing::debug!("query_with_params demonstration complete");
+    Ok(())
+}
+
 /// Demonstrates querying related records across relationship classes.
 ///
 /// **Note:** This requires a service with relationship classes defined.
@@ -666,6 +879,20 @@ fn print_best_practices() {
     tracing::info!("   - Use resultOffset/resultRecordCount for manual control");
     tracing::info!("   - Monitor exceededTransferLimit to detect more data");
     tracing::info!("   - Page size affects performance: 100-1000 is typical");
+    tracing::info!("");
+    tracing::info!("🔢 Feature Counting:");
+    tracing::info!("   - Use query_feature_count for server-side counting");
+    tracing::info!("   - Much faster than querying all features and counting");
+    tracing::info!("   - Reduces bandwidth - only count is transferred");
+    tracing::info!("   - Supports WHERE clauses for filtered counts");
+    tracing::info!("   - Perfect for pagination (get total before fetching pages)");
+    tracing::info!("");
+    tracing::info!("🔧 Advanced Parameters:");
+    tracing::info!("   - query_with_params: Lower-level control vs query builder");
+    tracing::info!("   - returnDistinctValues: Get unique field values efficiently");
+    tracing::info!("   - Use specific out_fields to reduce response size");
+    tracing::info!("   - Combine multiple parameters for complex queries");
+    tracing::info!("   - Distinct queries useful for populating dropdowns");
     tracing::info!("");
     tracing::info!("🔗 Relationships:");
     tracing::info!("   - Query related records instead of joining tables");
