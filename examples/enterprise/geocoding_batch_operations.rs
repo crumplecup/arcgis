@@ -47,7 +47,7 @@
 
 use anyhow::Result;
 use arcgis::{
-    ApiKeyAuth, ApiKeyTier, ArcGISClient, GeocodeAddress, GeocodeServiceClient, LocationType,
+    ApiKeyAuth, ApiKeyTier, ArcGISClient, BatchGeocodeRecord, GeocodeServiceClient, LocationType,
 };
 
 /// ArcGIS World Geocoding Service URL
@@ -90,12 +90,12 @@ async fn demonstrate_batch_geocode(geocoder: &GeocodeServiceClient<'_>) -> Resul
     tracing::info!("Process multiple addresses in a single API request");
     tracing::info!("");
 
-    // Prepare batch addresses
+    // Prepare batch addresses using single-line format
     let addresses = vec![
-        GeocodeAddress::new("380 New York St, Redlands, CA 92373"),
-        GeocodeAddress::new("1 Microsoft Way, Redmond, WA"),
-        GeocodeAddress::new("1600 Amphitheatre Parkway, Mountain View, CA"),
-        GeocodeAddress::new("1 Infinite Loop, Cupertino, CA"),
+        BatchGeocodeRecord::with_single_line(1, "380 New York St, Redlands, CA 92373"),
+        BatchGeocodeRecord::with_single_line(2, "1 Microsoft Way, Redmond, WA"),
+        BatchGeocodeRecord::with_single_line(3, "1600 Amphitheatre Parkway, Mountain View, CA"),
+        BatchGeocodeRecord::with_single_line(4, "1 Infinite Loop, Cupertino, CA"),
     ];
 
     tracing::info!(

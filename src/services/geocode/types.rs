@@ -232,6 +232,105 @@ impl GeocodeAddress {
     }
 }
 
+/// A single address record for batch geocoding requests.
+///
+/// For geocodeAddresses API, each record must have an OBJECTID and address components.
+/// You can use either single-field format (SingleLine) or multi-field format.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_new::new)]
+pub struct BatchGeocodeRecord {
+    /// Unique identifier for this record (required by API).
+    #[serde(rename = "OBJECTID")]
+    object_id: i32,
+
+    /// Complete address as single string (use this OR multi-field format).
+    #[serde(rename = "SingleLine", skip_serializing_if = "Option::is_none")]
+    #[new(default)]
+    single_line: Option<String>,
+
+    /// Street address (for multi-field format).
+    #[serde(rename = "Address", skip_serializing_if = "Option::is_none")]
+    #[new(default)]
+    address: Option<String>,
+
+    /// City name (for multi-field format).
+    #[serde(rename = "City", skip_serializing_if = "Option::is_none")]
+    #[new(default)]
+    city: Option<String>,
+
+    /// Region/state (for multi-field format).
+    #[serde(rename = "Region", skip_serializing_if = "Option::is_none")]
+    #[new(default)]
+    region: Option<String>,
+
+    /// Postal/ZIP code (for multi-field format).
+    #[serde(rename = "Postal", skip_serializing_if = "Option::is_none")]
+    #[new(default)]
+    postal: Option<String>,
+
+    /// Country code (optional).
+    #[serde(rename = "CountryCode", skip_serializing_if = "Option::is_none")]
+    #[new(default)]
+    country_code: Option<String>,
+}
+
+impl BatchGeocodeRecord {
+    /// Creates a record with a single-line address.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use arcgis::BatchGeocodeRecord;
+    ///
+    /// let record = BatchGeocodeRecord::with_single_line(1, "380 New York St, Redlands, CA 92373");
+    /// ```
+    pub fn with_single_line(object_id: i32, address: impl Into<String>) -> Self {
+        Self {
+            object_id,
+            single_line: Some(address.into()),
+            address: None,
+            city: None,
+            region: None,
+            postal: None,
+            country_code: None,
+        }
+    }
+
+    /// Creates a record with multi-field address components.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use arcgis::BatchGeocodeRecord;
+    ///
+    /// let record = BatchGeocodeRecord::with_components(
+    ///     1,
+    ///     "380 New York St",
+    ///     Some("Redlands"),
+    ///     Some("CA"),
+    ///     Some("92373"),
+    ///     None,
+    /// );
+    /// ```
+    pub fn with_components(
+        object_id: i32,
+        address: impl Into<String>,
+        city: Option<impl Into<String>>,
+        region: Option<impl Into<String>>,
+        postal: Option<impl Into<String>>,
+        country_code: Option<impl Into<String>>,
+    ) -> Self {
+        Self {
+            object_id,
+            single_line: None,
+            address: Some(address.into()),
+            city: city.map(Into::into),
+            region: region.map(Into::into),
+            postal: postal.map(Into::into),
+            country_code: country_code.map(Into::into),
+        }
+    }
+}
+
 /// Response from batch geocoding (geocodeAddresses).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
 pub struct BatchGeocodeResponse {

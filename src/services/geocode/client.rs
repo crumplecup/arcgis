@@ -651,15 +651,15 @@ impl<'a> GeocodeServiceClient<'a> {
     /// # Example
     ///
     /// ```no_run
-    /// use arcgis::{ApiKeyAuth, ArcGISClient, GeocodeServiceClient, GeocodeAddress};
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, GeocodeServiceClient, BatchGeocodeRecord};
     ///
     /// # async fn example() -> arcgis::Result<()> {
     /// # let auth = ApiKeyAuth::new("YOUR_API_KEY");
     /// # let client = ArcGISClient::new(auth);
     /// # let geocoder = GeocodeServiceClient::new("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer", &client);
     /// let addresses = vec![
-    ///     GeocodeAddress::new("380 New York St, Redlands, CA 92373"),
-    ///     GeocodeAddress::new("1 World Way, Los Angeles, CA 90045"),
+    ///     BatchGeocodeRecord::with_single_line(1, "380 New York St, Redlands, CA 92373"),
+    ///     BatchGeocodeRecord::with_single_line(2, "1 World Way, Los Angeles, CA 90045"),
     /// ];
     ///
     /// let results = geocoder.geocode_addresses(addresses).await?;
@@ -669,14 +669,24 @@ impl<'a> GeocodeServiceClient<'a> {
     #[instrument(skip(self, addresses), fields(count = addresses.len()))]
     pub async fn geocode_addresses(
         &self,
-        addresses: Vec<crate::GeocodeAddress>,
+        addresses: Vec<crate::BatchGeocodeRecord>,
     ) -> Result<crate::BatchGeocodeResponse> {
         tracing::debug!("Batch geocoding addresses");
 
         let url = format!("{}/geocodeAddresses", self.base_url);
 
+        // Format records with attributes wrapper as required by API
+        let records: Vec<serde_json::Value> = addresses
+            .iter()
+            .map(|addr| {
+                serde_json::json!({
+                    "attributes": addr
+                })
+            })
+            .collect();
+
         let addresses_json = serde_json::json!({
-            "records": addresses
+            "records": records
         });
 
         tracing::debug!(url = %url, count = addresses.len(), "Sending geocodeAddresses request");
