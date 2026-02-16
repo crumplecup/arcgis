@@ -519,7 +519,7 @@ impl<'a> FeatureServiceClient<'a> {
     ///
     /// // Calculate field values
     /// let calculations = vec![
-    ///     FieldCalculation::new("STATUS".to_string(), "CASE WHEN POPULATION > 100000 THEN 'Large' ELSE 'Small' END".to_string()),
+    ///     FieldCalculation::with_sql_expression("STATUS", "CASE WHEN POPULATION > 100000 THEN 'Large' ELSE 'Small' END"),
     /// ];
     ///
     /// let result = service

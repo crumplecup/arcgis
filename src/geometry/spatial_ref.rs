@@ -50,10 +50,10 @@ impl SpatialReference {
     /// ```
     /// # use arcgis::SpatialReference;
     /// let sr = SpatialReference::builder()
-    ///     .wkid(4269)
+    ///     .wkid(4269u32)
     ///     .build()
     ///     .unwrap();
-    /// assert_eq!(*sr.wkid(), Some(4269));
+    /// assert_eq!(*sr.wkid(), Some(4269u32));
     /// ```
     pub fn builder() -> SpatialReferenceBuilder {
         SpatialReferenceBuilder::default()

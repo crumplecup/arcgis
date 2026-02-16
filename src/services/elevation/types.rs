@@ -263,7 +263,7 @@ impl ElevationPoint {
 ///
 /// let params = SummarizeElevationParametersBuilder::default()
 ///     .input_features(polygon_featureset)
-///     .dem_resolution(DemResolution::ThirtyMeter)
+///     .dem_resolution(DemResolution::ThirtyMeter.as_str())
 ///     .include_slope_aspect(true)
 ///     .build()
 ///     .expect("Valid parameters");
@@ -423,7 +423,7 @@ impl SummarizeElevationResult {
 ///     .maximum_distance(5000.0)  // 5 km
 ///     .maximum_distance_units("Meters")
 ///     .observer_height(1.75)  // Default human eye height
-///     .dem_resolution(DemResolution::ThirtyMeter)
+///     .dem_resolution(DemResolution::ThirtyMeter.as_str())
 ///     .build()
 ///     .expect("Valid parameters");
 /// ```

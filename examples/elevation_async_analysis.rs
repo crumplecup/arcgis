@@ -222,14 +222,14 @@ async fn demonstrate_summarize_elevation(elevation: &ElevationClient<'_>) -> Res
         tracing::info!("      • Mean direction: {:.1}° from north", aspect);
 
         let cardinal = match *aspect {
-            a if a >= 337.5 || a < 22.5 => "North",
-            a if a >= 22.5 && a < 67.5 => "Northeast",
-            a if a >= 67.5 && a < 112.5 => "East",
-            a if a >= 112.5 && a < 157.5 => "Southeast",
-            a if a >= 157.5 && a < 202.5 => "South",
-            a if a >= 202.5 && a < 247.5 => "Southwest",
-            a if a >= 247.5 && a < 292.5 => "West",
-            a if a >= 292.5 && a < 337.5 => "Northwest",
+            a if !(22.5..337.5).contains(&a) => "North",
+            a if (22.5..67.5).contains(&a) => "Northeast",
+            a if (67.5..112.5).contains(&a) => "East",
+            a if (112.5..157.5).contains(&a) => "Southeast",
+            a if (157.5..202.5).contains(&a) => "South",
+            a if (202.5..247.5).contains(&a) => "Southwest",
+            a if (247.5..292.5).contains(&a) => "West",
+            a if (292.5..337.5).contains(&a) => "Northwest",
             _ => "Unknown",
         };
         tracing::info!("      • Cardinal direction: {}", cardinal);

@@ -238,7 +238,8 @@ impl<'a> ElevationClient<'a> {
     ///     .input_features(polygon)
     ///     .dem_resolution(DemResolution::ThirtyMeter.as_str())
     ///     .include_slope_aspect(true)
-    ///     .build()?;
+    ///     .build()
+    ///     .expect("Valid parameters");
     ///
     /// let job = elevation.submit_summarize_elevation(params).await?;
     /// tracing::info!(job_id = %job.job_id(), "Job submitted");
@@ -289,12 +290,14 @@ impl<'a> ElevationClient<'a> {
     /// # Example
     ///
     /// ```no_run
-    /// # use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ElevationClient};
+    /// # use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ElevationClient, SummarizeElevationParametersBuilder};
     /// # async fn example() -> arcgis::Result<()> {
     /// # let auth = ApiKeyAuth::agol(ApiKeyTier::Location)?;
     /// # let client = ArcGISClient::new(auth);
     /// # let elevation = ElevationClient::new(&client);
-    /// # let job = elevation.submit_summarize_elevation(Default::default()).await?;
+    /// # let polygon = r#"{"geometryType":"esriGeometryPolygon","spatialReference":{"wkid":4326},"features":[{"geometry":{"rings":[[[-119.5,37.8],[-119.4,37.8],[-119.4,37.9],[-119.5,37.9],[-119.5,37.8]]]},"attributes":{"OID":1}}]}"#;
+    /// # let params = SummarizeElevationParametersBuilder::default().input_features(polygon).build().expect("Valid");
+    /// # let job = elevation.submit_summarize_elevation(params).await?;
     /// let result = elevation.poll_summarize_elevation(job.job_id(), None).await?;
     ///
     /// if let Some(mean) = result.mean_elevation() {
@@ -463,7 +466,8 @@ impl<'a> ElevationClient<'a> {
     ///     .maximum_distance_units("Meters")
     ///     .observer_height(1.75)
     ///     .dem_resolution(DemResolution::ThirtyMeter.as_str())
-    ///     .build()?;
+    ///     .build()
+    ///     .expect("Valid parameters");
     ///
     /// let job = elevation.submit_viewshed(params).await?;
     /// tracing::info!(job_id = %job.job_id(), "Job submitted");
@@ -511,12 +515,14 @@ impl<'a> ElevationClient<'a> {
     /// # Example
     ///
     /// ```no_run
-    /// # use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ElevationClient};
+    /// # use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ElevationClient, ViewshedParametersBuilder};
     /// # async fn example() -> arcgis::Result<()> {
     /// # let auth = ApiKeyAuth::agol(ApiKeyTier::Location)?;
     /// # let client = ArcGISClient::new(auth);
     /// # let elevation = ElevationClient::new(&client);
-    /// # let job = elevation.submit_viewshed(Default::default()).await?;
+    /// # let observer = r#"{"geometryType":"esriGeometryMultipoint","spatialReference":{"wkid":4326},"points":[[-119.5,37.85]]}"#;
+    /// # let params = ViewshedParametersBuilder::default().input_points(observer).build().expect("Valid");
+    /// # let job = elevation.submit_viewshed(params).await?;
     /// let result = elevation.poll_viewshed(job.job_id(), None).await?;
     ///
     /// tracing::info!(

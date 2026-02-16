@@ -115,7 +115,7 @@ async fn demonstrate_basic_params(service: &ImageServiceClient<'_>) -> Result<()
         // Validate value is a reasonable NLCD class code
         if let Ok(class_code) = value.parse::<i32>() {
             anyhow::ensure!(
-                class_code >= 11 && class_code <= 95,
+                (11..=95).contains(&class_code),
                 "NLCD class code should be 11-95, got {}",
                 class_code
             );
@@ -246,7 +246,7 @@ async fn demonstrate_spatial_reference(service: &ImageServiceClient<'_>) -> Resu
         if value != "NoData" {
             if let Ok(class_code) = value.parse::<i32>() {
                 anyhow::ensure!(
-                    class_code >= 11 && class_code <= 95,
+                    (11..=95).contains(&class_code),
                     "NLCD class code should be 11-95, got {}",
                     class_code
                 );

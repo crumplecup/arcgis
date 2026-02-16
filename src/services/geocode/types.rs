@@ -308,7 +308,7 @@ impl BatchGeocodeRecord {
     ///     Some("Redlands"),
     ///     Some("CA"),
     ///     Some("92373"),
-    ///     None,
+    ///     None::<&str>,
     /// );
     /// ```
     pub fn with_components(

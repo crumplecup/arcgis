@@ -310,11 +310,13 @@ fn test_top_features_params_serialization() -> anyhow::Result<()> {
 
     tracing::info!(
         serialized_len = serialized.len(),
+        serialized = %serialized,
         "test_top_features_params_serialization: Verifying serialization"
     );
+    // topFilter is serialized as a JSON string (for URL query parameters)
     assert!(serialized.contains("\"topFilter\""));
-    assert!(serialized.contains("\"groupByFields\""));
-    assert!(serialized.contains("\"topCount\":5"));
+    assert!(serialized.contains("\\\"groupByFields\\\"")); // Escaped in JSON string
+    assert!(serialized.contains("\\\"topCount\\\":5")); // Escaped in JSON string
 
     tracing::info!("test_top_features_params_serialization: Completed");
     Ok(())

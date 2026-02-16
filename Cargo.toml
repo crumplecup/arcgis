@@ -1,9 +1,9 @@
 [package]
 name = "arcgis"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 rust-version = "1.85"
-authors = ["ArcGIS Rust Contributors"]
+authors = ["Erik Rose <erik.w.rose@gmail.com>"]
 license = "MIT OR Apache-2.0"
 description = "Type-safe Rust SDK for the ArcGIS REST API with compile-time guarantees"
 repository = "https://github.com/crumplecup/arcgis"
@@ -109,103 +109,3 @@ lto = "thin"
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
-
-# Public examples (Tier 1 - no auth required)
-[[example]]
-name = "query_features"
-path = "examples/public/query_features.rs"
-
-[[example]]
-name = "spatial_query"
-path = "examples/public/spatial_query.rs"
-
-[[example]]
-name = "map_service_basics"
-path = "examples/public/map_service_basics.rs"
-
-[[example]]
-name = "vector_tiles"
-path = "examples/public/vector_tiles.rs"
-
-# Enterprise examples - Authentication & Setup
-[[example]]
-name = "basic_client"
-path = "examples/enterprise/basic_client.rs"
-
-[[example]]
-name = "client_credentials_flow"
-path = "examples/enterprise/client_credentials_flow.rs"
-
-# Enterprise examples - Location Services (Tier 2)
-[[example]]
-name = "geocode_addresses"
-path = "examples/enterprise/geocode_addresses.rs"
-
-[[example]]
-name = "routing_navigation"
-path = "examples/enterprise/routing_navigation.rs"
-
-[[example]]
-name = "geometry_operations"
-path = "examples/enterprise/geometry_operations.rs"
-
-[[example]]
-name = "geometry_advanced"
-path = "examples/enterprise/geometry_advanced.rs"
-
-# Enterprise examples - Portal Operations (Tier 3)
-[[example]]
-name = "feature_attachments"
-path = "examples/enterprise/feature_attachments.rs"
-
-[[example]]
-name = "portal_content_management"
-path = "examples/enterprise/portal_content_management.rs"
-
-[[example]]
-name = "image_service_raster"
-path = "examples/enterprise/image_service_raster.rs"
-
-[[example]]
-name = "image_service_identify_advanced"
-path = "examples/enterprise/image_service_identify_advanced.rs"
-
-[[example]]
-name = "geoprocessing_tools"
-path = "examples/enterprise/geoprocessing_tools.rs"
-
-[[example]]
-name = "geoprocessing_job_monitoring"
-path = "examples/enterprise/geoprocessing_job_monitoring.rs"
-
-[[example]]
-name = "portal_publishing"
-path = "examples/enterprise/portal_publishing.rs"
-
-[[example]]
-name = "portal_item_lifecycle"
-path = "examples/enterprise/portal_item_lifecycle.rs"
-
-[[example]]
-name = "elevation_analysis"
-path = "examples/enterprise/elevation_analysis.rs"
-
-[[example]]
-name = "elevation_async_analysis"
-path = "examples/enterprise/elevation_async_analysis.rs"
-
-[[example]]
-name = "advanced_queries"
-path = "examples/enterprise/advanced_queries.rs"
-
-[[example]]
-name = "feature_service_metadata"
-path = "examples/enterprise/feature_service_metadata.rs"
-
-[[example]]
-name = "geocoding_batch_operations"
-path = "examples/enterprise/geocoding_batch_operations.rs"
-
-[[example]]
-name = "feature_service_field_calculations"
-path = "examples/enterprise/feature_service_field_calculations.rs"

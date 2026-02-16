@@ -72,16 +72,17 @@ impl NALocation {
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
-        let curb_approach = attrs
-            .get("CurbApproach")
-            .and_then(|v| v.as_i64())
-            .and_then(|i| match i {
-                0 => Some(CurbApproach::EitherSide),
-                1 => Some(CurbApproach::RightSide),
-                2 => Some(CurbApproach::LeftSide),
-                3 => Some(CurbApproach::NoUTurn),
-                _ => None,
-            });
+        let curb_approach =
+            attrs
+                .get("CurbApproach")
+                .and_then(|v| v.as_i64())
+                .and_then(|i| match i {
+                    0 => Some(CurbApproach::EitherSide),
+                    1 => Some(CurbApproach::RightSide),
+                    2 => Some(CurbApproach::LeftSide),
+                    3 => Some(CurbApproach::NoUTurn),
+                    _ => None,
+                });
 
         // Convert old geometry type to new via JSON (temporary during migration)
         let geometry = feature
@@ -1204,7 +1205,9 @@ impl<'de> serde::Deserialize<'de> for ClosestFacilityResult {
             type Value = ClosestFacilityResult;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a ClosestFacilityResult with FeatureSet routes, facilities, and incidents")
+                formatter.write_str(
+                    "a ClosestFacilityResult with FeatureSet routes, facilities, and incidents",
+                )
             }
 
             fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
@@ -1428,7 +1431,12 @@ impl<'de> serde::Deserialize<'de> for ODCostMatrixResult {
                 let mut total_time = None;
                 let mut total_distance = None;
 
-                for (i, name) in response.od_cost_matrix.cost_attribute_names.iter().enumerate() {
+                for (i, name) in response
+                    .od_cost_matrix
+                    .cost_attribute_names
+                    .iter()
+                    .enumerate()
+                {
                     if i < costs.len() {
                         match name.as_str() {
                             "TravelTime" | "Minutes" => total_time = Some(costs[i]),
