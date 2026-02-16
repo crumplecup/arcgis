@@ -148,7 +148,10 @@ impl<'a> PortalClient<'a> {
         }
 
         // Parse response
-        let group: GroupInfo = response.json().await?;
+        let response_text = response.text().await?;
+        tracing::debug!(response_body = %response_text, "Raw getGroup response");
+
+        let group: GroupInfo = serde_json::from_str(&response_text)?;
 
         tracing::debug!(title = %group.title(), owner = %group.owner(), "Got group");
 
@@ -245,7 +248,10 @@ impl<'a> PortalClient<'a> {
         }
 
         // Parse response
-        let result: GroupResult = response.json().await?;
+        let response_text = response.text().await?;
+        tracing::debug!(response_body = %response_text, "Raw createGroup response");
+
+        let result: GroupResult = serde_json::from_str(&response_text)?;
 
         tracing::debug!(success = result.success(), group_id = ?result.group_id(), "Group created");
 
@@ -571,7 +577,7 @@ impl<'a> PortalClient<'a> {
         &self,
         group_id: impl AsRef<str>,
         item_id: impl AsRef<str>,
-    ) -> Result<GroupResult> {
+    ) -> Result<crate::ShareItemResult> {
         let group_id = group_id.as_ref();
         let item_id = item_id.as_ref();
         tracing::debug!(group_id = %group_id, item_id = %item_id, "Adding item to group");
@@ -619,7 +625,9 @@ impl<'a> PortalClient<'a> {
         }
 
         // Parse response
-        let result: GroupResult = response.json().await?;
+        let response_text = response.text().await?;
+        tracing::debug!(response_body = %response_text, "Raw addToGroup response");
+        let result: crate::ShareItemResult = serde_json::from_str(&response_text)?;
 
         tracing::debug!(success = result.success(), "Added item to group");
 
@@ -643,7 +651,7 @@ impl<'a> PortalClient<'a> {
         &self,
         group_id: impl AsRef<str>,
         item_id: impl AsRef<str>,
-    ) -> Result<GroupResult> {
+    ) -> Result<crate::UnshareItemResult> {
         let group_id = group_id.as_ref();
         let item_id = item_id.as_ref();
         tracing::debug!(group_id = %group_id, item_id = %item_id, "Removing item from group");
@@ -691,7 +699,7 @@ impl<'a> PortalClient<'a> {
         }
 
         // Parse response
-        let result: GroupResult = response.json().await?;
+        let result: crate::UnshareItemResult = response.json().await?;
 
         tracing::debug!(success = result.success(), "Removed item from group");
 

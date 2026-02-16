@@ -154,7 +154,6 @@ pub struct GroupMembership {
 /// User's membership type in a group.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-#[serde(untagged)]
 pub enum GroupMembershipType {
     /// Group owner.
     Owner,
@@ -163,7 +162,22 @@ pub enum GroupMembershipType {
     /// Regular member.
     Member,
     /// Unknown membership type (captures any other string value from API).
-    Unknown(String),
+    #[serde(other)]
+    Unknown,
+}
+
+/// User's membership information in a group.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct UserMembershipInfo {
+    /// Username of the member.
+    username: String,
+
+    /// Membership type (owner, admin, member).
+    member_type: GroupMembershipType,
+
+    /// Number of applications (purpose unclear in API docs).
+    applications: i64,
 }
 
 /// Portal item information.
@@ -728,10 +742,6 @@ impl SharingParameters {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct ShareItemResult {
-    /// Whether the operation succeeded.
-    #[serde(default)]
-    success: bool,
-
     /// Item ID that was shared.
     #[serde(default)]
     item_id: Option<String>,
@@ -741,17 +751,31 @@ pub struct ShareItemResult {
     not_shared_with: Vec<String>,
 }
 
+impl ShareItemResult {
+    /// Returns whether the operation succeeded (inferred from presence of item_id and empty not_shared_with).
+    pub fn success(&self) -> bool {
+        self.item_id.is_some() && self.not_shared_with.is_empty()
+    }
+}
+
 /// Result from unsharing an item.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct UnshareItemResult {
-    /// Whether the operation succeeded.
-    #[serde(default)]
-    success: bool,
-
     /// Item ID that was unshared.
     #[serde(default)]
     item_id: Option<String>,
+
+    /// Groups that the item was not unshared from.
+    #[serde(default)]
+    not_unshared_from: Vec<String>,
+}
+
+impl UnshareItemResult {
+    /// Returns whether the operation succeeded (inferred from presence of item_id and empty not_unshared_from).
+    pub fn success(&self) -> bool {
+        self.item_id.is_some() && self.not_unshared_from.is_empty()
+    }
 }
 
 /// Group information from portal.
@@ -816,9 +840,9 @@ pub struct GroupInfo {
     #[serde(default)]
     auto_join: Option<bool>,
 
-    /// Number of users in group.
+    /// Current user's membership information in the group.
     #[serde(default)]
-    user_membership: Option<GroupMembershipType>,
+    user_membership: Option<UserMembershipInfo>,
 
     /// Provider group name (for federated groups).
     #[serde(default)]
@@ -1106,15 +1130,71 @@ impl UpdateGroupParams {
 }
 
 /// Generic result for group operations.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, derive_getters::Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupResult {
     /// Whether the operation succeeded.
     success: bool,
 
-    /// Group ID.
+    /// Group details (for create operations).
+    #[serde(default)]
+    group: Option<GroupSummary>,
+
+    /// Group ID (for update/delete operations that return just success and groupId).
     #[serde(default)]
     group_id: Option<String>,
+}
+
+impl GroupResult {
+    /// Gets the group ID from either the group object or the group_id field.
+    pub fn id(&self) -> Option<&str> {
+        if let Some(ref g) = self.group {
+            Some(g.id())
+        } else {
+            self.group_id.as_deref()
+        }
+    }
+}
+
+/// Summary of group details returned in create operations.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
+pub struct GroupSummary {
+    /// Group ID.
+    id: String,
+
+    /// Group title.
+    title: String,
+
+    /// Group owner.
+    owner: String,
+
+    /// Access level.
+    access: String,
+}
+
+// Custom Deserialize to handle both response formats
+impl<'de> Deserialize<'de> for GroupResult {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Helper {
+            success: bool,
+            #[serde(default)]
+            group: Option<GroupSummary>,
+            #[serde(default)]
+            group_id: Option<String>,
+        }
+
+        let helper = Helper::deserialize(deserializer)?;
+        Ok(GroupResult {
+            success: helper.success,
+            group: helper.group,
+            group_id: helper.group_id,
+        })
+    }
 }
 
 /// Parameters for publishing a hosted service.
