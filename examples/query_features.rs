@@ -84,6 +84,12 @@ async fn demonstrate_basic_where_query(
         .execute()
         .await?;
 
+    // Verify we got results
+    assert!(
+        !result.features().is_empty(),
+        "Expected to find cities with population > 5 million"
+    );
+
     tracing::info!(
         feature_count = result.features().len(),
         "Found large cities"
@@ -93,6 +99,17 @@ async fn demonstrate_basic_where_query(
         let city = feature.attributes().get("CITY_NAME");
         let pop = feature.attributes().get("POP");
         let country = feature.attributes().get("CNTRY_NAME");
+
+        // Verify requested fields are present
+        assert!(city.is_some(), "CITY_NAME field should be present");
+        assert!(pop.is_some(), "POP field should be present");
+
+        // Verify geometry was returned when requested
+        assert!(
+            feature.geometry().is_some(),
+            "Geometry should be present when return_geometry=true"
+        );
+
         tracing::info!(
             city = ?city,
             population = ?pop,
@@ -122,12 +139,30 @@ async fn demonstrate_field_filtering(
         .execute()
         .await?;
 
+    // Verify we got features
+    assert!(
+        !result.features().is_empty(),
+        "Expected to find cities with population > 1 million"
+    );
+
     tracing::info!(
         feature_count = result.features().len(),
         "Retrieved features (attributes only)"
     );
 
     for feature in result.features() {
+        // Verify geometry was NOT returned when return_geometry=false
+        assert!(
+            feature.geometry().is_none(),
+            "Geometry should be None when return_geometry=false"
+        );
+
+        // Verify requested fields are present
+        assert!(
+            feature.attributes().get("CITY_NAME").is_some(),
+            "CITY_NAME should be present"
+        );
+
         let has_geom = feature.geometry().is_some();
         tracing::debug!(
             has_geometry = has_geom,
@@ -154,7 +189,16 @@ async fn demonstrate_count_only(
         .execute()
         .await?;
 
+    // Verify count was returned
+    assert!(
+        result.count().is_some(),
+        "Count should be returned when count_only=true"
+    );
+
     if let Some(count) = result.count() {
+        // Verify count is reasonable (should be > 0 for cities with pop > 100k)
+        assert!(*count > 0, "Expected at least some cities with pop > 100k");
+
         tracing::info!(
             count = count,
             features_returned = result.features().len(),
@@ -179,6 +223,12 @@ async fn demonstrate_object_id_query(
         .out_fields(&["*"]) // All fields
         .execute()
         .await?;
+
+    // Verify we got features for the requested ObjectIDs
+    assert!(
+        !result.features().is_empty(),
+        "Expected features for ObjectIDs 1, 2, 3"
+    );
 
     tracing::info!(
         requested = 3,
@@ -229,6 +279,12 @@ async fn demonstrate_manual_pagination(
             break;
         }
     }
+
+    // Verify pagination returned features
+    assert!(
+        total_fetched > 0,
+        "Pagination should have returned at least some features"
+    );
 
     Ok(())
 }
