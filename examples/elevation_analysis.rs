@@ -135,6 +135,16 @@ async fn demonstrate_elevation_profile(elevation: &ElevationClient<'_>) -> Resul
 
     let result = elevation.profile(params).await?;
 
+    // Verify profile was generated successfully
+    assert!(
+        result.first_point_z().is_ok(),
+        "Profile should have first point elevation"
+    );
+    assert!(
+        result.last_point_z().is_ok(),
+        "Profile should have last point elevation"
+    );
+
     tracing::info!("✅ Elevation profile generated");
 
     if let Ok(first_z) = result.first_point_z() {
@@ -157,6 +167,17 @@ async fn demonstrate_elevation_profile(elevation: &ElevationClient<'_>) -> Resul
     // Extract typed elevation points using helper method
     let points = result.elevation_points()?;
 
+    // Verify we got elevation profile points
+    assert!(
+        !points.is_empty(),
+        "Elevation profile should contain points"
+    );
+    assert!(
+        points.len() >= 2,
+        "Profile should have at least 2 points (start and end), got {}",
+        points.len()
+    );
+
     tracing::info!("");
     tracing::info!("📊 Profile analysis ({} points):", points.len());
 
@@ -171,6 +192,16 @@ async fn demonstrate_elevation_profile(elevation: &ElevationClient<'_>) -> Resul
             .partial_cmp(b.elevation_meters())
             .unwrap()
     });
+
+    // Verify min and max points exist
+    assert!(
+        min_point.is_some(),
+        "Should be able to find minimum elevation point"
+    );
+    assert!(
+        max_point.is_some(),
+        "Should be able to find maximum elevation point"
+    );
 
     if let Some(min) = min_point {
         tracing::info!(
@@ -190,6 +221,13 @@ async fn demonstrate_elevation_profile(elevation: &ElevationClient<'_>) -> Resul
 
     // Calculate total distance
     if let Some(last) = points.last() {
+        // Verify distance is reasonable (non-zero for a trail segment)
+        assert!(
+            *last.distance_meters() > 0.0,
+            "Total distance should be positive, got: {}",
+            last.distance_meters()
+        );
+
         tracing::info!(
             "   Total distance: {:.1} kilometers",
             last.distance_meters() / 1000.0
@@ -210,6 +248,12 @@ async fn demonstrate_elevation_profile(elevation: &ElevationClient<'_>) -> Resul
             (grade, pair[0].distance_meters(), elevation_delta)
         })
         .max_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+
+    // Verify we found a steepest segment (we have at least 2 points)
+    assert!(
+        steepest.is_some(),
+        "Should be able to find steepest segment with at least 2 points"
+    );
 
     if let Some((grade, distance, _elevation_delta)) = steepest {
         tracing::info!(
