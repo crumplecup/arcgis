@@ -106,6 +106,8 @@ async fn demonstrate_job_cancellation(client: &ArcGISClient) -> Result<()> {
     let job_info = gp_service.submit_job(params).await?;
     let job_id = job_info.job_id();
 
+    assert!(!job_id.is_empty(), "Job ID should not be empty");
+
     tracing::info!("✅ Job submitted successfully");
     tracing::info!("   Job ID: {}", job_id);
     tracing::info!("   Initial Status: {:?}", job_info.job_status());
@@ -120,6 +122,15 @@ async fn demonstrate_job_cancellation(client: &ArcGISClient) -> Result<()> {
     tracing::info!("🔍 Checking job status before cancellation...");
     let status_before = gp_service.get_job_status(job_id).await?;
 
+    let status_str = format!("{:?}", status_before.job_status());
+    assert!(
+        status_str.contains("Submitted")
+            || status_str.contains("Executing")
+            || status_str.contains("Waiting"),
+        "Job should be in an active state before cancellation, got: {}",
+        status_str
+    );
+
     tracing::info!("   Status: {:?}", status_before.job_status());
     tracing::info!("   Progress: {:?}", status_before.progress());
     tracing::info!("");
@@ -132,12 +143,21 @@ async fn demonstrate_job_cancellation(client: &ArcGISClient) -> Result<()> {
 
     let cancel_result = gp_service.cancel_job(job_id).await?;
 
-    tracing::info!("✅ Job cancellation requested");
     let status = cancel_result.job_status();
+    let status_str = format!("{:?}", status);
+
+    // Verify cancellation was processed (job is either cancelling or completed)
+    assert!(
+        status_str.contains("Cancel") || status_str.contains("Succeeded") || status_str.contains("Failed"),
+        "Expected cancellation or completion status, got: {}",
+        status_str
+    );
+
+    tracing::info!("✅ Job cancellation requested");
     tracing::info!("   New Status: {:?}", status);
 
     // Check if job was actually cancelled
-    if format!("{:?}", status).contains("Cancel") {
+    if status_str.contains("Cancel") {
         tracing::info!("   ✓ Job successfully cancelled");
     } else {
         tracing::info!("   ⚠️  Job may have already completed before cancellation");
@@ -149,6 +169,17 @@ async fn demonstrate_job_cancellation(client: &ArcGISClient) -> Result<()> {
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     let status_after = gp_service.get_job_status(job_id).await?;
+    let final_status = format!("{:?}", status_after.job_status());
+
+    // Final status should be cancelling, cancelled, or completed
+    assert!(
+        final_status.contains("Cancel")
+            || final_status.contains("Succeeded")
+            || final_status.contains("Failed"),
+        "Expected terminal or cancelling status, got: {}",
+        final_status
+    );
+
     tracing::info!("   Final Status: {:?}", status_after.job_status());
 
     tracing::info!("");
