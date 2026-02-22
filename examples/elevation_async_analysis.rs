@@ -164,6 +164,12 @@ async fn demonstrate_summarize_elevation(elevation: &ElevationClient<'_>) -> Res
 
     let job_info = elevation.submit_summarize_elevation(params).await?;
 
+    // Verify job was submitted successfully
+    assert!(
+        !job_info.job_id().is_empty(),
+        "Job ID should not be empty after submission"
+    );
+
     tracing::info!(
         job_id = %job_info.job_id(),
         status = ?job_info.job_status(),
@@ -182,6 +188,30 @@ async fn demonstrate_summarize_elevation(elevation: &ElevationClient<'_>) -> Res
 
     tracing::info!("✅ Job completed in {:.1} seconds", elapsed.as_secs_f64());
     tracing::info!("");
+
+    // Verify terrain statistics were computed
+    assert!(
+        result.min_elevation().is_some(),
+        "Result should include minimum elevation"
+    );
+    assert!(
+        result.mean_elevation().is_some(),
+        "Result should include mean elevation"
+    );
+    assert!(
+        result.max_elevation().is_some(),
+        "Result should include maximum elevation"
+    );
+
+    // Verify slope and aspect were computed (we requested include_slope_aspect)
+    assert!(
+        result.min_slope().is_some(),
+        "Result should include minimum slope (requested include_slope_aspect=true)"
+    );
+    assert!(
+        result.mean_aspect().is_some(),
+        "Result should include mean aspect (requested include_slope_aspect=true)"
+    );
 
     // Display typed results
     tracing::info!("📊 Terrain Statistics for Yosemite Valley:");
@@ -302,6 +332,12 @@ async fn demonstrate_viewshed(elevation: &ElevationClient<'_>) -> Result<()> {
 
     let job_info = elevation.submit_viewshed(params).await?;
 
+    // Verify job was submitted successfully
+    assert!(
+        !job_info.job_id().is_empty(),
+        "Job ID should not be empty after submission"
+    );
+
     tracing::info!(
         job_id = %job_info.job_id(),
         status = ?job_info.job_status(),
@@ -321,10 +357,16 @@ async fn demonstrate_viewshed(elevation: &ElevationClient<'_>) -> Result<()> {
     tracing::info!("✅ Job completed in {:.1} seconds", elapsed.as_secs_f64());
     tracing::info!("");
 
+    // Verify viewshed output was generated
+    let viewshed_features = result.output_viewshed();
+    assert!(
+        !viewshed_features.features().is_empty(),
+        "Viewshed should return at least one visibility polygon"
+    );
+
     // Display viewshed results
     tracing::info!("📊 Viewshed Analysis Results:");
 
-    let viewshed_features = result.output_viewshed();
     let feature_count = viewshed_features.features().len();
 
     tracing::info!("   Features returned: {}", feature_count);
