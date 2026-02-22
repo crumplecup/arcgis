@@ -87,6 +87,12 @@ async fn demonstrate_bounding_box_query(
         .execute()
         .await?;
 
+    // Verify spatial filter returned results
+    assert!(
+        !bbox_result.features().is_empty(),
+        "Expected to find cities in California bounding box"
+    );
+
     tracing::info!(
         cities_found = bbox_result.features().len(),
         "Cities in California bounding box"
@@ -95,6 +101,17 @@ async fn demonstrate_bounding_box_query(
     for feature in bbox_result.features().iter().take(5) {
         let city = feature.attributes().get("CITY_NAME");
         let pop = feature.attributes().get("POP");
+
+        // Verify requested fields are present
+        assert!(city.is_some(), "CITY_NAME should be present");
+        assert!(pop.is_some(), "POP should be present");
+
+        // Verify geometry is present when requested
+        assert!(
+            feature.geometry().is_some(),
+            "Geometry should be present when return_geometry=true"
+        );
+
         tracing::info!(city = ?city, population = ?pop, "City in bbox");
     }
 
@@ -132,6 +149,12 @@ async fn demonstrate_polygon_query(
         .execute()
         .await?;
 
+    // Verify polygon filter returned results
+    assert!(
+        !polygon_result.features().is_empty(),
+        "Expected to find cities in Pacific Northwest polygon"
+    );
+
     tracing::info!(
         cities_found = polygon_result.features().len(),
         "Cities within Pacific Northwest polygon"
@@ -140,6 +163,13 @@ async fn demonstrate_polygon_query(
     for feature in polygon_result.features() {
         let city = feature.attributes().get("CITY_NAME");
         let country = feature.attributes().get("CNTRY_NAME");
+
+        // Verify geometry is NOT present when return_geometry=false
+        assert!(
+            feature.geometry().is_none(),
+            "Geometry should be None when return_geometry=false"
+        );
+
         tracing::info!(city = ?city, country = ?country, "City in polygon");
     }
 
@@ -170,6 +200,12 @@ async fn demonstrate_combined_spatial_attribute(
         .limit(10)
         .execute()
         .await?;
+
+    // Verify combined spatial + attribute filter works
+    assert!(
+        !combined_result.features().is_empty(),
+        "Expected to find large cities on West Coast"
+    );
 
     tracing::info!(
         cities_found = combined_result.features().len(),
@@ -226,6 +262,13 @@ async fn demonstrate_spatial_relationships(
             .execute()
             .await?;
 
+        // Verify count was returned
+        assert!(
+            result.count().is_some(),
+            "Count should be returned for spatial relationship query: {}",
+            rel_name
+        );
+
         if let Some(count) = result.count() {
             tracing::info!(
                 relationship = %rel_name,
@@ -262,6 +305,19 @@ async fn demonstrate_large_area_pagination(
         .limit(10) // Small page size
         .execute_all() // Auto-paginate
         .await?;
+
+    // Verify pagination returned multiple cities
+    assert!(
+        !us_result.features().is_empty(),
+        "Expected to find US cities with population > 100,000"
+    );
+
+    // With small page size (10) and execute_all(), should get many results
+    assert!(
+        us_result.features().len() > 10,
+        "execute_all() should have paginated and returned > 10 results, got {}",
+        us_result.features().len()
+    );
 
     tracing::info!(
         total_cities = us_result.features().len(),
