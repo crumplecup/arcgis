@@ -6,17 +6,23 @@
 ## Executive Summary
 
 - **Total Examples:** 30
-- **With Assertions:** 10 (33%)
-- **Without Assertions:** 20 (67%) ❌
-- **Critical Gap:** Examples serve as integration tests but most lack verification
+- **With Assertions:** 16 (53%) ⬆️
+- **Without Assertions:** 14 (47%) ⬇️
+- **Progress:** High-priority examples complete! (6/6 done)
 
 ## Assertion Coverage by Example
 
-### ✅ Good Coverage (10 examples)
+### ✅ Good Coverage (15 examples)
 
 | Example | Assertions | Status |
 |---------|------------|--------|
+| geometry_advanced.rs | 18 | ✅ Excellent |
+| advanced_queries.rs | 17 | ✅ Excellent |
 | portal_item_data_files.rs | 16 | ✅ Excellent |
+| geometry_operations.rs | 13 | ✅ Excellent |
+| geocoding_batch_operations.rs | 11 | ✅ Excellent |
+| query_features.rs | 11 | ✅ Excellent |
+| geocode_addresses.rs | 10 | ✅ Excellent |
 | portal_item_data_text.rs | 10 | ✅ Excellent |
 | portal_group_workflow.rs | 9 | ✅ Good |
 | portal_publishing.rs | 6 | ✅ Good |
@@ -27,16 +33,10 @@
 | routing_navigation.rs | 1 | 🟡 Minimal |
 | geoprocessing_job_monitoring.rs | 1 | 🟡 Minimal |
 
-### ❌ No Assertions (20 examples) - NEEDS FIXING
+### ❌ No Assertions (14 examples) - NEEDS FIXING
 
 | Example | Service | Priority | What to Assert |
 |---------|---------|----------|----------------|
-| **geometry_operations.rs** | GeometryServiceClient | 🔴 HIGH | Buffer count > 0, distance in range (500-600km SF-LA), projected coords != input |
-| **geometry_advanced.rs** | GeometryServiceClient | 🔴 HIGH | Simplification reduced points, union result count, area > 0 |
-| **geocode_addresses.rs** | GeocodeServiceClient | 🔴 HIGH | Candidates found, score > 0, location not empty |
-| **geocoding_batch_operations.rs** | GeocodeServiceClient | 🔴 HIGH | Batch results count matches input, locations found |
-| **query_features.rs** | FeatureServiceClient | 🟡 MEDIUM | Features returned, field values present |
-| **advanced_queries.rs** | FeatureServiceClient | 🟡 MEDIUM | Query results not empty, pagination works |
 | **spatial_query.rs** | FeatureServiceClient | 🟡 MEDIUM | Spatial filter returns features |
 | **feature_service_field_calculations.rs** | FeatureServiceClient | 🟡 MEDIUM | Calculation succeeded, fields updated |
 | **feature_service_metadata.rs** | FeatureServiceClient | 🟡 MEDIUM | Metadata fields present |
