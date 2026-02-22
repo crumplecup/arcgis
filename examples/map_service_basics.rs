@@ -164,11 +164,8 @@ async fn demonstrate_basic_map_export(service: &MapServiceClient<'_>) -> Result<
         );
 
         // Verify file has content
-        let metadata = std::fs::metadata(&path)?;
-        assert!(
-            metadata.len() > 0,
-            "Exported file should not be empty"
-        );
+        let metadata = std::fs::metadata(path)?;
+        assert!(metadata.len() > 0, "Exported file should not be empty");
 
         tracing::info!(
             path = %path.display(),
@@ -208,16 +205,10 @@ async fn demonstrate_transparent_export(service: &MapServiceClient<'_>) -> Resul
 
     if let Some(path) = result.path() {
         // Verify file exists
-        assert!(
-            path.exists(),
-            "Transparent map file should exist"
-        );
+        assert!(path.exists(), "Transparent map file should exist");
 
-        let metadata = std::fs::metadata(&path)?;
-        assert!(
-            metadata.len() > 0,
-            "Transparent map should not be empty"
-        );
+        let metadata = std::fs::metadata(path)?;
+        assert!(metadata.len() > 0, "Transparent map should not be empty");
 
         tracing::info!(
             path = %path.display(),
@@ -256,16 +247,10 @@ async fn demonstrate_high_dpi_export(service: &MapServiceClient<'_>) -> Result<(
 
     if let Some(path) = result.path() {
         // Verify file exists
-        assert!(
-            path.exists(),
-            "High-DPI map file should exist"
-        );
+        assert!(path.exists(), "High-DPI map file should exist");
 
-        let metadata = std::fs::metadata(&path)?;
-        assert!(
-            metadata.len() > 0,
-            "High-DPI map should not be empty"
-        );
+        let metadata = std::fs::metadata(path)?;
+        assert!(metadata.len() > 0, "High-DPI map should not be empty");
         // High DPI files should be larger than regular exports
         assert!(
             metadata.len() > 10000,
@@ -389,7 +374,7 @@ async fn demonstrate_find_by_text(service: &MapServiceClient<'_>) -> Result<()> 
         "Should find cities containing 'Los' (e.g., Los Angeles)"
     );
     assert!(
-        response.results().len() > 0,
+        !response.results().is_empty(),
         "Find should return at least one result"
     );
 
@@ -548,11 +533,7 @@ async fn demonstrate_metadata_retrieval(service: &MapServiceClient<'_>) -> Resul
 
     tracing::info!("   Layers:");
     for layer in metadata.layers().iter().take(5) {
-        tracing::info!(
-            "     - Layer {}: {}",
-            layer.id(),
-            layer.name()
-        );
+        tracing::info!("     - Layer {}: {}", layer.id(), layer.name());
     }
 
     if let Some(capabilities) = metadata.capabilities() {
@@ -594,11 +575,8 @@ async fn demonstrate_tile_export(service: &MapServiceClient<'_>) -> Result<()> {
             path.display()
         );
 
-        let metadata = std::fs::metadata(&path)?;
-        assert!(
-            metadata.len() > 0,
-            "Exported tile should not be empty"
-        );
+        let metadata = std::fs::metadata(path)?;
+        assert!(metadata.len() > 0, "Exported tile should not be empty");
 
         tracing::info!(
             path = %path.display(),
@@ -672,22 +650,19 @@ async fn demonstrate_generate_kml(service: &MapServiceClient<'_>) -> Result<()> 
     match kml_result {
         Ok(kml) => {
             // Verify KML was generated
-            assert!(
-                !kml.is_empty(),
-                "Generated KML should not be empty"
-            );
+            assert!(!kml.is_empty(), "Generated KML should not be empty");
             assert!(
                 kml.len() > 100,
                 "KML should have substantial content, got {} bytes",
                 kml.len()
             );
 
-            tracing::info!(
-                kml_length = kml.len(),
-                "✅ KML generated successfully"
-            );
+            tracing::info!(kml_length = kml.len(), "✅ KML generated successfully");
             tracing::info!("   Use case: Integration with Google Earth, KML viewers");
-            tracing::info!("   KML preview: {}...", &kml.chars().take(100).collect::<String>());
+            tracing::info!(
+                "   KML preview: {}...",
+                &kml.chars().take(100).collect::<String>()
+            );
         }
         Err(e) => {
             // Some services don't support KML generation

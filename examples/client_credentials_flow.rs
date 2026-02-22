@@ -61,10 +61,7 @@ async fn main() -> anyhow::Result<()> {
     let token = auth.get_token().await?;
 
     // Verify token was retrieved
-    assert!(
-        !token.is_empty(),
-        "Access token should not be empty"
-    );
+    assert!(!token.is_empty(), "Access token should not be empty");
     assert!(
         token.len() > 100,
         "Access token should be substantial (>100 chars), got {} chars",
@@ -86,10 +83,7 @@ async fn main() -> anyhow::Result<()> {
         tokens_match,
         "Second token request should return cached token (tokens should match)"
     );
-    assert!(
-        !token2.is_empty(),
-        "Cached token should not be empty"
-    );
+    assert!(!token2.is_empty(), "Cached token should not be empty");
 
     tracing::info!(tokens_match = tokens_match, "✅ Token retrieved from cache");
 

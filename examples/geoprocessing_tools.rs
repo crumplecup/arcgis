@@ -483,10 +483,7 @@ async fn demonstrate_job_messages(service: &GeoprocessingServiceClient<'_>) -> R
     let job_id = job_info.job_id().to_string();
 
     // Verify job submission
-    assert!(
-        !job_id.is_empty(),
-        "Job ID should not be empty"
-    );
+    assert!(!job_id.is_empty(), "Job ID should not be empty");
 
     tracing::info!(job_id = %job_id, "✅ Job submitted");
 

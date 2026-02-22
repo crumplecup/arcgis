@@ -110,10 +110,16 @@ async fn run_group_workflow(portal: &PortalClient<'_>) -> Result<()> {
     let create_result = portal.create_group(create_params).await?;
     assert!(*create_result.success(), "Group creation must succeed");
 
-    tracing::debug!("Create result: success={}, id={:?}",
-        create_result.success(), create_result.id());
+    tracing::debug!(
+        "Create result: success={}, id={:?}",
+        create_result.success(),
+        create_result.id()
+    );
 
-    let group_id = create_result.id().expect("No group ID returned").to_string();
+    let group_id = create_result
+        .id()
+        .expect("No group ID returned")
+        .to_string();
 
     tracing::info!("✓ Created group: {} ({})", group_title, group_id);
 
@@ -147,10 +153,7 @@ async fn run_group_workflow(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("Adding the test item to the group");
 
     let add_result: ShareItemResult = portal.add_to_group(&group_id, item_id).await?;
-    assert!(
-        add_result.success(),
-        "Adding item to group must succeed"
-    );
+    assert!(add_result.success(), "Adding item to group must succeed");
 
     tracing::info!("✓ Added item {} to group {}", item_id, group_id);
 
@@ -233,10 +236,7 @@ async fn run_group_workflow(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("=== Step 10: Cleaning Up - Deleting Item ===");
 
     let delete_item_result: DeleteItemResult = portal.delete_item(item_id).await?;
-    assert!(
-        delete_item_result.success(),
-        "Item deletion must succeed"
-    );
+    assert!(delete_item_result.success(), "Item deletion must succeed");
 
     tracing::info!("✓ Deleted test item: {}", item_id);
 
@@ -245,10 +245,7 @@ async fn run_group_workflow(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("=== Step 11: Cleaning Up - Deleting Group ===");
 
     let delete_group_result = portal.delete_group(&group_id).await?;
-    assert!(
-        delete_group_result.success(),
-        "Group deletion must succeed"
-    );
+    assert!(delete_group_result.success(), "Group deletion must succeed");
 
     tracing::info!("✓ Deleted test group: {}", group_id);
 

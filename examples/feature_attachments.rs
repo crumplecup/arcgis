@@ -176,10 +176,7 @@ async fn create_feature_service(content_key: &str) -> Result<ServiceInfo> {
         !service_item_id.is_empty(),
         "Service item ID should not be empty"
     );
-    assert!(
-        !service_url.is_empty(),
-        "Service URL should not be empty"
-    );
+    assert!(!service_url.is_empty(), "Service URL should not be empty");
     assert!(
         service_url.contains("FeatureServer"),
         "Service URL should contain 'FeatureServer', got: {}",
@@ -341,10 +338,7 @@ async fn demonstrate_add_photo(
         .await?;
 
     // Verify photo upload succeeded
-    assert!(
-        *add_result.success(),
-        "Photo upload should succeed"
-    );
+    assert!(*add_result.success(), "Photo upload should succeed");
     assert!(
         add_result.object_id().is_some(),
         "Upload result should include object_id"
@@ -382,10 +376,7 @@ async fn demonstrate_add_pdf(
         .await?;
 
     // Verify PDF upload succeeded
-    assert!(
-        *pdf_result.success(),
-        "PDF upload should succeed"
-    );
+    assert!(*pdf_result.success(), "PDF upload should succeed");
     assert!(
         pdf_result.object_id().is_some(),
         "Upload result should include object_id"
@@ -462,10 +453,7 @@ async fn demonstrate_download(
 
         if let Some(bytes) = download_result.bytes() {
             // Verify we got actual data (not empty)
-            assert!(
-                !bytes.is_empty(),
-                "Downloaded bytes should not be empty"
-            );
+            assert!(!bytes.is_empty(), "Downloaded bytes should not be empty");
 
             tracing::info!(
                 size = bytes.len(),
@@ -508,10 +496,7 @@ async fn demonstrate_update(
             .await?;
 
         // Verify update succeeded
-        assert!(
-            *update_result.success(),
-            "Attachment update should succeed"
-        );
+        assert!(*update_result.success(), "Attachment update should succeed");
 
         if *update_result.success() {
             tracing::info!(

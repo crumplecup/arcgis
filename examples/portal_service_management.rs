@@ -321,11 +321,10 @@ async fn run_service_management_workflow(portal: &PortalClient<'_>) -> Result<()
   ]
 }"#;
 
-    let update_item_params =
-        AddItemParams::new(format!("{} Updated", service_name), "GeoJSON")
-            .with_description("Updated data for overwrite operation")
-            .with_tags(vec!["demo".to_string(), "service-mgmt".to_string()])
-            .with_text(updated_geojson);
+    let update_item_params = AddItemParams::new(format!("{} Updated", service_name), "GeoJSON")
+        .with_description("Updated data for overwrite operation")
+        .with_tags(vec!["demo".to_string(), "service-mgmt".to_string()])
+        .with_text(updated_geojson);
 
     let update_add_result = portal.add_item(update_item_params).await?;
     let update_source_id = update_add_result.id().to_string();

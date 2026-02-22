@@ -180,10 +180,7 @@ async fn demonstrate_single_tile(vt_service: &VectorTileServiceClient<'_>) -> Re
     let tile_data = vt_service.get_tile(&tile).await?;
 
     // Verify tile data was retrieved
-    assert!(
-        !tile_data.is_empty(),
-        "Tile data should not be empty"
-    );
+    assert!(!tile_data.is_empty(), "Tile data should not be empty");
 
     tracing::info!("✅ Retrieved vector tile");
     tracing::info!("   Size: {} bytes", tile_data.len());
@@ -340,10 +337,7 @@ async fn demonstrate_sprite_resources(vt_service: &VectorTileServiceClient<'_>) 
     let sprite_image = vt_service.get_sprite_image().await?;
 
     // Verify sprite image was retrieved
-    assert!(
-        !sprite_image.is_empty(),
-        "Sprite image should not be empty"
-    );
+    assert!(!sprite_image.is_empty(), "Sprite image should not be empty");
 
     tracing::info!("✅ Retrieved sprite image");
     tracing::info!("   Format: PNG");

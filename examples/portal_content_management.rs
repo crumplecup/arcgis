@@ -138,10 +138,7 @@ async fn demonstrate_advanced_query(portal: &PortalClient<'_>) -> Result<()> {
         .context("Failed to search web maps")?;
 
     // Verify web map search returned results
-    assert!(
-        *maps_result.total() > 0,
-        "Search should find web maps"
-    );
+    assert!(*maps_result.total() > 0, "Search should find web maps");
     assert!(
         !maps_result.results().is_empty(),
         "Web map results should not be empty"
@@ -189,10 +186,7 @@ async fn demonstrate_item_details(portal: &PortalClient<'_>) -> Result<()> {
             .context("Failed to retrieve item details")?;
 
         // Verify item details were retrieved
-        assert!(
-            !item_details.title().is_empty(),
-            "Item should have a title"
-        );
+        assert!(!item_details.title().is_empty(), "Item should have a title");
         assert!(
             !item_details.item_type().is_empty(),
             "Item should have a type"

@@ -101,7 +101,10 @@ async fn demonstrate_coordinate_projection(geom_service: &GeometryServiceClient<
         )
         .await?;
 
-    assert!(!result.geometries().is_empty(), "No geometries in projection result");
+    assert!(
+        !result.geometries().is_empty(),
+        "No geometries in projection result"
+    );
 
     if let Some(ArcGISGeometry::Point(projected)) = result.geometries().first() {
         // Verify coordinates were actually transformed (Web Mercator values should be very different)
@@ -303,11 +306,7 @@ async fn demonstrate_line_length(geom_service: &GeometryServiceClient<'_>) -> Re
         assert_eq!(line.paths().len(), 1, "Expected 1 path in polyline");
 
         let first_path = line.paths().first().expect("Path should exist");
-        assert_eq!(
-            first_path.len(),
-            2,
-            "Expected 2 points in path (SF and LA)"
-        );
+        assert_eq!(first_path.len(), 2, "Expected 2 points in path (SF and LA)");
 
         tracing::info!(
             paths = line.paths().len(),

@@ -148,7 +148,9 @@ async fn demonstrate_job_cancellation(client: &ArcGISClient) -> Result<()> {
 
     // Verify cancellation was processed (job is either cancelling or completed)
     assert!(
-        status_str.contains("Cancel") || status_str.contains("Succeeded") || status_str.contains("Failed"),
+        status_str.contains("Cancel")
+            || status_str.contains("Succeeded")
+            || status_str.contains("Failed"),
         "Expected cancellation or completion status, got: {}",
         status_str
     );

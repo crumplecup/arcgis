@@ -104,10 +104,7 @@ async fn run_membership_workflow(portal: &PortalClient<'_>) -> Result<()> {
     let create_params = CreateGroupParams::new(&group_title)
         .with_description("Test group for demonstrating join/leave operations")
         .with_snippet("Created by arcgis-rust SDK membership example")
-        .with_tags(vec![
-            "test".to_string(),
-            "membership-demo".to_string(),
-        ])
+        .with_tags(vec!["test".to_string(), "membership-demo".to_string()])
         .with_access("org"); // Organization members can join
 
     let create_result = portal.create_group(create_params).await?;
@@ -244,7 +241,10 @@ async fn run_membership_workflow(portal: &PortalClient<'_>) -> Result<()> {
                 tracing::info!("   Note: This is expected - we created the group");
             }
             _ => {
-                tracing::warn!("⚠️  Still shows membership: {:?}", user_membership.member_type());
+                tracing::warn!(
+                    "⚠️  Still shows membership: {:?}",
+                    user_membership.member_type()
+                );
                 tracing::info!("   Note: May be API caching delay, or leave was unsuccessful");
             }
         }

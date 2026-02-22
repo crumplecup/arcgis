@@ -47,7 +47,8 @@
 
 use anyhow::Result;
 use arcgis::{
-    ApiKeyAuth, ApiKeyTier, ArcGISClient, BatchGeocodeRecord, GeocodeServiceClient, LocationType,
+    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISPoint, BatchGeocodeRecord, Category,
+    GeocodeServiceClient, LocationType,
 };
 
 /// ArcGIS World Geocoding Service URL
@@ -77,6 +78,9 @@ async fn main() -> Result<()> {
     // Demonstrate batch geocoding operations
     demonstrate_batch_geocode(&geocoder).await?;
     demonstrate_advanced_options(&geocoder).await?;
+    demonstrate_custom_spatial_reference(&geocoder).await?;
+    demonstrate_reverse_geocode_custom_sr(&geocoder).await?;
+    demonstrate_suggest_with_category(&geocoder).await?;
 
     tracing::info!("\n✅ All batch geocoding examples completed successfully!");
     print_best_practices();
@@ -254,6 +258,160 @@ async fn demonstrate_advanced_options(geocoder: &GeocodeServiceClient<'_>) -> Re
     tracing::info!("     - Rooftop: Precise building-level coordinates");
     tracing::info!("     - Street: Street centerline coordinates");
     tracing::info!("   • Combine both for fine-grained control");
+
+    Ok(())
+}
+
+/// Demonstrates geocoding with custom spatial reference.
+async fn demonstrate_custom_spatial_reference(geocoder: &GeocodeServiceClient<'_>) -> Result<()> {
+    tracing::info!("\n=== Example 3: Custom Spatial Reference ===");
+    tracing::info!("Geocode with Web Mercator projection (EPSG:3857)");
+    tracing::info!("");
+
+    let test_address = "380 New York St, Redlands, CA 92373";
+
+    // Geocode with Web Mercator spatial reference (3857)
+    tracing::info!("Geocoding with SR 3857 (Web Mercator):");
+    let response = geocoder
+        .find_address_candidates_with_sr(test_address, 3857)
+        .await?;
+
+    anyhow::ensure!(
+        !response.candidates().is_empty(),
+        "Should find candidates for known address"
+    );
+
+    let candidate = &response.candidates()[0];
+
+    // Web Mercator coordinates are much larger than lat/lon
+    // For Redlands, CA expect x around -13 million, y around 4 million
+    anyhow::ensure!(
+        candidate.location().x().abs() > 1_000_000.0,
+        "Web Mercator X should be large (>1M), got {}",
+        candidate.location().x()
+    );
+
+    anyhow::ensure!(
+        candidate.location().y().abs() > 1_000_000.0,
+        "Web Mercator Y should be large (>1M), got {}",
+        candidate.location().y()
+    );
+
+    tracing::info!("   ✅ Address: {}", candidate.address());
+    tracing::info!(
+        "   ✅ Web Mercator coordinates: ({:.2}, {:.2})",
+        candidate.location().x(),
+        candidate.location().y()
+    );
+    tracing::info!("   ✅ Score: {:.1}", candidate.score());
+
+    tracing::info!("");
+    tracing::info!("💡 Custom spatial reference use cases:");
+    tracing::info!("   • Match your application's projection system");
+    tracing::info!("   • Avoid client-side reprojection");
+    tracing::info!("   • Web Mercator (3857) for web mapping");
+    tracing::info!("   • State Plane for regional accuracy");
+
+    Ok(())
+}
+
+/// Demonstrates reverse geocoding with custom spatial reference.
+async fn demonstrate_reverse_geocode_custom_sr(geocoder: &GeocodeServiceClient<'_>) -> Result<()> {
+    tracing::info!("\n=== Example 4: Reverse Geocode with Custom SR ===");
+    tracing::info!("Convert coordinates to address using specific projection");
+    tracing::info!("");
+
+    // Web Mercator coordinates for Esri Redlands campus
+    // (approximately -117.195, 34.056 in WGS84)
+    let x = -13046213.0;
+    let y = 4036389.0;
+    let spatial_ref = 3857; // Web Mercator
+
+    tracing::info!("Reverse geocoding Web Mercator point:");
+    tracing::info!("   Input: ({:.2}, {:.2}) [SR: {}]", x, y, spatial_ref);
+
+    let point = ArcGISPoint::new(x, y);
+    let response = geocoder
+        .reverse_geocode_with_sr(&point, spatial_ref)
+        .await?;
+
+    let address_str = response
+        .address()
+        .match_addr()
+        .as_ref()
+        .map(|s| s.as_str())
+        .unwrap_or("(no address)");
+
+    anyhow::ensure!(
+        !address_str.is_empty(),
+        "Should return an address for valid coordinates"
+    );
+
+    anyhow::ensure!(
+        response.location().x().abs() > 1_000_000.0,
+        "Returned location should be in Web Mercator (large X)"
+    );
+
+    tracing::info!("   ✅ Address: {}", address_str);
+    tracing::info!(
+        "   ✅ Location: ({:.2}, {:.2})",
+        response.location().x(),
+        response.location().y()
+    );
+
+    tracing::info!("");
+    tracing::info!("💡 Reverse geocoding with custom SR:");
+    tracing::info!("   • Input coordinates match your data's projection");
+    tracing::info!("   • Output coordinates in same spatial reference");
+    tracing::info!("   • No coordinate system conversion needed");
+    tracing::info!("   • Useful for GIS workflows with specific SRs");
+
+    Ok(())
+}
+
+/// Demonstrates category-filtered autocomplete suggestions.
+async fn demonstrate_suggest_with_category(geocoder: &GeocodeServiceClient<'_>) -> Result<()> {
+    tracing::info!("\n=== Example 5: Category-Filtered Suggestions ===");
+    tracing::info!("Autocomplete with POI category filters");
+    tracing::info!("");
+
+    let query = "starbucks";
+    let category = Category::Food;
+
+    tracing::info!("Searching for '{}' in category: {:?}", query, category);
+
+    let response = geocoder.suggest_with_category(query, category).await?;
+
+    anyhow::ensure!(
+        !response.suggestions().is_empty(),
+        "Should find suggestions for '{}' with category filter",
+        query
+    );
+
+    let suggestion_count = response.suggestions().len();
+    anyhow::ensure!(suggestion_count > 0, "Expected suggestions, got 0");
+
+    tracing::info!("   ✅ Found {} suggestions", suggestion_count);
+
+    // Show top 5 suggestions
+    tracing::info!("");
+    tracing::info!("   Top suggestions:");
+    for (idx, suggestion) in response.suggestions().iter().take(5).enumerate() {
+        tracing::info!("     {}. {}", idx + 1, suggestion.text());
+
+        anyhow::ensure!(
+            !suggestion.text().is_empty(),
+            "Suggestion {} should have text",
+            idx
+        );
+    }
+
+    tracing::info!("");
+    tracing::info!("💡 Category-filtered suggestions:");
+    tracing::info!("   • Narrow autocomplete to specific POI types");
+    tracing::info!("   • Available categories: Restaurant, Hotel, Airport, etc.");
+    tracing::info!("   • Improves relevance for type-ahead search");
+    tracing::info!("   • Reduces noise in suggestion results");
 
     Ok(())
 }

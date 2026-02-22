@@ -177,10 +177,7 @@ async fn test_geojson_text_upload(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("   Original size:  {} bytes", original_size);
 
     // Verify data integrity
-    assert!(
-        retrieved_size > 0,
-        "Retrieved data is empty!"
-    );
+    assert!(retrieved_size > 0, "Retrieved data is empty!");
 
     // Parse to verify it's valid GeoJSON
     let retrieved_string = String::from_utf8(retrieved_data.to_vec())?;
@@ -205,8 +202,14 @@ async fn test_geojson_text_upload(portal: &PortalClient<'_>) -> Result<()> {
 
     tracing::info!("📊 GeoJSON Text Upload Summary:");
     tracing::info!("   ✓ Created GeoJSON item");
-    tracing::info!("   ✓ Uploaded {} bytes via ItemDataUpload::Text", original_size);
-    tracing::info!("   ✓ Retrieved and verified {} features", parsed.features.len());
+    tracing::info!(
+        "   ✓ Uploaded {} bytes via ItemDataUpload::Text",
+        original_size
+    );
+    tracing::info!(
+        "   ✓ Retrieved and verified {} features",
+        parsed.features.len()
+    );
     tracing::info!("   ✓ Cleaned up resources");
 
     Ok(())
@@ -312,15 +315,15 @@ async fn test_webmap_text_upload(portal: &PortalClient<'_>) -> Result<()> {
         parsed.get("operationalLayers").is_some(),
         "Missing operationalLayers"
     );
-    assert!(
-        parsed.get("baseMap").is_some(),
-        "Missing baseMap"
-    );
+    assert!(parsed.get("baseMap").is_some(), "Missing baseMap");
 
     let layers = parsed["operationalLayers"].as_array().unwrap();
     assert_eq!(layers.len(), 1, "Expected 1 operational layer");
 
-    tracing::info!("✅ Valid Web Map JSON with {} operational layers", layers.len());
+    tracing::info!(
+        "✅ Valid Web Map JSON with {} operational layers",
+        layers.len()
+    );
     tracing::info!("");
 
     // STEP 4: Cleanup
@@ -332,7 +335,10 @@ async fn test_webmap_text_upload(portal: &PortalClient<'_>) -> Result<()> {
 
     tracing::info!("📊 Web Map Text Upload Summary:");
     tracing::info!("   ✓ Created Web Map item");
-    tracing::info!("   ✓ Uploaded {} bytes via ItemDataUpload::Text", original_size);
+    tracing::info!(
+        "   ✓ Uploaded {} bytes via ItemDataUpload::Text",
+        original_size
+    );
     tracing::info!("   ✓ Retrieved and verified map definition");
     tracing::info!("   ✓ Cleaned up resources");
 

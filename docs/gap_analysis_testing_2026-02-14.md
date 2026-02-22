@@ -15,10 +15,10 @@
 ### Coverage Statistics
 
 - **Total Methods Implemented:** 120
-- **Methods Tested in Examples:** 91 ⬆️ (+39 since Feb 14, +7 since Feb 21)
-- **Untested Methods (Likely Broken):** 29 ⬇️ (was 68)
-- **Overall Coverage:** 76% ⬆️ (91/120, was 43%)
-- **Services at 100% Coverage:** 8 ✅ (GeometryServiceClient, RoutingServiceClient, ElevationClient, ImageServiceClient, VectorTileServiceClient, PortalClient, GeoprocessingServiceClient, **MapServiceClient**)
+- **Methods Tested in Examples:** 94 ⬆️ (+42 since Feb 14, +10 since Feb 21)
+- **Untested Methods (Likely Broken):** 26 ⬇️ (was 68)
+- **Overall Coverage:** 78% ⬆️ (94/120, was 43%)
+- **Services at 100% Coverage:** 9 ✅ (GeometryServiceClient, RoutingServiceClient, ElevationClient, ImageServiceClient, VectorTileServiceClient, PortalClient, GeoprocessingServiceClient, MapServiceClient, **GeocodeServiceClient**)
 - **Services at 0% Coverage:** 2 (PlacesClient, VersionManagementClient) ❌
 
 ### What Changed Since Feb 14
@@ -27,9 +27,9 @@
 
 | Category | Feb 14 | Feb 21 | Feb 22 | Change |
 |----------|--------|--------|--------|--------|
-| **Overall Coverage** | 43% (52/120) | 70% (84/120) | 76% (91/120) | ⬆️ +33% |
-| **Services at 100%** | 2 | 7 | 8 | ⬆️ +6 |
-| **Methods Untested** | 68 | 36 | 29 | ⬇️ -39 |
+| **Overall Coverage** | 43% (52/120) | 70% (84/120) | 78% (94/120) | ⬆️ +35% |
+| **Services at 100%** | 2 | 7 | 9 | ⬆️ +7 |
+| **Methods Untested** | 68 | 36 | 26 | ⬇️ -42 |
 
 **Biggest Improvements:**
 - **MapServiceClient: 22% → 100% ⬆️ (+78%)** ✨ **COMPLETE - All 9 methods tested!** (Feb 22)
@@ -38,7 +38,7 @@
 - ElevationClient: 20% → 100% ⬆️ (+80%)
 - VectorTileServiceClient: 67% → 100% ⬆️ (+33%)
 - FeatureServiceClient: 45% → 70% ⬆️ (+25%)
-- GeocodeServiceClient: 33% → 56% ⬆️ (+23%)
+- **GeocodeServiceClient: 33% → 100% ⬆️ (+67%)** ✨ **COMPLETE - All 8 methods tested!** (Feb 22)
 - ImageServiceClient: 83% → 100% ⬆️ (+17%)
 
 **New Examples:**
@@ -56,6 +56,8 @@
 12. ✅ `portal_group_membership.rs` (+2 methods) ✨ **OAuth-based join/leave operations**
 13. ✅ `portal_service_management.rs` (+3 methods) ✨ **Completes PortalClient to 100%**
 14. ✅ `geoprocessing_execution_modes.rs` (+1 method) ✨ **Completes GeoprocessingServiceClient to 100%**
+15. ✅ **Extended `map_service_basics.rs`** (+7 methods) ✨ **Completes MapServiceClient to 100%** (Feb 22)
+16. ✅ **Extended `geocoding_batch_operations.rs`** (+3 methods) ✨ **Completes GeocodeServiceClient to 100%** (Feb 22)
 
 **Coverage Corrections:**
 - 🔍 `vector_tiles.rs` already had sprite methods (+2 methods, missed in Feb 14 analysis)
@@ -72,12 +74,12 @@
 
 ### Risk Assessment
 
-**LOW RISK** ⬇️ - 24% of implemented methods are untested (down from 57%):
+**LOW RISK** ⬇️ - 22% of implemented methods are untested (down from 57%):
 - **MapServiceClient:** 0/9 untested (0%) ⬇️ - **100% COMPLETE** ✅
 - **PortalClient:** 0/26 untested (0%) ⬇️ - **100% COMPLETE** ✅
 - **GeoprocessingServiceClient:** 0/8 untested (0%) ⬇️ - **100% COMPLETE** ✅
+- **GeocodeServiceClient:** 0/8 untested (0%) ⬇️ - **100% COMPLETE** ✅
 - **FeatureServiceClient:** 6/20 untested (30%) - Critical workflows covered ✅
-- **GeocodeServiceClient:** 4/9 untested (44%) - Batch geocoding tested ✅
 
 ---
 
@@ -93,7 +95,7 @@
 | **GeoprocessingServiceClient** | 8 | 8 | 0 | 100% | ⬆️ +75% | ✅ None |
 | **PortalClient** | 26 | 26 | 0 | 100% | ⬆️ +50% | ✅ None |
 | **FeatureServiceClient** | 20 | 14 | 6 | 70% | ⬆️ +25% | 🟢 Low |
-| **GeocodeServiceClient** | 9 | 5 | 4 | 56% | ⬆️ +23% | 🟡 Medium |
+| **GeocodeServiceClient** | 8 | 8 | 0 | 100% | ⬆️ +67% | ✅ None |
 | **MapServiceClient** | 9 | 9 | 0 | 100% | ⬆️ +78% | ✅ None |
 | **PlacesClient** | 3 | 0 | 3 | 0% | — | 🟡 Medium* |
 | **VersionManagementClient** | 16 | 0 | 16 | 0% | — | 🟢 Low* |
@@ -226,27 +228,28 @@
 ---
 
 ### 6. GeocodeServiceClient
-**Coverage:** 56% ⬆️ (5/9 methods tested, was 33%)
-**Risk:** 🟡 MEDIUM - Spatial reference variants untested
+**Coverage:** 100% ⬆️ (8/8 methods tested, was 33%) ✅
+**Risk:** ✅ NONE - All operations tested
 
-#### ✅ TESTED (5 methods) - ⬆️ +2 methods
+#### ✅ ALL TESTED (8 methods) - ⬆️ +5 methods
+
+**Basic Geocoding:**
 - `find_address_candidates` - geocode_addresses.rs
-- `find_address_candidates_with_options` - geocoding_batch_operations.rs ✅ **NEW**
-- `geocode_addresses` - geocoding_batch_operations.rs ✅ **NEW**
-- `reverse_geocode` - geocode_addresses.rs
-- `suggest` - geocode_addresses.rs
+- `find_address_candidates_with_options` - geocoding_batch_operations.rs
+- `find_address_candidates_with_sr` - geocoding_batch_operations.rs ✅ **NEW**
 
-#### ❌ UNTESTED (4 methods) - Low Priority
+**Reverse Geocoding:**
+- `reverse_geocode` - geocode_addresses.rs
+- `reverse_geocode_with_sr` - geocoding_batch_operations.rs ✅ **NEW**
+
+**Autocomplete:**
+- `suggest` - geocode_addresses.rs
+- `suggest_with_category` - geocoding_batch_operations.rs ✅ **NEW**
 
 **Batch Operations:**
-- `find_address_candidates_by_batch` - Batch candidate search (similar to geocode_addresses)
+- `geocode_addresses` - geocoding_batch_operations.rs
 
-**Advanced Options:**
-- `suggest_with_category` - Category-filtered suggestions
-
-**Spatial Reference Variants:**
-- `find_address_candidates_with_sr` - Custom spatial reference output
-- `reverse_geocode_with_sr` - Reverse with custom SR
+**Note:** Gap analysis previously incorrectly listed 9 methods (including non-existent `find_address_candidates_by_batch`). Implementation has 8 methods total.
 
 ---
 
@@ -632,9 +635,10 @@ Extended existing map_service_basics.rs rather than creating a new example. This
 ### ElevationClient (5 methods) - 100% tested ✅
 **All Tested:** poll_summarize_elevation ✅, poll_viewshed ✅, profile, submit_summarize_elevation ✅, submit_viewshed ✅
 
-### GeocodeServiceClient (9 methods) - 56% tested ⬆️
-**Tested (5):** find_address_candidates, find_address_candidates_with_options ✅, geocode_addresses ✅, reverse_geocode, suggest
-**Untested (4):** find_address_candidates_by_batch, find_address_candidates_with_sr, reverse_geocode_with_sr, suggest_with_category
+### GeocodeServiceClient (8 methods) - 100% tested ✅
+**All Tested (8):** find_address_candidates, find_address_candidates_with_options, find_address_candidates_with_sr ✅, geocode_addresses, reverse_geocode, reverse_geocode_with_sr ✅, suggest, suggest_with_category ✅
+**Untested (0):** None
+**Note:** Previously incorrectly listed as 9 methods (non-existent `find_address_candidates_by_batch` removed)
 
 ### RoutingServiceClient (4 methods) - 100% tested ✅
 **All Tested:** generate_od_cost_matrix, solve_closest_facility, solve_route, solve_service_area
@@ -667,18 +671,19 @@ Extended existing map_service_basics.rs rather than creating a new example. This
 **Effort:** 2-3 hours
 **Methods:** apply_edits, update_features, apply_edits_with_global_ids
 
-### 2. `map_service_export.rs` (HIGH PRIORITY)
-**Impact:** MapServiceClient 22% → 55% (+3 methods)
-**Why:** Core map rendering functionality, currently 0% progress on exports
-**Effort:** 2-2.5 hours
-**Methods:** export_map, export_tile, find
+### 2. ~~`map_service_export.rs`~~ ✅ **COMPLETED** (Feb 22)
+Extended `map_service_basics.rs` to 100% coverage (+7 methods)
 
-**Total to 68% coverage:** 2 examples, 4-6 hours estimated effort
+### 3. ~~`geocoding_spatial_reference.rs`~~ ✅ **COMPLETED** (Feb 22)
+Extended `geocoding_batch_operations.rs` to 100% coverage (+3 methods)
+
+**Remaining to 80%+ coverage:** 1 example, 2-3 hours estimated effort
 
 ---
 
-**Generated:** 2026-02-21 (Updated from 2026-02-14)
+**Generated:** 2026-02-22 (Updated from 2026-02-14)
 **Tool:** Claude Code (Sonnet 4.5)
 **Analysis Type:** Testing Coverage Gap Analysis
-**Progress:** 43% → 63% coverage (+23 methods tested, +2 Feb 14 correction)
+**Progress:** 43% → 78% coverage (+42 methods tested, +2 Feb 14 correction, +10 Feb 22)
+**Latest:** MapServiceClient 22% → 100%, GeocodeServiceClient 33% → 100%
 **Achievement:** ✅ Exceeded 60% coverage target, 5 services at 100%
