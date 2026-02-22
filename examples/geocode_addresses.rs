@@ -100,7 +100,29 @@ async fn demonstrate_forward_geocoding(geocoder: &GeocodeServiceClient<'_>) -> R
 
         let response = geocoder.find_address_candidates(*address).await?;
 
+        assert!(
+            !response.candidates().is_empty(),
+            "No candidates found for well-known address: {}",
+            address
+        );
+
         if let Some(candidate) = response.candidates().first() {
+            // Verify candidate quality
+            assert!(
+                *candidate.score() > 70.0,
+                "Low confidence score for {}: {}",
+                address,
+                candidate.score()
+            );
+
+            // Verify location is valid (not 0,0 or NaN)
+            let location = candidate.location();
+            assert!(
+                location.x().abs() > 0.01 && location.y().abs() > 0.01,
+                "Invalid location (0,0) for address: {}",
+                address
+            );
+
             tracing::info!(
                 address = %address,
                 matched_address = %candidate.address(),
@@ -109,8 +131,6 @@ async fn demonstrate_forward_geocoding(geocoder: &GeocodeServiceClient<'_>) -> R
                 score = candidate.score(),
                 "✅ Geocoded successfully"
             );
-        } else {
-            tracing::warn!(address = %address, "No candidates found");
         }
     }
 
@@ -148,6 +168,19 @@ async fn demonstrate_reverse_geocoding(geocoder: &GeocodeServiceClient<'_>) -> R
             .as_deref()
             .unwrap_or("N/A");
 
+        // Verify we got valid address components
+        assert!(
+            long_label != "N/A" && !long_label.is_empty(),
+            "No address returned for known location: {}",
+            name
+        );
+
+        assert!(
+            country != "N/A" && !country.is_empty(),
+            "No country code returned for known location: {}",
+            name
+        );
+
         tracing::info!(
             name = %name,
             address = %long_label,
@@ -171,6 +204,13 @@ async fn demonstrate_autocomplete(geocoder: &GeocodeServiceClient<'_>) -> Result
         tracing::debug!(partial_text = %text, "Getting suggestions");
 
         let response = geocoder.suggest(*text).await?;
+
+        // Verify autocomplete returns suggestions
+        assert!(
+            !response.suggestions().is_empty(),
+            "No autocomplete suggestions for: {}",
+            text
+        );
 
         tracing::info!(
             partial_text = %text,
@@ -213,7 +253,22 @@ async fn demonstrate_batch_processing(geocoder: &GeocodeServiceClient<'_>) -> Re
 
         let response = geocoder.find_address_candidates(*address).await?;
 
+        // Verify we got results for each tech company address
+        assert!(
+            !response.candidates().is_empty(),
+            "No candidates found for tech company address: {}",
+            address
+        );
+
         if let Some(candidate) = response.candidates().first() {
+            // These are well-known addresses, should have high scores
+            assert!(
+                *candidate.score() > 80.0,
+                "Low confidence score for well-known address {}: {}",
+                address,
+                candidate.score()
+            );
+
             tracing::info!(
                 index = i + 1,
                 address = %address,
@@ -250,12 +305,26 @@ async fn demonstrate_high_precision(geocoder: &GeocodeServiceClient<'_>) -> Resu
 
     let response = geocoder.find_address_candidates(test_address).await?;
 
+    // Verify we got candidates
+    assert!(
+        !response.candidates().is_empty(),
+        "No candidates found for test address: {}",
+        test_address
+    );
+
     // Filter by score
     let high_quality_matches: Vec<_> = response
         .candidates()
         .iter()
         .filter(|c| *c.score() >= min_score)
         .collect();
+
+    // For a well-known Esri address, we should get high-quality matches
+    assert!(
+        !high_quality_matches.is_empty(),
+        "No high-quality matches (>= {}) found for Esri HQ address",
+        min_score
+    );
 
     tracing::info!(
         total_candidates = response.candidates().len(),
