@@ -74,7 +74,7 @@ pub use portal::{
     DomainCodedValue, DrawingTool, EditFieldsInfo, EditFieldsInfoBuilder, EditorTrackingInfo,
     FeatureTemplate, FeatureTemplateBuilder, FieldDefinition, FieldDefinitionBuilder, FieldType,
     GeometryTypeDefinition, GroupInfo, GroupMembership, GroupMembershipType, GroupResult,
-    GroupSearchParameters, GroupSearchResult, Index, IndexBuilder, ItemInfo, LayerDefinition,
+    GroupSearchParameters, GroupSearchResult, Index, IndexBuilder, ItemDataUpload, ItemInfo, LayerDefinition,
     LayerDefinitionBuilder, LayerRelationship, LayerRelationshipBuilder, MergePolicy,
     OverwriteParameters, OverwriteResult, PortalClient, PublishParameters, PublishResult,
     PublishStatus, RangeDomain, RangeDomainBuilder, RelationshipCardinality, RelationshipRole,

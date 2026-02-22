@@ -109,7 +109,7 @@ pub use services::{
     IdentifyParameters, IdentifyParametersBuilder, IdentifyParams, IdentifyParamsBuilder,
     IdentifyResponse, IdentifyResult, ImageFormat, ImageIdentifyResult, ImageServiceClient,
     ImpedanceAttribute, Index, IndexBuilder, InspectConflictFeature, InspectConflictLayer,
-    InspectConflictsResponse, InterpolationType, ItemInfo, LayerConflicts, LayerDefinition,
+    InspectConflictsResponse, InterpolationType, ItemDataUpload, ItemInfo, LayerConflicts, LayerDefinition,
     LayerDefinitionBuilder, LayerDefinitions, LayerDomainInfo, LayerFeatureDifferences,
     LayerLegend, LayerObjectIdDifferences, LayerOperation, LayerRelationship,
     LayerRelationshipBuilder, LayerSelection, LegendResponse, LegendSymbol, LevelOfDetail,

@@ -696,6 +696,42 @@ pub struct DeleteItemResult {
     item_id: Option<String>,
 }
 
+/// Configuration for uploading item data.
+///
+/// Specifies how to upload data to a portal item. The three variants correspond to
+/// the three mutually exclusive parameters supported by the ArcGIS REST API:
+///
+/// - `Text`: JSON content as a string (for Web Maps, GeoJSON text, etc.)
+/// - `File`: Binary file upload with MIME type (for images, PDFs, CSVs, packages)
+/// - `Url`: External URL reference (for remote services or resources)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ItemDataUpload {
+    /// Upload data as JSON text content.
+    ///
+    /// Uses the `text` parameter in the REST API. Suitable for Web Maps,
+    /// GeoJSON as text, and other JSON-based item types.
+    Text(String),
+
+    /// Upload data as a file with metadata.
+    ///
+    /// Uses the `file` parameter in the REST API. Suitable for binary files,
+    /// images, PDFs, CSVs, shapefiles, and other file-based content.
+    File {
+        /// The raw file data as bytes.
+        data: Vec<u8>,
+        /// Filename (e.g., "data.csv", "map.png").
+        filename: String,
+        /// MIME type (e.g., "text/csv", "image/png", "application/json").
+        mime_type: String,
+    },
+
+    /// Upload data as a URL reference.
+    ///
+    /// Uses the `url` parameter in the REST API. Suitable for referencing
+    /// external services or web resources.
+    Url(String),
+}
+
 /// Parameters for sharing an item.
 #[derive(Debug, Clone, Default, derive_getters::Getters, derive_setters::Setters)]
 #[setters(prefix = "with_")]

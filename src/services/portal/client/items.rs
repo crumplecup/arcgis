@@ -1,10 +1,10 @@
 //! Item operations for the Portal client.
 
-use super::super::{
-    AddItemParams, AddItemResult, DeleteItemResult, ItemInfo, UpdateItemParams, UpdateItemResult,
-};
 use super::PortalClient;
-use crate::Result;
+use crate::{
+    AddItemParams, AddItemResult, DeleteItemResult, ItemDataUpload, ItemInfo, Result,
+    UpdateItemParams, UpdateItemResult,
+};
 use tracing::instrument;
 
 impl<'a> PortalClient<'a> {
@@ -389,8 +389,10 @@ impl<'a> PortalClient<'a> {
 
     /// Downloads the data file associated with a portal item.
     ///
-    /// Returns the raw bytes of the item's data file (e.g., the actual web map JSON,
-    /// a GeoJSON file, or other item data).
+    /// Returns the raw bytes of the item's data file in its native format.
+    /// The content type is determined by the item's MIME type.
+    ///
+    /// For package items that you want as ZIP, use `get_item_data_zip` instead.
     ///
     /// # Example
     ///
@@ -409,12 +411,10 @@ impl<'a> PortalClient<'a> {
 
         let url = format!("{}/content/items/{}/data", self.base_url, item_id);
 
-        // Get authentication token
-
         tracing::debug!(url = %url, "Sending getItemData request");
 
-        // Build request
-        let mut request = self.client.http().get(&url).query(&[("f", "json")]);
+        // Build request - NO f parameter for most item types
+        let mut request = self.client.http().get(&url);
 
         if let Some(token) = self.client.get_token_if_required().await? {
             request = request.query(&[("token", token)]);
@@ -444,33 +444,101 @@ impl<'a> PortalClient<'a> {
         Ok(bytes)
     }
 
-    /// Uploads or updates the data file for a portal item.
+    /// Downloads package item data as a ZIP file.
     ///
-    /// Updates the item's data content (e.g., web map definition, GeoJSON, etc.).
+    /// For package-type items (Layer Packages, Map Packages, etc.), this method
+    /// requests the data in ZIP format using the `f=zip` parameter.
     ///
     /// # Example
     ///
     /// ```no_run
     /// # use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient};
     /// # async fn example(portal: &PortalClient<'_>) -> arcgis::Result<()> {
-    /// let data = br#"{"type":"FeatureCollection","features":[]}"#.to_vec();
-    /// let result = portal.update_item_data("abc123def456", data).await?;
-    /// println!("Update success: {}", result.success());
+    /// let zip_data = portal.get_item_data_zip("package_item_id").await?;
+    /// std::fs::write("package.zip", zip_data)?;
     /// # Ok(())
     /// # }
     /// ```
-    #[instrument(skip(self, item_id, data))]
-    pub async fn update_item_data(
+    #[instrument(skip(self, item_id))]
+    pub async fn get_item_data_zip(&self, item_id: impl AsRef<str>) -> Result<bytes::Bytes> {
+        let item_id = item_id.as_ref();
+        tracing::debug!(item_id = %item_id, "Getting item data as ZIP");
+
+        let url = format!("{}/content/items/{}/data", self.base_url, item_id);
+
+        tracing::debug!(url = %url, "Sending getItemData request with f=zip");
+
+        // Build request with f=zip for package types
+        let mut request = self.client.http().get(&url).query(&[("f", "zip")]);
+
+        if let Some(token) = self.client.get_token_if_required().await? {
+            request = request.query(&[("token", token)]);
+        }
+
+        let response = request.send().await?;
+
+        // Check for HTTP errors
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error response: {}", e));
+            tracing::error!(status = %status, error = %error_text, "getItemData (ZIP) request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        // Get bytes
+        let bytes = response.bytes().await?;
+
+        tracing::debug!(size = bytes.len(), "Retrieved item data as ZIP");
+
+        Ok(bytes)
+    }
+
+    /// Uploads or updates item data with flexible format support.
+    ///
+    /// Supports three upload methods via the `ItemDataUpload` enum:
+    /// - `Text`: JSON content as string (Web Maps, GeoJSON text)
+    /// - `File`: Binary file with MIME type (images, PDFs, CSVs, packages)
+    /// - `Url`: External URL reference (services, web resources)
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient, ItemDataUpload};
+    /// # async fn example(portal: &PortalClient<'_>) -> arcgis::Result<()> {
+    /// // Upload JSON text
+    /// let geojson = r#"{"type":"FeatureCollection","features":[]}"#;
+    /// let upload = ItemDataUpload::Text(geojson.to_string());
+    /// portal.update_item_data_v2("item123", upload).await?;
+    ///
+    /// // Upload binary file
+    /// let csv_data = b"name,value\ntest,123".to_vec();
+    /// let upload = ItemDataUpload::File {
+    ///     data: csv_data,
+    ///     filename: "data.csv".to_string(),
+    ///     mime_type: "text/csv".to_string(),
+    /// };
+    /// portal.update_item_data_v2("item456", upload).await?;
+    ///
+    /// // URL reference
+    /// let upload = ItemDataUpload::Url("https://example.com/service".to_string());
+    /// portal.update_item_data_v2("item789", upload).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, item_id, upload))]
+    pub async fn update_item_data_v2(
         &self,
         item_id: impl AsRef<str>,
-        data: Vec<u8>,
+        upload: ItemDataUpload,
     ) -> Result<UpdateItemResult> {
         let item_id = item_id.as_ref();
-        tracing::debug!(item_id = %item_id, size = data.len(), "Updating item data");
 
-        // Get authentication token
-
-        // Get the item to find its owner
         let item = self.get_item(item_id).await?;
         let url = format!(
             "{}/content/users/{}/items/{}/update",
@@ -479,25 +547,54 @@ impl<'a> PortalClient<'a> {
             item_id
         );
 
-        tracing::debug!(url = %url, owner = %item.owner(), "Sending updateItemData request");
+        let mut form = reqwest::multipart::Form::new().text("f", "json");
 
-        // Create multipart form with file
-        let part = reqwest::multipart::Part::bytes(data)
-            .file_name("data.json")
-            .mime_str("application/json")?;
+        match upload {
+            ItemDataUpload::Text(json_text) => {
+                tracing::debug!(
+                    item_id = %item_id,
+                    size = json_text.len(),
+                    "Uploading text data"
+                );
+                form = form.text("text", json_text);
+            }
 
-        let mut form = reqwest::multipart::Form::new()
-            .text("f", "json")
-            .part("file", part);
+            ItemDataUpload::File {
+                data,
+                filename,
+                mime_type,
+            } => {
+                tracing::debug!(
+                    item_id = %item_id,
+                    size = data.len(),
+                    filename = %filename,
+                    mime_type = %mime_type,
+                    "Uploading file data"
+                );
+                let part = reqwest::multipart::Part::bytes(data)
+                    .file_name(filename)
+                    .mime_str(&mime_type)?;
+                form = form.part("file", part);
+            }
 
-        // Add token if required by auth provider
+            ItemDataUpload::Url(url_ref) => {
+                tracing::debug!(
+                    item_id = %item_id,
+                    url = %url_ref,
+                    "Setting URL reference"
+                );
+                form = form.text("url", url_ref);
+            }
+        }
+
         if let Some(token) = self.client.get_token_if_required().await? {
             form = form.text("token", token);
         }
 
+        tracing::debug!(url = %url, owner = %item.owner(), "Sending updateItemData request");
+
         let response = self.client.http().post(&url).multipart(form).send().await?;
 
-        // Check for HTTP errors
         let status = response.status();
         if !status.is_success() {
             let error_text = response
@@ -511,7 +608,6 @@ impl<'a> PortalClient<'a> {
             }));
         }
 
-        // Parse response
         let result: UpdateItemResult = response.json().await?;
 
         tracing::debug!(success = result.success(), "Item data updated");
