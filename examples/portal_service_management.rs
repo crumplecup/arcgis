@@ -129,7 +129,7 @@ async fn run_service_management_workflow(portal: &PortalClient<'_>) -> Result<()
     let timestamp = chrono::Utc::now().timestamp();
     let service_name = format!("ServiceMgmt_{}", timestamp);
 
-    let item_params = AddItemParams::new(&format!("{} Source", service_name), "GeoJSON")
+    let item_params = AddItemParams::new(format!("{} Source", service_name), "GeoJSON")
         .with_description("Source data for service management demo")
         .with_tags(vec!["demo".to_string(), "service-mgmt".to_string()])
         .with_text(initial_geojson);
@@ -322,7 +322,7 @@ async fn run_service_management_workflow(portal: &PortalClient<'_>) -> Result<()
 }"#;
 
     let update_item_params =
-        AddItemParams::new(&format!("{} Updated", service_name), "GeoJSON")
+        AddItemParams::new(format!("{} Updated", service_name), "GeoJSON")
             .with_description("Updated data for overwrite operation")
             .with_tags(vec!["demo".to_string(), "service-mgmt".to_string()])
             .with_text(updated_geojson);
