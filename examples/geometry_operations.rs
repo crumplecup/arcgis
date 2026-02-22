@@ -95,13 +95,39 @@ async fn demonstrate_coordinate_projection(geom_service: &GeometryServiceClient<
 
     let result = geom_service
         .project(
-            vec![ArcGISGeometry::Point(sf_point)],
+            vec![ArcGISGeometry::Point(sf_point.clone())],
             4326, // WGS84
             3857, // Web Mercator
         )
         .await?;
 
+    assert!(!result.geometries().is_empty(), "No geometries in projection result");
+
     if let Some(ArcGISGeometry::Point(projected)) = result.geometries().first() {
+        // Verify coordinates were actually transformed (Web Mercator values should be very different)
+        assert_ne!(
+            *projected.x(),
+            *sf_point.x(),
+            "X coordinate unchanged after projection"
+        );
+        assert_ne!(
+            *projected.y(),
+            *sf_point.y(),
+            "Y coordinate unchanged after projection"
+        );
+
+        // Web Mercator coordinates should be much larger (in meters from origin)
+        assert!(
+            projected.x().abs() > 10_000.0,
+            "Web Mercator X coordinate seems incorrect: {}",
+            projected.x()
+        );
+        assert!(
+            projected.y().abs() > 1_000_000.0,
+            "Web Mercator Y coordinate seems incorrect: {}",
+            projected.y()
+        );
+
         tracing::info!(
             x = *projected.x(),
             y = *projected.y(),
@@ -131,6 +157,17 @@ async fn demonstrate_buffer_creation(geom_service: &GeometryServiceClient<'_>) -
 
     tracing::debug!("Creating 1000m geodesic buffer");
     let buffer_result = geom_service.buffer(buffer_params).await?;
+
+    assert!(
+        !buffer_result.geometries().is_empty(),
+        "No buffer geometries returned"
+    );
+    assert_eq!(
+        buffer_result.geometries().len(),
+        1,
+        "Expected 1 buffer polygon, got {}",
+        buffer_result.geometries().len()
+    );
 
     tracing::info!(
         buffer_count = buffer_result.geometries().len(),
@@ -165,6 +202,13 @@ async fn demonstrate_distance_calculation(geom_service: &GeometryServiceClient<'
 
     let distance_km = distance_result.distance() / 1000.0;
     let distance_mi = distance_km * 0.621371;
+
+    // SF to LA geodesic distance is approximately 559 km (347 mi)
+    assert!(
+        distance_km > 500.0 && distance_km < 600.0,
+        "Distance out of expected range (500-600 km): {:.1} km",
+        distance_km
+    );
 
     tracing::info!(
         distance_meters = distance_result.distance(),
@@ -201,6 +245,15 @@ async fn demonstrate_batch_projection(geom_service: &GeometryServiceClient<'_>) 
             3857, // Web Mercator
         )
         .await?;
+
+    // Verify all geometries were projected
+    assert_eq!(
+        batch_result.geometries().len(),
+        cities.len(),
+        "Expected {} projected geometries, got {}",
+        cities.len(),
+        batch_result.geometries().len()
+    );
 
     tracing::info!("✅ Batch projection completed");
 
@@ -240,7 +293,22 @@ async fn demonstrate_line_length(geom_service: &GeometryServiceClient<'_>) -> Re
         )
         .await?;
 
+    assert!(
+        !projected_route.geometries().is_empty(),
+        "No geometries in polyline projection result"
+    );
+
     if let Some(ArcGISGeometry::Polyline(line)) = projected_route.geometries().first() {
+        assert!(!line.paths().is_empty(), "Polyline has no paths");
+        assert_eq!(line.paths().len(), 1, "Expected 1 path in polyline");
+
+        let first_path = line.paths().first().expect("Path should exist");
+        assert_eq!(
+            first_path.len(),
+            2,
+            "Expected 2 points in path (SF and LA)"
+        );
+
         tracing::info!(
             paths = line.paths().len(),
             points_in_first_path = line.paths().first().map(|p| p.len()).unwrap_or(0),
