@@ -12,22 +12,32 @@
 //! - **Feature identification**: Click-to-query features at a point
 //! - **Text search**: Find features by keyword across layers
 //! - **Legend retrieval**: Get symbology for map layers
+//! - **Service metadata**: Query capabilities, layers, and spatial reference
+//! - **Cached tiles**: Export pre-generated tiles from cached services
+//! - **Domain queries**: Retrieve field domains and subtypes
+//! - **KML export**: Generate KML for Google Earth (if supported)
+//! - **Dynamic renderers**: Create classification renderers (if supported)
 //!
 //! # Prerequisites
 //!
 //! - No authentication required (uses public ESRI USA MapServer)
 //!
-//! # Service Capabilities
+//! # Services Used
 //!
-//! **USA MapServer** is a dynamic map service that supports:
+//! **USA MapServer** (dynamic service):
 //! - ✅ Map export (static images)
-//! - ✅ Transparent backgrounds
-//! - ✅ Custom DPI
+//! - ✅ Transparent backgrounds and custom DPI
 //! - ✅ Feature identification (identify operation)
 //! - ✅ Text search (find operation)
 //! - ✅ Legend retrieval
+//! - ✅ Service metadata
+//! - ✅ Domain queries
+//! - ⚠️ KML and renderer generation (may not be supported)
+//! - Layers: Cities, Highways, States, Counties
 //!
-//! This service includes 4 layers: Cities, Highways, States, and Counties.
+//! **World Street Map** (cached service):
+//! - ✅ Cached tile export
+//! - Used to demonstrate export_tile() operation
 //!
 //! # Running
 //!
@@ -48,20 +58,38 @@
 //!
 //! # Output
 //!
-//! This example creates several PNG files in the current directory:
+//! This example creates several image files in the current directory:
 //! - `map_basic.png` - Basic map of San Francisco Bay Area
 //! - `map_transparent.png` - Transparent overlay-ready map
 //! - `map_high_dpi.png` - High-resolution print-quality map
+//! - `tile_cached.jpg` - Cached tile from World Street Map service
+//!
+//! # Coverage
+//!
+//! This example demonstrates ALL 9 public methods of MapServiceClient (100% coverage):
+//! 1. `export()` / `export_map()` - Dynamic map image export
+//! 2. `export_tile()` - Cached tile retrieval
+//! 3. `get_legend()` - Legend/symbology information
+//! 4. `get_metadata()` - Service capabilities and metadata
+//! 5. `identify()` - Feature identification at a point
+//! 6. `find()` - Text search across layers
+//! 7. `generate_kml()` - KML export for Google Earth
+//! 8. `generate_renderer()` - Dynamic classification renderers
+//! 9. `query_domains()` - Field domain and subtype information
 
 use anyhow::Result;
 use arcgis::{
-    ArcGISClient, ExportTarget, GeometryType, IdentifyParams, ImageFormat, LayerSelection,
-    MapServiceClient, NoAuth,
+    ArcGISClient, ExportTarget, GenerateKmlParams, GenerateRendererParams, GeometryType,
+    IdentifyParams, ImageFormat, LayerSelection, MapServiceClient, NoAuth, TileCoordinate,
 };
 
 /// Public ESRI USA MapServer service (no auth required).
 const USA_MAP_SERVER: &str =
     "https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer";
+
+/// Public World Street Map service (cached/tiled, no auth required).
+const WORLD_STREET_MAP: &str =
+    "https://sampleserver6.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer";
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -87,6 +115,16 @@ async fn main() -> Result<()> {
     demonstrate_identify_features(&map_service).await?;
     demonstrate_find_by_text(&map_service).await?;
     demonstrate_legend_retrieval(&map_service).await?;
+    demonstrate_metadata_retrieval(&map_service).await?;
+
+    // Cached tile service for export_tile demonstration
+    let cached_service = MapServiceClient::new(WORLD_STREET_MAP, &client);
+    demonstrate_tile_export(&cached_service).await?;
+
+    // Advanced operations (may not be supported on all services)
+    demonstrate_query_domains(&map_service).await?;
+    demonstrate_generate_kml(&map_service).await?;
+    demonstrate_generate_renderer(&map_service).await?;
 
     tracing::info!("\n✅ All map service examples completed successfully!");
     print_best_practices();
@@ -464,6 +502,252 @@ async fn demonstrate_legend_retrieval(service: &MapServiceClient<'_>) -> Result<
 
     if legend.layers().len() > 5 {
         tracing::info!("   ... and {} more layers", legend.layers().len() - 5);
+    }
+
+    Ok(())
+}
+
+/// Demonstrates retrieving service metadata and capabilities.
+async fn demonstrate_metadata_retrieval(service: &MapServiceClient<'_>) -> Result<()> {
+    tracing::info!("\n=== Example 7: Service Metadata Retrieval ===");
+    tracing::info!("Get comprehensive service information and capabilities");
+
+    let metadata = service.get_metadata().await?;
+
+    // Verify metadata was retrieved
+    assert!(
+        !metadata.layers().is_empty(),
+        "Metadata should include layer information"
+    );
+    assert!(
+        metadata.spatial_reference().is_some(),
+        "Metadata should include spatial reference"
+    );
+
+    tracing::info!(
+        layer_count = metadata.layers().len(),
+        "✅ Metadata retrieved"
+    );
+
+    tracing::info!("📊 Service Information:");
+
+    if let Some(desc) = metadata.description() {
+        let preview = desc.chars().take(100).collect::<String>();
+        tracing::info!("   Description: {}...", preview);
+    }
+
+    if let Some(sr) = metadata.spatial_reference() {
+        if let Some(wkid) = sr.wkid() {
+            tracing::info!("   Spatial Reference: WKID {}", wkid);
+        }
+    }
+
+    if let Some(extent) = metadata.full_extent() {
+        tracing::debug!("   Extent: {:?}", extent);
+    }
+
+    tracing::info!("   Layers:");
+    for layer in metadata.layers().iter().take(5) {
+        tracing::info!(
+            "     - Layer {}: {}",
+            layer.id(),
+            layer.name()
+        );
+    }
+
+    if let Some(capabilities) = metadata.capabilities() {
+        tracing::info!("   Capabilities: {}", capabilities);
+    }
+
+    Ok(())
+}
+
+/// Demonstrates exporting cached tiles from a tiled service.
+async fn demonstrate_tile_export(service: &MapServiceClient<'_>) -> Result<()> {
+    tracing::info!("\n=== Example 8: Cached Tile Export ===");
+    tracing::info!("Export pre-generated tiles from cached service");
+
+    // San Francisco area tile at zoom level 5
+    // Tile coordinates: level 5, row 12, column 5
+    let tile_coord = TileCoordinate::new(5, 12, 5);
+
+    tracing::info!("   Tile coordinates:");
+    tracing::info!("     Zoom level: {}", tile_coord.level());
+    tracing::info!("     Row: {}", tile_coord.row());
+    tracing::info!("     Column: {}", tile_coord.col());
+
+    let result = service
+        .export_tile(tile_coord, ExportTarget::to_path("tile_cached.jpg"))
+        .await?;
+
+    // Verify tile was exported
+    assert!(
+        result.path().is_some(),
+        "Tile export should create a file and return path"
+    );
+
+    if let Some(path) = result.path() {
+        // Verify file exists
+        assert!(
+            path.exists(),
+            "Exported tile should exist at {}",
+            path.display()
+        );
+
+        let metadata = std::fs::metadata(&path)?;
+        assert!(
+            metadata.len() > 0,
+            "Exported tile should not be empty"
+        );
+
+        tracing::info!(
+            path = %path.display(),
+            size_bytes = metadata.len(),
+            "✅ Cached tile exported"
+        );
+        tracing::info!("   Use case: Offline mapping, custom tile caches");
+    }
+
+    Ok(())
+}
+
+/// Demonstrates querying field domains and subtypes.
+async fn demonstrate_query_domains(service: &MapServiceClient<'_>) -> Result<()> {
+    tracing::info!("\n=== Example 9: Query Domains ===");
+    tracing::info!("Retrieve domain and subtype information for layers");
+
+    // Query domains for all layers (empty vector)
+    let domains_result = service.query_domains(vec![]).await;
+
+    match domains_result {
+        Ok(domains) => {
+            // Verify domains response structure (layers() is always valid)
+            tracing::info!(
+                layer_count = domains.layers().len(),
+                "✅ Query domains completed"
+            );
+
+            if domains.layers().is_empty() {
+                tracing::info!("   No domain information available for this service");
+                tracing::info!("   (Many services don't use coded value domains)");
+            } else {
+                tracing::info!("🔍 Domain information:");
+                for layer_domain in domains.layers().iter().take(3) {
+                    if let Some(name) = layer_domain.name() {
+                        tracing::info!("   Layer: {}", name);
+                    }
+
+                    if !layer_domain.domains().is_empty() {
+                        tracing::info!("      {} domain(s) defined", layer_domain.domains().len());
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            // Some services don't support queryDomains operation
+            tracing::warn!(
+                error = %e,
+                "Query domains not supported by this service"
+            );
+            tracing::info!("   This is expected - not all services support this operation");
+        }
+    }
+
+    Ok(())
+}
+
+/// Demonstrates generating KML output for Google Earth.
+async fn demonstrate_generate_kml(service: &MapServiceClient<'_>) -> Result<()> {
+    tracing::info!("\n=== Example 10: Generate KML ===");
+    tracing::info!("Export map service as KML for Google Earth");
+
+    let params = GenerateKmlParams::builder()
+        .doc_name("USA_Map")
+        .layers(vec![0, 2]) // Cities and States layers
+        .build()
+        .expect("Valid KML params");
+
+    let kml_result = service.generate_kml(params).await;
+
+    match kml_result {
+        Ok(kml) => {
+            // Verify KML was generated
+            assert!(
+                !kml.is_empty(),
+                "Generated KML should not be empty"
+            );
+            assert!(
+                kml.len() > 100,
+                "KML should have substantial content, got {} bytes",
+                kml.len()
+            );
+
+            tracing::info!(
+                kml_length = kml.len(),
+                "✅ KML generated successfully"
+            );
+            tracing::info!("   Use case: Integration with Google Earth, KML viewers");
+            tracing::info!("   KML preview: {}...", &kml.chars().take(100).collect::<String>());
+        }
+        Err(e) => {
+            // Some services don't support KML generation
+            tracing::warn!(
+                error = %e,
+                "KML generation not supported by this service"
+            );
+            tracing::info!("   This is expected - not all services support KML export");
+            tracing::info!("   Services need KmlServer extension enabled");
+        }
+    }
+
+    Ok(())
+}
+
+/// Demonstrates generating dynamic classification renderers.
+async fn demonstrate_generate_renderer(service: &MapServiceClient<'_>) -> Result<()> {
+    tracing::info!("\n=== Example 11: Generate Renderer ===");
+    tracing::info!("Create dynamic classification renderer for data visualization");
+
+    // Try to generate a renderer for States layer (layer 2)
+    // Classification based on population or area
+    let params = GenerateRendererParams::builder()
+        .classification_field("POP2000") // Population field
+        .classification_method("natural-breaks")
+        .break_count(5)
+        .build()
+        .expect("Valid renderer params");
+
+    let renderer_result = service.generate_renderer(2, params).await;
+
+    match renderer_result {
+        Ok(renderer) => {
+            // Verify renderer was generated
+            assert!(
+                !renderer.renderer_type().is_empty(),
+                "Generated renderer should have renderer type"
+            );
+
+            tracing::info!("✅ Renderer generated successfully");
+            tracing::info!("   Renderer type: {}", renderer.renderer_type());
+            tracing::info!("   Use case: Dynamic choropleth maps, data visualization");
+
+            if let Some(field) = renderer.field() {
+                tracing::info!("   Classification field: {}", field);
+            }
+
+            if let Some(breaks) = renderer.class_break_infos() {
+                tracing::info!("   Class breaks: {} classes", breaks.len());
+            }
+        }
+        Err(e) => {
+            // Some services don't support dynamic renderers
+            tracing::warn!(
+                error = %e,
+                "Renderer generation not supported by this service"
+            );
+            tracing::info!("   This is expected - not all services support dynamic renderers");
+            tracing::info!("   Requires specific service configuration and field availability");
+        }
     }
 
     Ok(())
