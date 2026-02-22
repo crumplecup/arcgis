@@ -171,6 +171,21 @@ async fn create_feature_service(content_key: &str) -> Result<ServiceInfo> {
         .clone()
         .context("Created service should have URL")?;
 
+    // Verify service was created successfully
+    assert!(
+        !service_item_id.is_empty(),
+        "Service item ID should not be empty"
+    );
+    assert!(
+        !service_url.is_empty(),
+        "Service URL should not be empty"
+    );
+    assert!(
+        service_url.contains("FeatureServer"),
+        "Service URL should contain 'FeatureServer', got: {}",
+        service_url
+    );
+
     tracing::info!(
         service_item_id = %service_item_id,
         service_url = %service_url,
@@ -239,13 +254,30 @@ async fn create_test_feature(
         .add_features(layer_id, vec![test_feature], EditOptions::new())
         .await?;
 
+    // Verify add operation returned results
+    assert!(
+        !add_result.add_results().is_empty(),
+        "add_features should return at least one result"
+    );
+
     let object_id = if let Some(result) = add_result.add_results().first() {
+        // Verify feature was added successfully
+        assert!(
+            *result.success(),
+            "Feature creation should succeed, error: {:?}",
+            result.error()
+        );
+
         if *result.success() {
             let oid = result
                 .object_id()
                 .as_ref()
                 .copied()
                 .context("Added feature should have ObjectID")?;
+
+            // Verify ObjectID is valid (not 0)
+            assert!(oid.0 > 0, "ObjectID should be positive, got: {}", oid.0);
+
             tracing::info!(object_id = oid.0, "✅ Test feature created");
             oid
         } else {
@@ -271,6 +303,8 @@ async fn demonstrate_list_attachments(
         .query_attachments(layer_id, object_id)
         .await?;
 
+    // Verify query returns a list (even if empty initially)
+    // This is expected to be 0 for a newly created feature
     tracing::info!(
         attachment_count = attachments.len(),
         "Found existing attachments"
@@ -306,6 +340,16 @@ async fn demonstrate_add_photo(
         .add_attachment(layer_id, object_id, source)
         .await?;
 
+    // Verify photo upload succeeded
+    assert!(
+        *add_result.success(),
+        "Photo upload should succeed"
+    );
+    assert!(
+        add_result.object_id().is_some(),
+        "Upload result should include object_id"
+    );
+
     if *add_result.success() {
         tracing::info!(
             object_id = ?add_result.object_id().as_ref().map(|id| id.0),
@@ -337,6 +381,16 @@ async fn demonstrate_add_pdf(
         .add_attachment(layer_id, object_id, source)
         .await?;
 
+    // Verify PDF upload succeeded
+    assert!(
+        *pdf_result.success(),
+        "PDF upload should succeed"
+    );
+    assert!(
+        pdf_result.object_id().is_some(),
+        "Upload result should include object_id"
+    );
+
     if *pdf_result.success() {
         tracing::info!(
             object_id = ?pdf_result.object_id().as_ref().map(|id| id.0),
@@ -364,6 +418,17 @@ async fn demonstrate_download(
         .query_attachments(layer_id, object_id)
         .await?;
 
+    // Verify we now have attachments (we just added 2: photo and PDF)
+    assert!(
+        !attachments.is_empty(),
+        "Should have attachments after adding photo and PDF"
+    );
+    assert!(
+        attachments.len() >= 2,
+        "Should have at least 2 attachments, got {}",
+        attachments.len()
+    );
+
     if let Some(attachment) = attachments.first() {
         let attachment_id = *attachment.id();
 
@@ -372,6 +437,12 @@ async fn demonstrate_download(
         let download_result = feature_service
             .download_attachment(layer_id, object_id, attachment_id, target)
             .await?;
+
+        // Verify download to file succeeded
+        assert!(
+            download_result.path().is_some(),
+            "Download to file should return a path"
+        );
 
         if let Some(path) = download_result.path() {
             tracing::info!(path = ?path, "✅ Downloaded to file");
@@ -383,7 +454,19 @@ async fn demonstrate_download(
             .download_attachment(layer_id, object_id, attachment_id, target)
             .await?;
 
+        // Verify download to memory succeeded
+        assert!(
+            download_result.bytes().is_some(),
+            "Download to memory should return bytes"
+        );
+
         if let Some(bytes) = download_result.bytes() {
+            // Verify we got actual data (not empty)
+            assert!(
+                !bytes.is_empty(),
+                "Downloaded bytes should not be empty"
+            );
+
             tracing::info!(
                 size = bytes.len(),
                 "✅ Downloaded to memory ({} bytes)",
@@ -423,6 +506,12 @@ async fn demonstrate_update(
         let update_result = feature_service
             .update_attachment(layer_id, object_id, attachment_id, source)
             .await?;
+
+        // Verify update succeeded
+        assert!(
+            *update_result.success(),
+            "Attachment update should succeed"
+        );
 
         if *update_result.success() {
             tracing::info!(
@@ -513,7 +602,20 @@ async fn cleanup(
         .delete_features(layer_id, vec![object_id], EditOptions::new())
         .await?;
 
+    // Verify delete operation returned results
+    assert!(
+        !delete_result.delete_results().is_empty(),
+        "delete_features should return at least one result"
+    );
+
     if let Some(result) = delete_result.delete_results().first() {
+        // Verify deletion succeeded
+        assert!(
+            *result.success(),
+            "Feature deletion should succeed, error: {:?}",
+            result.error()
+        );
+
         if *result.success() {
             tracing::info!(object_id = object_id.0, "✅ Test feature deleted");
         } else {
