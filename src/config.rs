@@ -13,6 +13,7 @@
 //! - `ARCGIS_CLIENT_SECRET` - OAuth client secret for client credentials flow
 //! - `ARCGIS_ENTERPRISE_PORTAL` - URL for ArcGIS Enterprise portal (e.g., `https://your-server.com/portal/sharing/rest`)
 //! - `ARCGIS_ENTERPRISE_KEY` - API key for ArcGIS Enterprise portal operations
+//! - `ARCGIS_FEATURE_URL` - Base URL for a feature service (e.g., `https://your-server.com/arcgis/rest/services/Assets/FeatureServer`)
 //!
 //! # Example
 //!
@@ -87,6 +88,14 @@ pub struct EnvConfig {
     /// General-level permissions for Enterprise portal content management and feature editing.
     /// Separate from ArcGIS Online keys as Enterprise portals use different authentication.
     pub arcgis_enterprise_key: Option<SecretString>,
+
+    /// Base URL for a feature service.
+    ///
+    /// Example: `https://your-server.com/arcgis/rest/services/Assets/FeatureServer`
+    ///
+    /// Used for version management examples to construct VersionManagementServer URL.
+    /// The VersionManagementServer URL is derived by replacing `FeatureServer` with `VersionManagementServer`.
+    pub arcgis_feature_url: Option<String>,
 }
 
 impl EnvConfig {
@@ -139,6 +148,9 @@ impl EnvConfig {
             arcgis_enterprise_key: std::env::var("ARCGIS_ENTERPRISE_KEY").ok().map(|s| {
                 tracing::debug!("ARCGIS_ENTERPRISE_KEY loaded from environment");
                 SecretString::new(s.into())
+            }),
+            arcgis_feature_url: std::env::var("ARCGIS_FEATURE_URL").ok().inspect(|_| {
+                tracing::debug!("ARCGIS_FEATURE_URL loaded from environment");
             }),
         };
 
