@@ -118,8 +118,23 @@ async fn demonstrate_basic_map_export(service: &MapServiceClient<'_>) -> Result<
     );
 
     if let Some(path) = result.path() {
+        // Verify file exists on disk
+        assert!(
+            path.exists(),
+            "Exported file should exist at {}",
+            path.display()
+        );
+
+        // Verify file has content
+        let metadata = std::fs::metadata(&path)?;
+        assert!(
+            metadata.len() > 0,
+            "Exported file should not be empty"
+        );
+
         tracing::info!(
             path = %path.display(),
+            size_bytes = metadata.len(),
             "✅ Map exported successfully"
         );
         tracing::info!("   Extent: San Francisco Bay Area");
@@ -154,8 +169,21 @@ async fn demonstrate_transparent_export(service: &MapServiceClient<'_>) -> Resul
     );
 
     if let Some(path) = result.path() {
+        // Verify file exists
+        assert!(
+            path.exists(),
+            "Transparent map file should exist"
+        );
+
+        let metadata = std::fs::metadata(&path)?;
+        assert!(
+            metadata.len() > 0,
+            "Transparent map should not be empty"
+        );
+
         tracing::info!(
             path = %path.display(),
+            size_bytes = metadata.len(),
             "✅ Transparent map exported"
         );
         tracing::info!("   Background: Transparent (alpha channel)");
@@ -189,8 +217,27 @@ async fn demonstrate_high_dpi_export(service: &MapServiceClient<'_>) -> Result<(
     );
 
     if let Some(path) = result.path() {
+        // Verify file exists
+        assert!(
+            path.exists(),
+            "High-DPI map file should exist"
+        );
+
+        let metadata = std::fs::metadata(&path)?;
+        assert!(
+            metadata.len() > 0,
+            "High-DPI map should not be empty"
+        );
+        // High DPI files should be larger than regular exports
+        assert!(
+            metadata.len() > 10000,
+            "High-DPI map should be substantial, got {} bytes",
+            metadata.len()
+        );
+
         tracing::info!(
             path = %path.display(),
+            size_bytes = metadata.len(),
             "✅ High-DPI map exported"
         );
         tracing::info!("   Resolution: 300 DPI (print quality)");
@@ -243,6 +290,18 @@ async fn demonstrate_identify_features(service: &MapServiceClient<'_>) -> Result
         tracing::info!("   No features found at this location");
         tracing::info!("   Try different coordinates or increase tolerance");
     } else {
+        // Verify identify results have expected structure
+        for result in response.results().iter() {
+            assert!(
+                !result.layer_name().is_empty(),
+                "Identified feature should have layer name"
+            );
+            assert!(
+                !result.attributes().is_empty(),
+                "Identified feature should have attributes"
+            );
+        }
+
         tracing::info!("📍 Features identified:");
         for (i, result) in response.results().iter().take(5).enumerate() {
             tracing::info!(
@@ -291,6 +350,27 @@ async fn demonstrate_find_by_text(service: &MapServiceClient<'_>) -> Result<()> 
         !response.results().is_empty(),
         "Should find cities containing 'Los' (e.g., Los Angeles)"
     );
+    assert!(
+        response.results().len() > 0,
+        "Find should return at least one result"
+    );
+
+    // Verify all results have expected structure
+    for result in response.results().iter() {
+        assert!(
+            !result.layer_name().is_empty(),
+            "Found feature should have layer name"
+        );
+        assert!(
+            !result.found_field_name().is_empty(),
+            "Found feature should have field name"
+        );
+        // Value is a serde_json::Value, verify it exists
+        assert!(
+            !result.value().is_null(),
+            "Found feature should have non-null value"
+        );
+    }
 
     tracing::info!(result_count = response.results().len(), "✅ Find completed");
 
@@ -336,6 +416,29 @@ async fn demonstrate_legend_retrieval(service: &MapServiceClient<'_>) -> Result<
         !legend.layers().is_empty(),
         "Legend should have at least one layer"
     );
+    // USA MapServer has 4 layers: Cities, Highways, States, Counties
+    assert!(
+        legend.layers().len() >= 3,
+        "USA MapServer should have at least 3 layers, got {}",
+        legend.layers().len()
+    );
+
+    // Verify layers have expected structure
+    for layer in legend.layers().iter() {
+        assert!(
+            !layer.layer_name().is_empty(),
+            "Legend layer should have a name"
+        );
+        // Most layers should have at least one legend item
+        if !layer.legend().is_empty() {
+            for symbol in layer.legend().iter() {
+                assert!(
+                    !symbol.label().is_empty(),
+                    "Legend symbol should have a label"
+                );
+            }
+        }
+    }
 
     tracing::info!(layer_count = legend.layers().len(), "✅ Legend retrieved");
 
