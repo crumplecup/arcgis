@@ -98,6 +98,16 @@ async fn demonstrate_basic_search(portal: &PortalClient<'_>) -> Result<()> {
         .await
         .context("Failed to search portal items")?;
 
+    // Verify search returned results
+    assert!(
+        *search_results.total() > 0,
+        "Search should find feature services tagged with 'parks'"
+    );
+    assert!(
+        !search_results.results().is_empty(),
+        "Search results should not be empty"
+    );
+
     tracing::info!(
         total_found = search_results.total(),
         returned = search_results.results().len(),
@@ -126,6 +136,16 @@ async fn demonstrate_advanced_query(portal: &PortalClient<'_>) -> Result<()> {
         .search(recent_maps)
         .await
         .context("Failed to search web maps")?;
+
+    // Verify web map search returned results
+    assert!(
+        *maps_result.total() > 0,
+        "Search should find web maps"
+    );
+    assert!(
+        !maps_result.results().is_empty(),
+        "Web map results should not be empty"
+    );
 
     tracing::info!(
         total_found = maps_result.total(),
@@ -168,6 +188,20 @@ async fn demonstrate_item_details(portal: &PortalClient<'_>) -> Result<()> {
             .await
             .context("Failed to retrieve item details")?;
 
+        // Verify item details were retrieved
+        assert!(
+            !item_details.title().is_empty(),
+            "Item should have a title"
+        );
+        assert!(
+            !item_details.item_type().is_empty(),
+            "Item should have a type"
+        );
+        assert!(
+            !item_details.owner().is_empty(),
+            "Item should have an owner"
+        );
+
         tracing::info!("📋 Item Details:");
         tracing::info!("   Title: {}", item_details.title());
         tracing::info!("   Type: {}", item_details.item_type());
@@ -209,6 +243,16 @@ async fn demonstrate_group_discovery(portal: &PortalClient<'_>) -> Result<()> {
         .await
         .context("Failed to search groups")?;
 
+    // Verify group search returned results
+    assert!(
+        *group_results.total() > 0,
+        "Search should find public groups related to 'open data'"
+    );
+    assert!(
+        !group_results.results().is_empty(),
+        "Group search results should not be empty"
+    );
+
     tracing::info!(
         total_found = group_results.total(),
         returned = group_results.results().len(),
@@ -249,6 +293,13 @@ async fn demonstrate_pagination(portal: &PortalClient<'_>) -> Result<()> {
             .search(page_params)
             .await
             .context("Failed to search page")?;
+
+        // Verify pagination returns results
+        assert!(
+            !page_results.results().is_empty(),
+            "Pagination should return results on page {}",
+            page_num
+        );
 
         tracing::info!(
             "📄 Page {} (items {}-{}):",
