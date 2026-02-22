@@ -98,6 +98,16 @@ async fn demonstrate_raster_metadata(service: &ImageServiceClient<'_>) -> Result
 
     let info = service.get_raster_info().await?;
 
+    // Verify raster metadata was retrieved
+    assert!(
+        info.pixel_type().is_some(),
+        "Raster info should include pixel type"
+    );
+    assert!(
+        info.band_count().is_some(),
+        "Raster info should include band count"
+    );
+
     tracing::info!("📊 Raster Information:");
 
     if let Some(pixel_type) = info.pixel_type() {
@@ -140,6 +150,20 @@ async fn demonstrate_export_image(service: &ImageServiceClient<'_>) -> Result<()
 
     let result = service.export_image(params).await?;
 
+    // Verify image was exported successfully
+    assert!(
+        !result.href().is_empty(),
+        "Export result should have download URL (href)"
+    );
+    assert!(
+        result.width().is_some(),
+        "Export result should include image width"
+    );
+    assert!(
+        result.height().is_some(),
+        "Export result should include image height"
+    );
+
     tracing::info!(
         href = %result.href(),
         "✅ Image exported successfully"
@@ -168,6 +192,12 @@ async fn demonstrate_identify_pixel(service: &ImageServiceClient<'_>) -> Result<
     let geometry: ArcGISGeometry = geom.into();
 
     let result = service.identify(&geometry).await?;
+
+    // Verify pixel value was returned
+    assert!(
+        result.value().is_some(),
+        "Identify should return pixel value for valid point"
+    );
 
     tracing::info!("📍 Pixel Values at Redlands, CA:");
     if let Some(value) = result.value() {
@@ -225,8 +255,14 @@ async fn demonstrate_sample_transect(service: &ImageServiceClient<'_>) -> Result
 
     let result = service.get_samples(params).await?;
 
-    tracing::info!("🔬 Sampled Pixel Values:");
+    // Verify samples were returned
     let samples = result.samples();
+    assert!(
+        !samples.is_empty(),
+        "Sample should return pixel values along transect"
+    );
+
+    tracing::info!("🔬 Sampled Pixel Values:");
     for (i, sample) in samples.iter().enumerate().take(10) {
         // Sample is a Value, so we need to access it as such
         if let Some(value) = sample.get("value") {
@@ -277,9 +313,21 @@ async fn demonstrate_compute_histograms(service: &ImageServiceClient<'_>) -> Res
 
     let result = service.compute_histograms(params).await?;
 
-    tracing::info!("📊 Histogram Results:");
+    // Verify histograms were computed
     let histograms = result.histograms();
+    assert!(
+        !histograms.is_empty(),
+        "Histogram computation should return at least one histogram"
+    );
+
+    tracing::info!("📊 Histogram Results:");
     for (i, histogram) in histograms.iter().enumerate() {
+        // Verify histogram has bins
+        assert!(
+            !histogram.counts().is_empty(),
+            "Histogram should have bin counts"
+        );
+
         tracing::info!("   Band {}: {} bins", i, histogram.counts().len());
 
         // Show the most common values
