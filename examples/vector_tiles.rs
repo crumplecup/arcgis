@@ -109,6 +109,17 @@ async fn demonstrate_style_retrieval(vt_service: &VectorTileServiceClient<'_>) -
 
     let style = vt_service.get_style().await?;
 
+    // Verify style was retrieved successfully
+    assert!(
+        *style.version() > 0,
+        "Style should have a valid Mapbox GL version, got {}",
+        style.version()
+    );
+    assert!(
+        !style.layers().is_empty(),
+        "Style should have at least one layer"
+    );
+
     tracing::info!("✅ Retrieved vector tile style");
     tracing::info!("   Mapbox GL version: {}", style.version());
     tracing::info!("   Layer count: {}", style.layers().len());
@@ -168,6 +179,12 @@ async fn demonstrate_single_tile(vt_service: &VectorTileServiceClient<'_>) -> Re
 
     let tile_data = vt_service.get_tile(&tile).await?;
 
+    // Verify tile data was retrieved
+    assert!(
+        !tile_data.is_empty(),
+        "Tile data should not be empty"
+    );
+
     tracing::info!("✅ Retrieved vector tile");
     tracing::info!("   Size: {} bytes", tile_data.len());
     tracing::info!("   Format: MVT (Mapbox Vector Tile / Protocol Buffer)");
@@ -201,6 +218,19 @@ async fn demonstrate_batch_tiles(vt_service: &VectorTileServiceClient<'_>) -> Re
     tracing::info!("");
 
     let tile_data = vt_service.get_tiles(&tiles).await?;
+
+    // Verify all tiles were retrieved
+    assert_eq!(
+        tile_data.len(),
+        tiles.len(),
+        "Should retrieve all requested tiles, requested {}, got {}",
+        tiles.len(),
+        tile_data.len()
+    );
+    assert!(
+        tile_data.iter().all(|t| !t.is_empty()),
+        "All tiles should have data"
+    );
 
     tracing::info!("✅ Retrieved {} tiles", tile_data.len());
 
@@ -239,6 +269,13 @@ async fn demonstrate_font_glyphs(vt_service: &VectorTileServiceClient<'_>) -> Re
         let font_stack = FontStack::new(*font_name);
         let glyphs = vt_service.get_fonts(&font_stack, range).await?;
 
+        // Verify glyph data was retrieved
+        assert!(
+            !glyphs.is_empty(),
+            "Font glyphs should not be empty for {}",
+            font_name
+        );
+
         glyph_sizes.insert(*font_name, glyphs.len());
 
         tracing::info!("✅ Retrieved glyphs: {}", font_name);
@@ -272,6 +309,12 @@ async fn demonstrate_sprite_resources(vt_service: &VectorTileServiceClient<'_>) 
     tracing::debug!("Fetching sprite metadata");
     let sprite_meta = vt_service.get_sprite_metadata().await?;
 
+    // Verify sprite metadata was retrieved
+    assert!(
+        sprite_meta.is_object(),
+        "Sprite metadata should be a JSON object"
+    );
+
     let sprite_count = if sprite_meta.is_object() {
         sprite_meta.as_object().map(|m| m.len()).unwrap_or(0)
     } else {
@@ -295,6 +338,12 @@ async fn demonstrate_sprite_resources(vt_service: &VectorTileServiceClient<'_>) 
     // Get sprite image (PNG sprite sheet)
     tracing::debug!("Fetching sprite image");
     let sprite_image = vt_service.get_sprite_image().await?;
+
+    // Verify sprite image was retrieved
+    assert!(
+        !sprite_image.is_empty(),
+        "Sprite image should not be empty"
+    );
 
     tracing::info!("✅ Retrieved sprite image");
     tracing::info!("   Format: PNG");
