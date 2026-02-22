@@ -111,6 +111,12 @@ async fn demonstrate_basic_map_export(service: &MapServiceClient<'_>) -> Result<
         .execute(ExportTarget::to_path("map_basic.png"))
         .await?;
 
+    // Verify map was exported successfully
+    assert!(
+        result.path().is_some(),
+        "Export should create a file and return path"
+    );
+
     if let Some(path) = result.path() {
         tracing::info!(
             path = %path.display(),
@@ -141,6 +147,12 @@ async fn demonstrate_transparent_export(service: &MapServiceClient<'_>) -> Resul
         .execute(ExportTarget::to_path("map_transparent.png"))
         .await?;
 
+    // Verify transparent map was exported
+    assert!(
+        result.path().is_some(),
+        "Transparent export should create a file and return path"
+    );
+
     if let Some(path) = result.path() {
         tracing::info!(
             path = %path.display(),
@@ -169,6 +181,12 @@ async fn demonstrate_high_dpi_export(service: &MapServiceClient<'_>) -> Result<(
         .dpi(300) // Print quality (default is 96)
         .execute(ExportTarget::to_path("map_high_dpi.png"))
         .await?;
+
+    // Verify high-DPI map was exported
+    assert!(
+        result.path().is_some(),
+        "High-DPI export should create a file and return path"
+    );
 
     if let Some(path) = result.path() {
         tracing::info!(
@@ -214,6 +232,8 @@ async fn demonstrate_identify_features(service: &MapServiceClient<'_>) -> Result
 
     let response = service.identify(params).await?;
 
+    // Verify identify response was received
+    // Note: Results may be empty if no features at the location, which is valid
     tracing::info!(
         result_count = response.results().len(),
         "✅ Identify completed"
@@ -265,6 +285,13 @@ async fn demonstrate_find_by_text(service: &MapServiceClient<'_>) -> Result<()> 
 
     let response = service.find(params).await?;
 
+    // Verify find response was received
+    // Should find cities containing "Los" (Los Angeles, etc.)
+    assert!(
+        !response.results().is_empty(),
+        "Should find cities containing 'Los' (e.g., Los Angeles)"
+    );
+
     tracing::info!(result_count = response.results().len(), "✅ Find completed");
 
     if response.results().is_empty() {
@@ -303,6 +330,12 @@ async fn demonstrate_legend_retrieval(service: &MapServiceClient<'_>) -> Result<
     tracing::info!("Get legend symbols and labels for all layers");
 
     let legend = service.get_legend().await?;
+
+    // Verify legend was retrieved
+    assert!(
+        !legend.layers().is_empty(),
+        "Legend should have at least one layer"
+    );
 
     tracing::info!(layer_count = legend.layers().len(), "✅ Legend retrieved");
 
