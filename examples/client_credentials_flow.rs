@@ -53,9 +53,24 @@ async fn main() -> anyhow::Result<()> {
     let auth = ClientCredentialsAuth::from_env()?;
     tracing::info!("✅ Authenticator created");
 
+    // Verify authenticator was created successfully
+    // (from_env() returns Result, so reaching this point verifies successful creation)
+
     // 1. Get access token (fetched automatically on first use)
     tracing::info!("🔑 Fetching access token");
     let token = auth.get_token().await?;
+
+    // Verify token was retrieved
+    assert!(
+        !token.is_empty(),
+        "Access token should not be empty"
+    );
+    assert!(
+        token.len() > 100,
+        "Access token should be substantial (>100 chars), got {} chars",
+        token.len()
+    );
+
     tracing::info!(
         token_preview = %&token[..20.min(token.len())],
         "✅ Access token obtained"
@@ -65,6 +80,17 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("🔄 Getting token again (should use cache)");
     let token2 = auth.get_token().await?;
     let tokens_match = token == token2;
+
+    // Verify token caching works
+    assert!(
+        tokens_match,
+        "Second token request should return cached token (tokens should match)"
+    );
+    assert!(
+        !token2.is_empty(),
+        "Cached token should not be empty"
+    );
+
     tracing::info!(tokens_match = tokens_match, "✅ Token retrieved from cache");
 
     // 3. Show token info
