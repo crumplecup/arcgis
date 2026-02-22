@@ -89,8 +89,8 @@ use anyhow::{Context, Result};
 use arcgis::{
     AddItemParams, AddToDefinitionParams, ApiKeyAuth, ApiKeyTier, ArcGISClient,
     CreateServiceParams, EditOptions, Feature, FeatureServiceClient, FieldDefinitionBuilder,
-    FieldType, GeometryTypeDefinition, LayerDefinitionBuilder, LayerId, NoAuth, PortalClient,
-    SharingParameters,
+    FieldType, GeometryTypeDefinition, ItemDataUpload, LayerDefinitionBuilder, LayerId, NoAuth,
+    PortalClient, SharingParameters,
 };
 use std::collections::HashMap;
 use std::time::Duration;
@@ -466,7 +466,7 @@ async fn demonstrate_workflow_a_direct_service(
     let share_params = SharingParameters::new().with_org(true);
     let share_result = portal.share_item(&service_item_id, share_params).await?;
 
-    if *share_result.success() {
+    if share_result.success() {
         tracing::info!("✅ Service shared with organization");
     }
 
@@ -594,19 +594,29 @@ async fn demonstrate_workflow_b_geojson_item(
     tracing::info!("");
     tracing::info!("📤 STEP 3: Uploading GeoJSON data to item");
     tracing::info!("");
-    tracing::info!("   Method: update_item_data()");
+    tracing::info!("   Method: update_item_data_v2()");
     tracing::info!("   Data size: {} bytes", data_size);
     tracing::info!("   Format: GeoJSON (application/json)");
     tracing::info!("");
 
     let geojson_bytes = geojson_string.into_bytes();
-    let update_result = portal.update_item_data(&item_id, geojson_bytes).await?;
+    let upload = ItemDataUpload::File {
+        data: geojson_bytes,
+        filename: "data.geojson".to_string(),
+        mime_type: "application/json".to_string(),
+    };
+    let update_result = portal.update_item_data_v2(&item_id, upload).await?;
 
-    if *update_result.success() {
-        tracing::info!("✅ Uploaded data successfully");
-        if let Some(id) = update_result.id() {
-            tracing::info!("   Item ID: {}", id);
-        }
+    assert!(
+        update_result.success(),
+        "Failed to upload item data: success={}, id={:?}",
+        update_result.success(),
+        update_result.id()
+    );
+
+    tracing::info!("✅ Uploaded data successfully");
+    if let Some(id) = update_result.id() {
+        tracing::info!("   Item ID: {}", id);
     }
 
     // ========================================================================
@@ -658,7 +668,7 @@ async fn demonstrate_workflow_b_geojson_item(
     tracing::info!("");
     tracing::info!("📊 Workflow B Summary:");
     tracing::info!("   ✓ Created portal item (metadata) - {}", item_id);
-    tracing::info!("   ✓ Uploaded {} bytes via update_item_data()", data_size);
+    tracing::info!("   ✓ Uploaded {} bytes via ItemDataUpload::File", data_size);
     tracing::info!(
         "   ✓ Retrieved {} bytes via get_item_data()",
         retrieved_size

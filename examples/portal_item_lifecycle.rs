@@ -115,7 +115,7 @@ async fn main() -> Result<()> {
     let share_params = SharingParameters::new().with_org(true);
     let share_result = portal.share_item(item_id, share_params).await?;
 
-    if *share_result.success() {
+    if share_result.success() {
         tracing::info!("✅ Shared with organization");
     } else {
         tracing::warn!("⚠️  Share returned success=false (may be API key permission restriction)");
@@ -131,7 +131,7 @@ async fn main() -> Result<()> {
     let unshare_params = SharingParameters::new();
     let unshare_result = portal.unshare_item(item_id, unshare_params).await?;
 
-    if *unshare_result.success() {
+    if unshare_result.success() {
         tracing::info!("✅ Unshared from organization");
     } else {
         tracing::warn!(
