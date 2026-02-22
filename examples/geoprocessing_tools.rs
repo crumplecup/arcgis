@@ -138,6 +138,12 @@ async fn demonstrate_async_job(service: &GeoprocessingServiceClient<'_>) -> Resu
     tracing::info!("   SQL Query: {}", query);
     let job_info = service.submit_job(params).await?;
 
+    // Verify job was submitted successfully
+    assert!(
+        !job_info.job_id().is_empty(),
+        "Job ID should not be empty after submission"
+    );
+
     tracing::info!(
         job_id = %job_info.job_id(),
         status = ?job_info.job_status(),
@@ -154,6 +160,22 @@ async fn demonstrate_async_job(service: &GeoprocessingServiceClient<'_>) -> Resu
             Some(60000), // Timeout: 60 seconds
         )
         .await?;
+
+    // Verify job completed successfully
+    assert!(
+        result.job_status().is_terminal(),
+        "Job status should be terminal after polling completes"
+    );
+    assert_eq!(
+        *result.job_status(),
+        arcgis::GPJobStatus::Succeeded,
+        "Job should have succeeded, got: {:?}",
+        result.job_status()
+    );
+    assert!(
+        !result.messages().is_empty(),
+        "Completed job should have messages"
+    );
 
     tracing::info!(
         job_id = %result.job_id(),
@@ -190,6 +212,12 @@ async fn demonstrate_async_job(service: &GeoprocessingServiceClient<'_>) -> Resu
             desc.starts_with("Executing (") || desc.contains("Running script")
         })
         .count();
+
+    // Verify we executed actual processing steps
+    assert!(
+        step_count > 0,
+        "Job should have executed processing steps, got 0"
+    );
 
     tracing::info!("   ✅ Hotspot analysis completed successfully");
     if let Some(time) = processing_time {
@@ -270,6 +298,12 @@ async fn demonstrate_job_monitoring(service: &GeoprocessingServiceClient<'_>) ->
     let job_info = service.submit_job(params).await?;
     let job_id = job_info.job_id().to_string();
 
+    // Verify job submission
+    assert!(
+        !job_id.is_empty(),
+        "Job ID should not be empty after submission"
+    );
+
     tracing::info!(job_id = %job_id, "✅ Job submitted to server");
     tracing::info!(
         "   Status: {:?} → Job queued, waiting for server resources",
@@ -309,12 +343,26 @@ async fn demonstrate_job_monitoring(service: &GeoprocessingServiceClient<'_>) ->
         tracing::info!("            → {}", status_explanation);
 
         if status.job_status().is_terminal() {
+            // Verify job succeeded
+            assert_eq!(
+                *status.job_status(),
+                arcgis::GPJobStatus::Succeeded,
+                "Job should have succeeded, got: {:?}",
+                status.job_status()
+            );
+
             tracing::info!("");
             tracing::info!("✅ Job completed in {:.1} seconds", elapsed);
 
             // Get final results
             if *status.job_status() == arcgis::GPJobStatus::Succeeded {
                 let result = service.get_job_result(&job_id).await?;
+
+                // Verify result has messages
+                assert!(
+                    !result.messages().is_empty(),
+                    "Job result should have processing messages"
+                );
                 tracing::info!("");
                 tracing::info!("📊 Weekday 911 Call Analysis Results:");
 
@@ -434,12 +482,26 @@ async fn demonstrate_job_messages(service: &GeoprocessingServiceClient<'_>) -> R
     let job_info = service.submit_job(params).await?;
     let job_id = job_info.job_id().to_string();
 
+    // Verify job submission
+    assert!(
+        !job_id.is_empty(),
+        "Job ID should not be empty"
+    );
+
     tracing::info!(job_id = %job_id, "✅ Job submitted");
 
     // Wait for completion
     let result = service
         .poll_until_complete(&job_id, 2000, 5000, Some(60000))
         .await?;
+
+    // Verify job completed successfully
+    assert_eq!(
+        *result.job_status(),
+        arcgis::GPJobStatus::Succeeded,
+        "Job should have succeeded, got: {:?}",
+        result.job_status()
+    );
 
     tracing::info!(
         job_id = %job_id,
@@ -451,6 +513,12 @@ async fn demonstrate_job_messages(service: &GeoprocessingServiceClient<'_>) -> R
     tracing::info!("");
     tracing::info!("📥 Retrieving server messages...");
     let messages = service.get_job_messages(&job_id).await?;
+
+    // Verify we received messages
+    assert!(
+        !messages.is_empty(),
+        "Job messages should not be empty for completed job"
+    );
 
     tracing::info!("");
     tracing::info!("💬 Analysis of Server Messages ({} total):", messages.len());
