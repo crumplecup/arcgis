@@ -14,6 +14,7 @@ along with their last associated commit.
 | [docs/examples_expansion_plan.md](docs/examples_expansion_plan.md) | Examples expansion plan (25% → 80% coverage) | New document | Today |
 | [ESRI_GEOMETRY_INTEGRATION_PLAN.md](ESRI_GEOMETRY_INTEGRATION_PLAN.md) | ✅ Geometry consolidation refactor (COMPLETE) | Latest on branch `refactor/consolidate-geometry` | Today |
 | [SERVICE_DEFINITION_TYPING_PLAN.md](SERVICE_DEFINITION_TYPING_PLAN.md) | 🟡 Strong typing for service definitions (replace serde_json::Value) | New document | Today |
+| [PLANNING_ITEM_DATA_API.md](PLANNING_ITEM_DATA_API.md) | 🔧 Item data API enhancement (fix get_item_data/update_item_data, support diverse formats) | New document | 2026-02-21 |
 
 ## Project Standards
 
