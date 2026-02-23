@@ -362,7 +362,7 @@ impl<'a> MapServiceClient<'a> {
 
         tracing::debug!(url = %url, "Sending metadata request");
 
-        let mut request = self.client.http().get(url);
+        let mut request = self.client.http().get(url).query(&[("f", "json")]);
 
         if let Some(token) = self.client.get_token_if_required().await? {
             request = request.query(&[("token", token)]);

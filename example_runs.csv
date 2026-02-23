@@ -1,0 +1,54 @@
+example_name,timestamp,status,duration_ms,methods_tested,service_type,error_message,git_commit
+basic_client,2026-02-23T15:59:48.719989295+00:00,success,87,,ArcGISClient,"",37e5bc1
+client_credentials_flow,2026-02-23T16:00:00.938840379+00:00,success,10371,get_token,ClientCredentialsAuth,"",37e5bc1
+elevation_analysis,2026-02-23T16:00:11.757114023+00:00,success,8784,,ExampleClient,"",37e5bc1
+feature_service_batch_editing,2026-02-23T16:00:19.432545085+00:00,success,6910,get_table_definition;apply_edits;update_features;apply_edits_with_global_ids,FeatureServiceClient,"",37e5bc1
+feature_service_metadata,2026-02-23T16:00:22.578643168+00:00,success,914,,ExampleClient,"",37e5bc1
+geocode_addresses,2026-02-23T16:00:28.179714951+00:00,success,2100,,ExampleClient,"",37e5bc1
+geoprocessing_execution_modes,2026-02-23T16:00:55.052235962+00:00,success,3881,,ExampleClient,"",37e5bc1
+image_service_identify_advanced,2026-02-23T16:00:58.831499433+00:00,success,1364,,ExampleClient,"",37e5bc1
+image_service_raster,2026-02-23T16:01:02.763724945+00:00,success,1553,,ExampleClient,"",37e5bc1
+portal_content_management,2026-02-23T16:01:36.654608162+00:00,success,3609,,ExampleClient,"",37e5bc1
+portal_group_workflow,2026-02-23T16:01:52.015241457+00:00,success,12874,,ExampleClient,"",37e5bc1
+portal_item_lifecycle,2026-02-23T16:01:57.886102817+00:00,success,3580,,PortalClient,"",37e5bc1
+routing_navigation,2026-02-23T16:02:09.889314058+00:00,success,9470,,ExampleClient,"",37e5bc1
+spatial_query,2026-02-23T16:02:20.732581929+00:00,success,8654,,ExampleClient,"",37e5bc1
+vector_tiles,2026-02-23T16:02:29.635277429+00:00,success,6269,,ExampleClient,"",37e5bc1
+feature_service_truncate_safe,2026-02-23T16:02:41.323286615+00:00,failed,10857,truncate;add_features;query_feature_count;create;start_editing;stop_editing;delete,FeatureServiceClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+version_management_basics,2026-02-23T16:02:42.482728087+00:00,failed,350,list_versions;create;get_info;alter;start_editing;stop_editing;start_reading;stop_reading;differences;delete_forward_edits;reconcile;post;conflicts;inspect_conflicts;restore_rows;delete,VersionManagementClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+advanced_queries,2026-02-23T16:02:57.265938003+00:00,success,11643,,ExampleClient,"",37e5bc1
+feature_service_field_calculations,2026-02-23T16:03:56.722345061+00:00,failed,0,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+geocoding_batch_operations,2026-02-23T16:04:05.146139331+00:00,failed,5785,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+geometry_advanced,2026-02-23T16:04:08.448981018+00:00,failed,953,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+map_service_basics,2026-02-23T16:04:54.563591535+00:00,failed,1943,,ExampleClient,"Panic: Legend symbol should have a label at examples/map_service_basics.rs:466",37e5bc1
+portal_group_membership,2026-02-23T16:05:02.729592935+00:00,failed,5667,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+portal_item_data_files,2026-02-23T16:05:21.321424083+00:00,success,15473,,ExampleClient,"",37e5bc1
+portal_item_data_text,2026-02-23T16:05:26.761902669+00:00,failed,2997,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+portal_service_management,2026-02-23T16:05:50.533195341+00:00,failed,473,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+elevation_async_analysis,2026-02-23T16:10:42.201561147+00:00,success,18057,,ExampleClient,"",37e5bc1
+geometry_operations,2026-02-23T16:11:19.417736122+00:00,failed,16921,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+map_service_basics,2026-02-23T16:17:19.481040439+00:00,failed,2079,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+map_service_basics,2026-02-23T16:21:12.699603876+00:00,failed,7331,,ExampleClient,"Panic: Valid KML params: UninitializedField(""layer_defs"") at examples/map_service_basics.rs:647",37e5bc1
+map_service_basics,2026-02-23T16:22:45.451709798+00:00,success,12426,,ExampleClient,"",37e5bc1
+map_service_basics,2026-02-23T16:22:59.690691734+00:00,success,2354,,ExampleClient,"",37e5bc1
+geometry_operations,2026-02-23T16:24:57.686751165+00:00,success,8725,,ExampleClient,"",37e5bc1
+geometry_advanced,2026-02-23T16:27:42.927807855+00:00,failed,11757,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+geometry_advanced,2026-02-23T16:30:46.941609394+00:00,failed,6568,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+geometry_advanced,2026-02-23T16:31:25.953571018+00:00,failed,6748,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+geometry_advanced,2026-02-23T16:31:35.056866648+00:00,failed,1699,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+geometry_advanced,2026-02-23T16:32:02.211179072+00:00,failed,2805,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+geometry_advanced,2026-02-23T16:33:54.569208618+00:00,failed,2762,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+geometry_advanced,2026-02-23T16:34:01.115554139+00:00,failed,820,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+geometry_advanced,2026-02-23T16:36:12.394323520+00:00,failed,15593,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+geometry_advanced,2026-02-23T16:43:23.117404813+00:00,success,1959,,ExampleClient,"",37e5bc1
+geometry_advanced,2026-02-23T16:43:32.483159627+00:00,success,2589,,ExampleClient,"",37e5bc1
+geometry_advanced,2026-02-23T16:43:40.919448688+00:00,success,2809,,ExampleClient,"",37e5bc1
+geometry_advanced,2026-02-23T16:48:21.954184837+00:00,success,961,,ExampleClient,"",37e5bc1
+geometry_advanced,2026-02-23T16:48:29.436130893+00:00,success,2136,,ExampleClient,"",37e5bc1
+geometry_advanced,2026-02-23T16:49:02.334222411+00:00,success,15977,,ExampleClient,"",37e5bc1
+portal_item_data_text,2026-02-23T16:54:32.142797581+00:00,failed,12652,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+portal_item_data_text,2026-02-23T20:20:27.561151261+00:00,failed,7862,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+portal_item_data_text,2026-02-23T20:20:37.187602243+00:00,failed,2706,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+portal_item_data_text,2026-02-23T20:23:44.330922106+00:00,failed,6403,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+portal_item_data_text,2026-02-23T20:23:50.561365961+00:00,failed,1384,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
+portal_item_data_text,2026-02-23T20:26:00.957548377+00:00,success,6744,,ExampleClient,"",37e5bc1

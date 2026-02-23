@@ -1,16 +1,24 @@
-//! 📝 Portal Item Data - Text Uploads Example
+//! 📝 Portal Item Data - Web Map Text Uploads Example
 //!
-//! Demonstrates uploading JSON-based item data using the `Text` variant of `ItemDataUpload`.
-//! This example shows how to work with Web Maps, GeoJSON text, and other JSON-structured
-//! portal items.
+//! Demonstrates uploading Web Map JSON using the `text` parameter during item creation.
+//! Web Maps are one of the few item types that support inline text data (as opposed to file uploads).
 //!
 //! # What You'll Learn
 //!
-//! - **Text-based uploads**: Use `ItemDataUpload::Text` for JSON content
-//! - **GeoJSON items**: Create and populate GeoJSON items with feature data
-//! - **Web Map items**: Upload Web Map JSON definitions
+//! - **Text-based uploads**: Use `AddItemParams::with_text()` for Web Map JSON
+//! - **Web Map items**: Upload Web Map JSON definitions inline
 //! - **Data verification**: Download and validate uploaded content
 //! - **Round-trip integrity**: Ensure data matches after upload/download cycle
+//!
+//! # Important Note
+//!
+//! Most item types (GeoJSON, CSV, shapefiles, etc.) require **file uploads**, not text.
+//! The `text` parameter is specifically for:
+//! - Web Maps (map configuration JSON)
+//! - Web Mapping Applications (app configuration JSON)
+//! - Other configuration-based item types
+//!
+//! For GeoJSON and other file-based items, see the `portal_item_data_files` example.
 //!
 //! # Prerequisites
 //!
@@ -42,12 +50,16 @@
 //!
 //! # Item Types Covered
 //!
-//! - **GeoJSON**: Geographic feature collections
-//! - **Web Map**: Map configuration and layer definitions
-//! - **JSON**: Generic JSON data items
+//! - **Web Map**: Map configuration and layer definitions (uses `text` parameter)
+//!
+//! # Why Not GeoJSON?
+//!
+//! GeoJSON and most other file-based item types require the `file` parameter, not `text`.
+//! See the `portal_item_data_files` example for file-based uploads.
 
 use anyhow::Result;
-use arcgis::{AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, ItemDataUpload, PortalClient};
+use arcgis::{AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, PortalClient};
+use arcgis::example_tracker::ExampleTracker;
 
 /// Portal base URL for ArcGIS Online
 const PORTAL_URL: &str = "https://www.arcgis.com/sharing/rest";
@@ -62,6 +74,11 @@ async fn main() -> Result<()> {
         )
         .init();
 
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("portal_item_data_text")
+        .service_type("ExampleClient")
+        .start();
+
     tracing::info!("📝 Portal Item Data - Text Uploads Example");
     tracing::info!("");
 
@@ -72,150 +89,18 @@ async fn main() -> Result<()> {
     let client = ArcGISClient::new(auth);
     let portal = PortalClient::new(PORTAL_URL, &client);
 
-    // Demonstrate different text-based upload scenarios
-    test_geojson_text_upload(&portal).await?;
+    // Demonstrate Web Map text upload (one of the few item types that supports inline text data)
     test_webmap_text_upload(&portal).await?;
 
-    tracing::info!("\n✅ All text upload examples completed successfully!");
+    tracing::info!("\n✅ Web Map text upload completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 
 /// Demonstrates uploading GeoJSON as text data.
-async fn test_geojson_text_upload(portal: &PortalClient<'_>) -> Result<()> {
-    tracing::info!("\n=== Example 1: GeoJSON Text Upload ===");
-    tracing::info!("Create GeoJSON item and upload feature data as text");
-    tracing::info!("");
-
-    // Create a sample GeoJSON FeatureCollection
-    let geojson = r#"{
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [-122.4194, 37.7749]
-      },
-      "properties": {
-        "name": "San Francisco",
-        "population": 883305,
-        "state": "California"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [-118.2437, 34.0522]
-      },
-      "properties": {
-        "name": "Los Angeles",
-        "population": 3979576,
-        "state": "California"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [-121.8863, 37.3382]
-      },
-      "properties": {
-        "name": "San Jose",
-        "population": 1026908,
-        "state": "California"
-      }
-    }
-  ]
-}"#;
-
-    let original_size = geojson.len();
-    tracing::info!("   GeoJSON size: {} bytes", original_size);
-    tracing::info!("   Features: 3 cities");
-    tracing::info!("");
-
-    // STEP 1: Create GeoJSON item (metadata only)
-    tracing::info!("📋 STEP 1: Creating GeoJSON item");
-    let item_params = AddItemParams::new("California Cities (Text Upload Demo)", "GeoJson")
-        .with_description("Demonstrates text-based GeoJSON upload using ItemDataUpload::Text")
-        .with_tags(vec![
-            "demo".to_string(),
-            "geojson".to_string(),
-            "text-upload".to_string(),
-        ]);
-
-    let add_result = portal.add_item(item_params).await?;
-    let item_id = add_result.id().to_string();
-    tracing::info!("✅ Created item: {}", item_id);
-    tracing::info!("");
-
-    // STEP 2: Upload GeoJSON data as text
-    tracing::info!("📤 STEP 2: Uploading GeoJSON as text");
-    tracing::info!("   Method: update_item_data_v2()");
-    tracing::info!("   Upload Type: ItemDataUpload::Text");
-    tracing::info!("");
-
-    let upload = ItemDataUpload::Text(geojson.to_string());
-    let update_result = portal.update_item_data_v2(&item_id, upload).await?;
-
-    assert!(
-        update_result.success(),
-        "Failed to upload GeoJSON text: {:?}",
-        update_result
-    );
-    tracing::info!("✅ Uploaded {} bytes as text", original_size);
-    tracing::info!("");
-
-    // STEP 3: Download and verify
-    tracing::info!("📥 STEP 3: Downloading and verifying data");
-    let retrieved_data = portal.get_item_data(&item_id).await?;
-    let retrieved_size = retrieved_data.len();
-
-    tracing::info!("   Retrieved size: {} bytes", retrieved_size);
-    tracing::info!("   Original size:  {} bytes", original_size);
-
-    // Verify data integrity
-    assert!(retrieved_size > 0, "Retrieved data is empty!");
-
-    // Parse to verify it's valid GeoJSON
-    let retrieved_string = String::from_utf8(retrieved_data.to_vec())?;
-    let parsed: geojson::FeatureCollection = serde_json::from_str(&retrieved_string)?;
-
-    assert_eq!(
-        parsed.features.len(),
-        3,
-        "Expected 3 features, got {}",
-        parsed.features.len()
-    );
-
-    tracing::info!("✅ Valid GeoJSON with {} features", parsed.features.len());
-    tracing::info!("");
-
-    // STEP 4: Cleanup
-    tracing::info!("🧹 STEP 4: Cleaning up");
-    let delete_result = portal.delete_item(&item_id).await?;
-    assert!(delete_result.success(), "Failed to delete item");
-    tracing::info!("✅ Deleted item");
-    tracing::info!("");
-
-    tracing::info!("📊 GeoJSON Text Upload Summary:");
-    tracing::info!("   ✓ Created GeoJSON item");
-    tracing::info!(
-        "   ✓ Uploaded {} bytes via ItemDataUpload::Text",
-        original_size
-    );
-    tracing::info!(
-        "   ✓ Retrieved and verified {} features",
-        parsed.features.len()
-    );
-    tracing::info!("   ✓ Cleaned up resources");
-
-    Ok(())
-}
-
-/// Demonstrates uploading Web Map JSON as text data.
 async fn test_webmap_text_upload(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 2: Web Map Text Upload ===");
     tracing::info!("Create Web Map item and upload map definition as text");
@@ -264,40 +149,28 @@ async fn test_webmap_text_upload(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("   Layers: 1 operational + 1 basemap");
     tracing::info!("");
 
-    // STEP 1: Create Web Map item
-    tracing::info!("📋 STEP 1: Creating Web Map item");
+    // STEP 1: Create Web Map item WITH data (text parameter)
+    tracing::info!("📋 STEP 1: Creating Web Map item with data");
+    tracing::info!("   Method: add_item() with .with_text()");
+    tracing::info!("   Data size: {} bytes", original_size);
+    tracing::info!("");
+
     let item_params = AddItemParams::new("Sample Web Map (Text Upload Demo)", "Web Map")
-        .with_description("Demonstrates text-based Web Map upload using ItemDataUpload::Text")
+        .with_description("Demonstrates text-based Web Map upload using add_item with text parameter")
         .with_tags(vec![
             "demo".to_string(),
             "webmap".to_string(),
             "text-upload".to_string(),
-        ]);
+        ])
+        .with_text(webmap_json.to_string());
 
     let add_result = portal.add_item(item_params).await?;
     let item_id = add_result.id().to_string();
-    tracing::info!("✅ Created item: {}", item_id);
+    tracing::info!("✅ Created item with data: {}", item_id);
     tracing::info!("");
 
-    // STEP 2: Upload Web Map JSON as text
-    tracing::info!("📤 STEP 2: Uploading Web Map JSON as text");
-    tracing::info!("   Method: update_item_data_v2()");
-    tracing::info!("   Upload Type: ItemDataUpload::Text");
-    tracing::info!("");
-
-    let upload = ItemDataUpload::Text(webmap_json.to_string());
-    let update_result = portal.update_item_data_v2(&item_id, upload).await?;
-
-    assert!(
-        update_result.success(),
-        "Failed to upload Web Map JSON: {:?}",
-        update_result
-    );
-    tracing::info!("✅ Uploaded {} bytes as text", original_size);
-    tracing::info!("");
-
-    // STEP 3: Download and verify
-    tracing::info!("📥 STEP 3: Downloading and verifying data");
+    // STEP 2: Download and verify
+    tracing::info!("📥 STEP 2: Downloading and verifying data");
     let retrieved_data = portal.get_item_data(&item_id).await?;
     let retrieved_size = retrieved_data.len();
 
@@ -326,19 +199,15 @@ async fn test_webmap_text_upload(portal: &PortalClient<'_>) -> Result<()> {
     );
     tracing::info!("");
 
-    // STEP 4: Cleanup
-    tracing::info!("🧹 STEP 4: Cleaning up");
+    // STEP 3: Cleanup
+    tracing::info!("🧹 STEP 3: Cleaning up");
     let delete_result = portal.delete_item(&item_id).await?;
     assert!(delete_result.success(), "Failed to delete item");
     tracing::info!("✅ Deleted item");
     tracing::info!("");
 
     tracing::info!("📊 Web Map Text Upload Summary:");
-    tracing::info!("   ✓ Created Web Map item");
-    tracing::info!(
-        "   ✓ Uploaded {} bytes via ItemDataUpload::Text",
-        original_size
-    );
+    tracing::info!("   ✓ Created Web Map item with {} bytes of data", original_size);
     tracing::info!("   ✓ Retrieved and verified map definition");
     tracing::info!("   ✓ Cleaned up resources");
 
@@ -348,19 +217,20 @@ async fn test_webmap_text_upload(portal: &PortalClient<'_>) -> Result<()> {
 /// Prints best practices for text-based uploads.
 fn print_best_practices() {
     tracing::info!("\n💡 Text Upload Best Practices:");
-    tracing::info!("   - Use ItemDataUpload::Text for JSON-structured items");
-    tracing::info!("   - Suitable for: GeoJSON, Web Maps, JSON config");
-    tracing::info!("   - Content is sent directly as 'text' parameter");
+    tracing::info!("   - Use AddItemParams::with_text() for configuration JSON items");
+    tracing::info!("   - Suitable for: Web Maps, Web Mapping Applications, configuration JSON");
+    tracing::info!("   - Content is sent directly as 'text' parameter during add_item()");
     tracing::info!("   - No file encoding overhead vs File uploads");
     tracing::info!("");
     tracing::info!("🎯 When to Use Text vs File:");
-    tracing::info!("   Text:  JSON content, Web Maps, GeoJSON text");
-    tracing::info!("   File:  Binary files, CSVs, images, PDFs, packages");
+    tracing::info!("   Text:  Web Maps, Web Mapping Applications, configuration JSON");
+    tracing::info!("   File:  GeoJSON, CSV, shapefiles, images, PDFs, packages, most data files");
     tracing::info!("   Url:   External service references");
     tracing::info!("");
     tracing::info!("⚠️  Important Notes:");
-    tracing::info!("   - Text uploads send JSON as string parameter");
-    tracing::info!("   - File uploads use multipart encoding");
+    tracing::info!("   - Text data must be provided during item creation (add_item)");
+    tracing::info!("   - Most item types (including GeoJSON) require file uploads, not text");
+    tracing::info!("   - The 'text' parameter is specifically for configuration-based items");
     tracing::info!("   - Choose based on item type and data format");
     tracing::info!("   - Both methods support full round-trip integrity");
 }

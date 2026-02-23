@@ -799,26 +799,40 @@ impl<'a> GeometryServiceClient<'a> {
 
         // Serialize polygons as plain array (no geometryType wrapper for this operation)
         let polygons_json = serde_json::to_string(params.polygons())?;
+        tracing::debug!(polygons_json = %polygons_json, "Serialized polygons");
         let sr_str = params.sr().to_string();
 
         // Store optional parameter strings to keep them alive
+        // lengthUnit uses numeric WKID codes
         let length_unit_str = params.length_unit().as_ref().map(|u| {
-            serde_json::to_string(u)
-                .unwrap()
-                .trim_matches('"')
-                .to_string()
+            let wkid = match u {
+                crate::LinearUnit::Meters => "9001",
+                crate::LinearUnit::Kilometers => "9036",
+                crate::LinearUnit::Feet => "9002",
+                crate::LinearUnit::Miles => "9093",
+                crate::LinearUnit::NauticalMiles => "9030",
+                crate::LinearUnit::Yards => "9096",
+            };
+            tracing::debug!(length_unit_wkid = wkid, "Serialized length unit");
+            wkid.to_string()
         });
+        // areaUnit uses JSON object format: {"areaUnit":"esriSquareKilometers"}
         let area_unit_str = params.area_unit().as_ref().map(|u| {
-            serde_json::to_string(u)
+            let unit_name = serde_json::to_string(u)
                 .unwrap()
                 .trim_matches('"')
-                .to_string()
+                .to_string();
+            let json_obj = format!(r#"{{"areaUnit":"{}"}}"#, unit_name);
+            tracing::debug!(area_unit_json = %json_obj, "Serialized area unit");
+            json_obj
         });
         let calc_type_str = params.calculation_type().as_ref().map(|c| {
-            serde_json::to_string(c)
+            let s = serde_json::to_string(c)
                 .unwrap()
                 .trim_matches('"')
-                .to_string()
+                .to_string();
+            tracing::debug!(calc_type_str = %s, "Serialized calc type");
+            s
         });
 
         let mut form = vec![
@@ -861,7 +875,10 @@ impl<'a> GeometryServiceClient<'a> {
             }));
         }
 
-        let result: AreasAndLengthsResult = response.json().await?;
+        // Debug: log response body
+        let response_text = response.text().await?;
+        tracing::debug!(response_body = %response_text, "areasAndLengths response");
+        let result: AreasAndLengthsResult = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             result_count = result.areas().len(),

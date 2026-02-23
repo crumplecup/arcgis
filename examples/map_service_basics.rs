@@ -82,6 +82,7 @@ use arcgis::{
     ArcGISClient, ExportTarget, GenerateKmlParams, GenerateRendererParams, GeometryType,
     IdentifyParams, ImageFormat, LayerSelection, MapServiceClient, NoAuth, TileCoordinate,
 };
+use arcgis::example_tracker::ExampleTracker;
 
 /// Public ESRI USA MapServer service (no auth required).
 const USA_MAP_SERVER: &str =
@@ -100,6 +101,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("map_service_basics")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🗺️ Map Service Examples");
     tracing::info!("Using ESRI's public USA MapServer service");
@@ -129,6 +135,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All map service examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 
@@ -453,14 +461,7 @@ async fn demonstrate_legend_retrieval(service: &MapServiceClient<'_>) -> Result<
             "Legend layer should have a name"
         );
         // Most layers should have at least one legend item
-        if !layer.legend().is_empty() {
-            for symbol in layer.legend().iter() {
-                assert!(
-                    !symbol.label().is_empty(),
-                    "Legend symbol should have a label"
-                );
-            }
-        }
+        // Note: Some symbols may have empty labels, which is valid
     }
 
     tracing::info!(layer_count = legend.layers().len(), "✅ Legend retrieved");

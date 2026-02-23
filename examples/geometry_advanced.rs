@@ -31,6 +31,7 @@ use arcgis::{
     AreasAndLengthsParameters, CalculationType, GeometryServiceClient, LinearUnit, NoAuth,
     ProjectParameters, SimplifyParameters, SpatialReference, UnionParameters,
 };
+use arcgis::example_tracker::ExampleTracker;
 use tracing::{debug, info};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -42,6 +43,11 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("geometry_advanced")
+        .service_type("ExampleClient")
+        .start();
+
     info!("Starting advanced geometry operations demonstration");
 
     // Initialize client with public geometry service (no auth required)
@@ -49,8 +55,9 @@ async fn main() -> Result<()> {
     let client = ArcGISClient::new(auth);
 
     // Create geometry service client
+    // Note: Using sampleserver6 instead of utility.arcgisonline.com for better reliability
     let service_url =
-        "https://utility.arcgisonline.com/arcgis/rest/services/Geometry/GeometryServer";
+        "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer";
     let service = GeometryServiceClient::new(service_url, &client);
 
     info!("Connected to ArcGIS Geometry Service");
@@ -62,6 +69,8 @@ async fn main() -> Result<()> {
     demonstrate_datum_transformations(&service).await?;
 
     info!("✓ All advanced geometry operations completed successfully");
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 
@@ -217,13 +226,17 @@ async fn demonstrate_areas_and_lengths(service: &GeometryServiceClient<'_>) -> R
 
     // Create a polygon representing approximately 1 degree by 1 degree square
     // (roughly 111km x 111km at the equator, smaller at higher latitudes)
-    let test_polygon = ArcGISPolygon::new(vec![vec![
+    // Note: For areasAndLengths operation, polygons should NOT include spatial_reference
+    // The SR is provided separately via the sr parameter
+    let mut test_polygon = ArcGISPolygon::new(vec![vec![
         vec![-118.0, 34.0],
         vec![-118.0, 35.0],
         vec![-117.0, 35.0],
         vec![-117.0, 34.0],
         vec![-118.0, 34.0],
     ]]);
+    // Remove spatial reference since sr is provided separately in parameters
+    test_polygon = test_polygon.with_spatial_reference(None);
 
     debug!("Created 1°×1° test polygon for area/length calculation");
 
@@ -232,7 +245,7 @@ async fn demonstrate_areas_and_lengths(service: &GeometryServiceClient<'_>) -> R
         .sr(4326)
         .length_unit(LinearUnit::Kilometers)
         .area_unit(AreaUnit::SquareKilometers)
-        .calculation_type(CalculationType::Planar)
+        .calculation_type(CalculationType::Geodesic)
         .build()
         .context("Failed to build areas and lengths params")?;
 

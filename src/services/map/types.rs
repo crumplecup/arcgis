@@ -940,22 +940,27 @@ pub struct GenerateKmlParams {
     /// Comma-separated list of layer IDs to include.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(serialize_with = "serialize_opt_vec_as_comma")]
+    #[builder(default)]
     layers: Option<Vec<i32>>,
 
     /// Layer definitions (WHERE clauses).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     layer_defs: Option<String>,
 
     /// Image format for ground overlay.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     image_format: Option<String>,
 
     /// DPI for image.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     dpi: Option<i32>,
 
     /// Image size (width,height).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     image_size: Option<String>,
 }
 
@@ -981,22 +986,27 @@ pub struct GenerateRendererParams {
 
     /// Number of classes/breaks.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     break_count: Option<i32>,
 
     /// Normalization field.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     normalization_field: Option<String>,
 
     /// Normalization type: "field", "log", "percent-of-total".
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     normalization_type: Option<String>,
 
     /// Base symbol definition (as JSON string).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     base_symbol: Option<String>,
 
     /// Color ramp definition.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[builder(default)]
     color_ramp: Option<serde_json::Value>,
 }
 
