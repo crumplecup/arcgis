@@ -47,8 +47,8 @@
 
 use anyhow::Result;
 use arcgis::{
-    ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISPoint, BatchGeocodeRecord, Category,
-    GeocodeServiceClient, LocationType,
+    ApiKeyAuth, ApiKeyTier, ArcGISClient, BatchGeocodeRecord, Category, GeocodeServiceClient,
+    LocationType, WebMercatorPoint, Wgs84Point,
 };
 use arcgis::example_tracker::ExampleTracker;
 
@@ -323,25 +323,23 @@ async fn demonstrate_custom_spatial_reference(geocoder: &GeocodeServiceClient<'_
     Ok(())
 }
 
-/// Demonstrates reverse geocoding with custom output spatial reference.
+/// Demonstrates type-safe reverse geocoding with spatial reference conversion.
 async fn demonstrate_reverse_geocode_custom_sr(geocoder: &GeocodeServiceClient<'_>) -> Result<()> {
-    tracing::info!("\n=== Example 4: Reverse Geocode with Custom Output SR ===");
-    tracing::info!("Convert WGS84 coordinates to address with Web Mercator output");
+    tracing::info!("\n=== Example 4: Type-Safe Reverse Geocoding ===");
+    tracing::info!("Using ProjectedPoint types for compile-time spatial reference safety");
     tracing::info!("");
 
     // WGS84 coordinates for Esri Redlands campus
-    // Note: Input coordinates are always in WGS84 (lon, lat) for reverseGeocode
-    let lon = -117.195;
-    let lat = 34.056;
-    let out_sr = 3857; // Request output in Web Mercator
+    let wgs84 = Wgs84Point::new(-117.195, 34.056);
 
-    tracing::info!("Reverse geocoding WGS84 point:");
-    tracing::info!("   Input: ({:.6}, {:.6}) [WGS84]", lon, lat);
-    tracing::info!("   Requesting output in SR: {} (Web Mercator)", out_sr);
+    tracing::info!("Reverse geocoding with WGS84 → Web Mercator conversion:");
+    tracing::info!("   Input: ({:.6}, {:.6}) [WGS84/EPSG:4326]", wgs84.lon(), wgs84.lat());
+    tracing::info!("   Output: Web Mercator (EPSG:3857)");
+    tracing::info!("");
 
-    let point = ArcGISPoint::new(lon, lat);
+    // ✅ Type-safe: compiler knows we're converting WGS84 → Web Mercator
     let response = geocoder
-        .reverse_geocode_with_sr(&point, out_sr)
+        .reverse_geocode_to::<_, WebMercatorPoint>(&wgs84)
         .await?;
 
     let address_str = response
@@ -369,11 +367,13 @@ async fn demonstrate_reverse_geocode_custom_sr(geocoder: &GeocodeServiceClient<'
     );
 
     tracing::info!("");
-    tracing::info!("💡 Reverse geocoding with custom output SR:");
-    tracing::info!("   • Input coordinates are always WGS84 (lon, lat)");
-    tracing::info!("   • Output coordinates returned in requested spatial reference");
-    tracing::info!("   • Useful when your application uses a different projection");
-    tracing::info!("   • Common output SRs: Web Mercator (3857), State Plane systems");
+    tracing::info!("💡 Type-Safe Spatial References:");
+    tracing::info!("   • Wgs84Point: EPSG:4326 (GPS coordinates)");
+    tracing::info!("   • WebMercatorPoint: EPSG:3857 (web maps)");
+    tracing::info!("   • StatePlanePoint<WKID>: State Plane zones");
+    tracing::info!("   • Spatial reference is encoded in the type system");
+    tracing::info!("   • Compiler prevents mixing coordinate systems");
+    tracing::info!("   • No magic WKID numbers - types carry the information!");
 
     Ok(())
 }

@@ -328,52 +328,112 @@ impl<'a> GeocodeServiceClient<'a> {
         Ok(geocode_response)
     }
 
-    /// Converts a location (coordinates) to an address.
+
+    /// Reverse geocodes a point to an address, with output in the same spatial reference.
     ///
-    /// This performs reverse geocoding - converting coordinates to an address.
+    /// # Type Safety
     ///
-    /// # Arguments
+    /// The spatial reference is encoded in the type system via the `ProjectedPoint` trait.
+    /// The method automatically uses the correct WKID from the type, preventing runtime errors
+    /// from incorrect spatial reference usage.
     ///
-    /// * `location` - The point to reverse geocode
-    ///
-    /// # Example
+    /// # Examples
     ///
     /// ```no_run
-    /// use arcgis::{ApiKeyAuth, ArcGISClient, GeocodeServiceClient, ArcGISPoint};
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, GeocodeServiceClient, Wgs84Point, WebMercatorPoint};
     ///
     /// # async fn example() -> arcgis::Result<()> {
     /// # let auth = ApiKeyAuth::new("YOUR_API_KEY");
     /// # let client = ArcGISClient::new(auth);
-    /// # let geocoder = GeocodeServiceClient::new("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer", &client);
-    /// let point = ArcGISPoint::new(-117.196, 34.056);
+    /// let geocoder = GeocodeServiceClient::world_geocoding_service(&client);
     ///
-    /// let response = geocoder.reverse_geocode(&point).await?;
+    /// // ✅ WGS84 input → WGS84 output
+    /// let wgs84 = Wgs84Point::new(-117.195, 34.056);
+    /// let response = geocoder.reverse_geocode(&wgs84).await?;
+    /// // response.location() is in WGS84
     ///
-    /// if let Some(addr) = response.address().match_addr() {
-    ///     println!("Address: {}", addr);
-    /// }
+    /// // ✅ Web Mercator input → Web Mercator output
+    /// let web_merc = WebMercatorPoint::new(-13046213.0, 4036389.0);
+    /// let response = geocoder.reverse_geocode(&web_merc).await?;
+    /// // response.location() is in Web Mercator
     /// # Ok(())
     /// # }
     /// ```
-    #[instrument(skip(self, location), fields(base_url = %self.base_url, x = *location.x(), y = *location.y()))]
-    pub async fn reverse_geocode(&self, location: &ArcGISPoint) -> Result<ReverseGeocodeResponse> {
+    #[instrument(skip(self, location), fields(
+        base_url = %self.base_url,
+        input_wkid = P::WKID,
+        input_sr = P::NAME
+    ))]
+    pub async fn reverse_geocode<P: crate::ProjectedPoint>(
+        &self,
+        location: &P,
+    ) -> Result<ReverseGeocodeResponse> {
+        self.reverse_geocode_to::<P, P>(location).await
+    }
+
+    /// Reverse geocodes a point with explicit input and output spatial references.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `In` - Input coordinate system (derived from location type)
+    /// * `Out` - Output coordinate system (specified explicitly)
+    ///
+    /// # Type Safety
+    ///
+    /// Both input and output spatial references are encoded in the type system.
+    /// The compiler ensures you can't accidentally mix coordinate systems.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use arcgis::{ApiKeyAuth, ArcGISClient, GeocodeServiceClient, Wgs84Point, WebMercatorPoint};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// # let auth = ApiKeyAuth::new("YOUR_API_KEY");
+    /// # let client = ArcGISClient::new(auth);
+    /// let geocoder = GeocodeServiceClient::world_geocoding_service(&client);
+    ///
+    /// // ✅ WGS84 input → Web Mercator output
+    /// let wgs84 = Wgs84Point::new(-117.195, 34.056);
+    /// let response = geocoder
+    ///     .reverse_geocode_to::<_, WebMercatorPoint>(&wgs84)
+    ///     .await?;
+    /// // response.location() is in Web Mercator
+    ///
+    /// // ✅ Web Mercator input → WGS84 output
+    /// let web_merc = WebMercatorPoint::new(-13046213.0, 4036389.0);
+    /// let response = geocoder
+    ///     .reverse_geocode_to::<_, Wgs84Point>(&web_merc)
+    ///     .await?;
+    /// // response.location() is in WGS84
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, location), fields(
+        base_url = %self.base_url,
+        input_wkid = In::WKID,
+        output_wkid = Out::WKID
+    ))]
+    pub async fn reverse_geocode_to<In: crate::ProjectedPoint, Out: crate::ProjectedPoint>(
+        &self,
+        location: &In,
+    ) -> Result<ReverseGeocodeResponse> {
         tracing::debug!(
-            x = *location.x(),
-            y = *location.y(),
-            "Reverse geocoding location"
+            input_sr = In::NAME,
+            output_sr = Out::NAME,
+            "Reverse geocoding with spatial reference conversion"
         );
 
         let url = format!("{}/reverseGeocode", self.base_url);
 
-        let location_str = format!("{},{}", location.x(), location.y());
+        // Use JSON format to support any input spatial reference
+        let location_param = location.to_location_json();
 
-        tracing::debug!(url = %url, location = %location_str, "Sending reverseGeocode request");
-
-        let mut request = self
-            .client
-            .http()
-            .get(&url)
-            .query(&[("location", location_str.as_str()), ("f", "json")]);
+        let mut request = self.client.http().get(&url).query(&[
+            ("location", location_param.as_str()),
+            ("outSR", Out::WKID.to_string().as_str()),
+            ("f", "json"),
+        ]);
 
         if let Some(token) = self.client.get_token_if_required().await? {
             request = request.query(&[("token", token)]);
@@ -398,90 +458,9 @@ impl<'a> GeocodeServiceClient<'a> {
 
         tracing::info!(
             address = ?reverse_response.address().match_addr(),
+            input_sr = In::NAME,
+            output_sr = Out::NAME,
             "reverseGeocode completed"
-        );
-
-        Ok(reverse_response)
-    }
-
-    /// Reverse geocodes a location with custom spatial reference.
-    ///
-    /// This extends the basic `reverse_geocode` operation by allowing you to specify
-    /// the output spatial reference for the returned coordinates.
-    ///
-    /// # Arguments
-    ///
-    /// * `location` - The point to reverse geocode
-    /// * `out_sr` - The WKID of the desired output spatial reference
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use arcgis::{ApiKeyAuth, ArcGISClient, GeocodeServiceClient, ArcGISPoint};
-    ///
-    /// # async fn example() -> arcgis::Result<()> {
-    /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
-    /// let client = ArcGISClient::new(auth);
-    /// let geocoder = GeocodeServiceClient::new("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer", &client);
-    ///
-    /// // Reverse geocode with Web Mercator output
-    /// let point = ArcGISPoint::new(-122.4194, 37.7749);
-    /// let result = geocoder
-    ///     .reverse_geocode_with_sr(&point, 3857)  // Web Mercator output
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[instrument(skip(self, location), fields(x = *location.x(), y = *location.y(), out_sr = out_sr))]
-    pub async fn reverse_geocode_with_sr(
-        &self,
-        location: &ArcGISPoint,
-        out_sr: i32,
-    ) -> Result<ReverseGeocodeResponse> {
-        tracing::debug!(
-            x = *location.x(),
-            y = *location.y(),
-            out_sr = out_sr,
-            "Reverse geocoding location with custom SR"
-        );
-
-        let url = format!("{}/reverseGeocode", self.base_url);
-
-        let location_str = format!("{},{}", location.x(), location.y());
-
-        tracing::debug!(url = %url, location = %location_str, "Sending reverseGeocode request");
-
-        let mut request = self.client.http().get(&url).query(&[
-            ("location", location_str.as_str()),
-            ("outSR", out_sr.to_string().as_str()),
-            ("f", "json"),
-        ]);
-
-        if let Some(token) = self.client.get_token_if_required().await? {
-            request = request.query(&[("token", token)]);
-        }
-
-        let response = request.send().await?;
-
-        let status = response.status();
-        if !status.is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|e| format!("Failed to read error: {}", e));
-            tracing::error!(status = %status, error = %error_text, "reverseGeocode with SR failed");
-            return Err(crate::Error::from(crate::ErrorKind::Api {
-                code: status.as_u16() as i32,
-                message: format!("HTTP {}: {}", status, error_text),
-            }));
-        }
-
-        let reverse_response: ReverseGeocodeResponse = response.json().await?;
-
-        tracing::info!(
-            address = ?reverse_response.address().match_addr(),
-            out_sr = out_sr,
-            "reverseGeocode with SR completed"
         );
 
         Ok(reverse_response)

@@ -62,6 +62,9 @@ mod services;
 mod types;
 mod util;
 
+// Example tracking (for testing/verification)
+pub mod example_tracker;
+
 // Re-exports
 pub use auth::{ApiKeyAuth, ApiKeyTier, AuthProvider, ClientCredentialsAuth, NoAuth};
 pub use client::ArcGISClient;
@@ -72,8 +75,10 @@ pub use error::{
 };
 pub use geometry::{
     ArcGISEnvelope, ArcGISGeometry, ArcGISGeometryError, ArcGISGeometryErrorKind, ArcGISMultipoint,
-    ArcGISPoint, ArcGISPolygon, ArcGISPolyline, GeoError, GeometryJsonError, GeometryType,
-    SpatialReference, SpatialRel,
+    ArcGISPoint, ArcGISPolygon, ArcGISPolyline, CaliforniaZone5, CaliforniaZone5Meters, GeoError,
+    GeometryJsonError, GeometryType, OregonNorth, OregonNorthMeters, ProjectedPoint,
+    SpatialReference, SpatialRel, StatePlanePoint, WashingtonNorth, WashingtonNorthMeters,
+    WebMercatorPoint, Wgs84Point,
 };
 pub use services::{
     AddAttachmentResult, AddItemParams, AddItemResult, AddToDefinitionParams,

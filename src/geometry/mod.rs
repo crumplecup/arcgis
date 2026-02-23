@@ -74,10 +74,15 @@
 //! ```
 
 mod errors;
+mod projected;
 mod spatial_ref;
 mod types;
 
 pub use errors::{ArcGISGeometryError, ArcGISGeometryErrorKind, GeoError, GeometryJsonError};
+pub use projected::{
+    CaliforniaZone5, CaliforniaZone5Meters, OregonNorth, OregonNorthMeters, ProjectedPoint,
+    StatePlanePoint, WashingtonNorth, WashingtonNorthMeters, WebMercatorPoint, Wgs84Point,
+};
 pub use spatial_ref::SpatialReference;
 pub use types::{
     ArcGISEnvelope, ArcGISGeometry, ArcGISMultipoint, ArcGISPoint, ArcGISPolygon, ArcGISPolyline,
