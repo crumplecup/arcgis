@@ -50,6 +50,7 @@ use arcgis::{
     ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISPoint, BatchGeocodeRecord, Category,
     GeocodeServiceClient, LocationType,
 };
+use arcgis::example_tracker::ExampleTracker;
 
 /// ArcGIS World Geocoding Service URL
 const WORLD_GEOCODE_SERVICE: &str =
@@ -64,6 +65,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("geocoding_batch_operations")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🌍 Batch Geocoding Operations Examples");
     tracing::info!("Demonstrating efficient bulk address processing");
@@ -85,6 +91,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All batch geocoding examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 
@@ -315,24 +323,25 @@ async fn demonstrate_custom_spatial_reference(geocoder: &GeocodeServiceClient<'_
     Ok(())
 }
 
-/// Demonstrates reverse geocoding with custom spatial reference.
+/// Demonstrates reverse geocoding with custom output spatial reference.
 async fn demonstrate_reverse_geocode_custom_sr(geocoder: &GeocodeServiceClient<'_>) -> Result<()> {
-    tracing::info!("\n=== Example 4: Reverse Geocode with Custom SR ===");
-    tracing::info!("Convert coordinates to address using specific projection");
+    tracing::info!("\n=== Example 4: Reverse Geocode with Custom Output SR ===");
+    tracing::info!("Convert WGS84 coordinates to address with Web Mercator output");
     tracing::info!("");
 
-    // Web Mercator coordinates for Esri Redlands campus
-    // (approximately -117.195, 34.056 in WGS84)
-    let x = -13046213.0;
-    let y = 4036389.0;
-    let spatial_ref = 3857; // Web Mercator
+    // WGS84 coordinates for Esri Redlands campus
+    // Note: Input coordinates are always in WGS84 (lon, lat) for reverseGeocode
+    let lon = -117.195;
+    let lat = 34.056;
+    let out_sr = 3857; // Request output in Web Mercator
 
-    tracing::info!("Reverse geocoding Web Mercator point:");
-    tracing::info!("   Input: ({:.2}, {:.2}) [SR: {}]", x, y, spatial_ref);
+    tracing::info!("Reverse geocoding WGS84 point:");
+    tracing::info!("   Input: ({:.6}, {:.6}) [WGS84]", lon, lat);
+    tracing::info!("   Requesting output in SR: {} (Web Mercator)", out_sr);
 
-    let point = ArcGISPoint::new(x, y);
+    let point = ArcGISPoint::new(lon, lat);
     let response = geocoder
-        .reverse_geocode_with_sr(&point, spatial_ref)
+        .reverse_geocode_with_sr(&point, out_sr)
         .await?;
 
     let address_str = response
@@ -354,17 +363,17 @@ async fn demonstrate_reverse_geocode_custom_sr(geocoder: &GeocodeServiceClient<'
 
     tracing::info!("   ✅ Address: {}", address_str);
     tracing::info!(
-        "   ✅ Location: ({:.2}, {:.2})",
+        "   ✅ Web Mercator location: ({:.2}, {:.2})",
         response.location().x(),
         response.location().y()
     );
 
     tracing::info!("");
-    tracing::info!("💡 Reverse geocoding with custom SR:");
-    tracing::info!("   • Input coordinates match your data's projection");
-    tracing::info!("   • Output coordinates in same spatial reference");
-    tracing::info!("   • No coordinate system conversion needed");
-    tracing::info!("   • Useful for GIS workflows with specific SRs");
+    tracing::info!("💡 Reverse geocoding with custom output SR:");
+    tracing::info!("   • Input coordinates are always WGS84 (lon, lat)");
+    tracing::info!("   • Output coordinates returned in requested spatial reference");
+    tracing::info!("   • Useful when your application uses a different projection");
+    tracing::info!("   • Common output SRs: Web Mercator (3857), State Plane systems");
 
     Ok(())
 }

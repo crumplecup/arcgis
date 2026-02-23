@@ -52,3 +52,5 @@ portal_item_data_text,2026-02-23T20:20:37.187602243+00:00,failed,2706,,ExampleCl
 portal_item_data_text,2026-02-23T20:23:44.330922106+00:00,failed,6403,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
 portal_item_data_text,2026-02-23T20:23:50.561365961+00:00,failed,1384,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",37e5bc1
 portal_item_data_text,2026-02-23T20:26:00.957548377+00:00,success,6744,,ExampleClient,"",37e5bc1
+geocoding_batch_operations,2026-02-23T20:33:10.992659984+00:00,failed,11022,,ExampleClient,"Example exited without explicit success() - likely returned early via Result::Err",9a33a02
+geocoding_batch_operations,2026-02-23T20:35:58.179740202+00:00,success,5911,,ExampleClient,"",9a33a02
