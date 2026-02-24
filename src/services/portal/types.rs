@@ -394,7 +394,8 @@ pub struct AddItemParams {
 
     /// Item type (REQUIRED).
     ///
-    /// Examples: "Web Map", "Feature Service", "Web Mapping Application", "GeoJSON"
+    /// Examples: "Web Map", "Feature Service", "Web Mapping Application", "GeoJson"
+    /// Note: Item types are case-sensitive. Use "GeoJson" not "GeoJSON".
     #[setters(rename = "with_item_type")]
     item_type: String,
 
@@ -1235,65 +1236,61 @@ impl<'de> Deserialize<'de> for GroupResult {
 
 /// Parameters for publishing a hosted service.
 #[derive(Debug, Clone, Default, derive_getters::Getters, derive_setters::Setters)]
-#[setters(prefix = "with_")]
+#[setters(prefix = "with_", into, strip_option)]
 pub struct PublishParameters {
     /// Service name (REQUIRED).
     name: String,
 
+    /// File type of the source item (defaults to "serviceDefinition").
+    ///
+    /// Supported values: "serviceDefinition", "shapefile", "csv", "excel",
+    /// "tilePackage", "featureService", "featureCollection", "fileGeodatabase",
+    /// "geojson", "scenepackage", "vectortilepackage", "imageCollection",
+    /// "mapService", "sqliteGeodatabase"
+    ///
+    /// Use "geojson" for GeoJSON files, "shapefile" for shapefiles, etc.
+    file_type: Option<String>,
+
     /// Service description.
-    #[setters(skip)]
     description: Option<String>,
 
     /// Copyright text.
-    #[setters(skip)]
     copyright_text: Option<String>,
 
     /// Whether the data is static (vs dynamic).
-    #[setters(skip)]
     has_static_data: Option<bool>,
 
     /// Maximum number of records returned by queries.
-    #[setters(skip)]
     max_record_count: Option<i32>,
 
     /// Service capabilities (e.g., "Query,Create,Update,Delete").
-    #[setters(skip)]
     capabilities: Option<String>,
 
     /// Default spatial reference WKID.
-    #[setters(skip)]
     spatial_reference: Option<i32>,
 
     /// Initial extent as [[xmin, ymin], [xmax, ymax]].
-    #[setters(skip)]
     initial_extent: Option<Vec<Vec<f64>>>,
 
     /// Full extent as [[xmin, ymin], [xmax, ymax]].
-    #[setters(skip)]
     full_extent: Option<Vec<Vec<f64>>>,
 
     /// Allow geometry updates.
-    #[setters(skip)]
     allow_geometry_updates: Option<bool>,
 
     /// Enable versioning.
-    #[setters(skip)]
     enable_versioning: Option<bool>,
 
     /// Units (e.g., "esriMeters").
-    #[setters(skip)]
     units: Option<String>,
 
     /// XSS prevention enabled.
-    #[setters(skip)]
     xss_prevention_enabled: Option<bool>,
 
     /// Overwrite existing service.
-    #[setters(skip)]
     overwrite: Option<bool>,
 
     /// Build initial cache.
-    #[setters(skip)]
     build_initial_cache: Option<bool>,
 }
 
@@ -1304,90 +1301,6 @@ impl PublishParameters {
             name: name.into(),
             ..Default::default()
         }
-    }
-
-    /// Sets the description.
-    pub fn with_description(mut self, description: impl Into<String>) -> Self {
-        self.description = Some(description.into());
-        self
-    }
-
-    /// Sets the copyright text.
-    pub fn with_copyright_text(mut self, copyright_text: impl Into<String>) -> Self {
-        self.copyright_text = Some(copyright_text.into());
-        self
-    }
-
-    /// Sets whether data is static.
-    pub fn with_has_static_data(mut self, has_static_data: bool) -> Self {
-        self.has_static_data = Some(has_static_data);
-        self
-    }
-
-    /// Sets the maximum record count.
-    pub fn with_max_record_count(mut self, max_record_count: i32) -> Self {
-        self.max_record_count = Some(max_record_count);
-        self
-    }
-
-    /// Sets the service capabilities.
-    pub fn with_capabilities(mut self, capabilities: impl Into<String>) -> Self {
-        self.capabilities = Some(capabilities.into());
-        self
-    }
-
-    /// Sets the spatial reference.
-    pub fn with_spatial_reference(mut self, wkid: i32) -> Self {
-        self.spatial_reference = Some(wkid);
-        self
-    }
-
-    /// Sets the initial extent.
-    pub fn with_initial_extent(mut self, extent: Vec<Vec<f64>>) -> Self {
-        self.initial_extent = Some(extent);
-        self
-    }
-
-    /// Sets the full extent.
-    pub fn with_full_extent(mut self, extent: Vec<Vec<f64>>) -> Self {
-        self.full_extent = Some(extent);
-        self
-    }
-
-    /// Sets whether to allow geometry updates.
-    pub fn with_allow_geometry_updates(mut self, allow: bool) -> Self {
-        self.allow_geometry_updates = Some(allow);
-        self
-    }
-
-    /// Sets whether to enable versioning.
-    pub fn with_enable_versioning(mut self, enable: bool) -> Self {
-        self.enable_versioning = Some(enable);
-        self
-    }
-
-    /// Sets the units.
-    pub fn with_units(mut self, units: impl Into<String>) -> Self {
-        self.units = Some(units.into());
-        self
-    }
-
-    /// Sets XSS prevention.
-    pub fn with_xss_prevention_enabled(mut self, enabled: bool) -> Self {
-        self.xss_prevention_enabled = Some(enabled);
-        self
-    }
-
-    /// Sets whether to overwrite existing service.
-    pub fn with_overwrite(mut self, overwrite: bool) -> Self {
-        self.overwrite = Some(overwrite);
-        self
-    }
-
-    /// Sets whether to build initial cache.
-    pub fn with_build_initial_cache(mut self, build: bool) -> Self {
-        self.build_initial_cache = Some(build);
-        self
     }
 }
 
