@@ -36,11 +36,11 @@
 //! - **Spatial queries**: Find features within a certain distance
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ArcGISClient, ArcGISGeometry, ArcGISPoint, ArcGISPolyline, GeometryServiceClient, LinearUnit,
     NoAuth,
 };
-use arcgis::example_tracker::ExampleTracker;
 
 /// ArcGIS Online Geometry Service URL (free public utility)
 const GEOMETRY_SERVICE: &str =

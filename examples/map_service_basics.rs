@@ -78,11 +78,11 @@
 //! 9. `query_domains()` - Field domain and subtype information
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ArcGISClient, ExportTarget, GenerateKmlParams, GenerateRendererParams, GeometryType,
     IdentifyParams, ImageFormat, LayerSelection, MapServiceClient, NoAuth, TileCoordinate,
 };
-use arcgis::example_tracker::ExampleTracker;
 
 /// Public ESRI USA MapServer service (no auth required).
 const USA_MAP_SERVER: &str =

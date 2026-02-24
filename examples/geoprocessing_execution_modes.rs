@@ -38,8 +38,8 @@
 //! - **Cancellation (cancel_job)**: Stop long-running jobs and free resources
 
 use anyhow::Result;
-use arcgis::{ArcGISClient, GeoprocessingServiceClient, NoAuth};
 use arcgis::example_tracker::ExampleTracker;
+use arcgis::{ArcGISClient, GeoprocessingServiceClient, NoAuth};
 use serde_json::json;
 use std::collections::HashMap;
 use std::time::Duration;

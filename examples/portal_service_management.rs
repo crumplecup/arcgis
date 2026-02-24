@@ -47,11 +47,11 @@
 //! - **overwrite_service**: Replace service data (preserves item ID/URL)
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, ItemDataUpload, OverwriteParameters,
     PortalClient, PublishParameters,
 };
-use arcgis::example_tracker::ExampleTracker;
 use std::time::Duration;
 
 /// Portal base URL for ArcGIS Online
@@ -332,7 +332,9 @@ async fn run_service_management_workflow(portal: &PortalClient<'_>) -> Result<()
         filename: "data.geojson".to_string(),
         mime_type: "application/json".to_string(),
     };
-    portal.update_item_data_v2(&update_source_id, updated_upload).await?;
+    portal
+        .update_item_data_v2(&update_source_id, updated_upload)
+        .await?;
 
     tracing::info!("✅ Uploaded updated data");
     tracing::info!("   Item ID: {}", update_source_id);

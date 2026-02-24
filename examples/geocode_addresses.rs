@@ -46,8 +46,8 @@
 //! - **Search interfaces**: Provide autocomplete for location search
 
 use anyhow::Result;
-use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISPoint, GeocodeServiceClient};
 use arcgis::example_tracker::ExampleTracker;
+use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, GeocodeServiceClient, Wgs84Point};
 
 /// ArcGIS World Geocoding Service URL
 const WORLD_GEOCODE_SERVICE: &str =
@@ -157,7 +157,7 @@ async fn demonstrate_reverse_geocoding(geocoder: &GeocodeServiceClient<'_>) -> R
     ];
 
     for (name, lon, lat) in &locations {
-        let point = ArcGISPoint::new(*lon, *lat);
+        let point = Wgs84Point::new(*lon, *lat);
 
         tracing::debug!(
             name = %name,

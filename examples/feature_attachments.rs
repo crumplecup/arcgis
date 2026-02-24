@@ -56,12 +56,12 @@
 //! - Old/duplicate attachments are cleaned up periodically
 
 use anyhow::{Context, Result};
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ApiKeyAuth, ArcGISClient, ArcGISGeometry, ArcGISPoint, AttachmentId, AttachmentSource,
     CreateServiceParams, DownloadTarget, EditOptions, EnvConfig, Feature, FeatureServiceClient,
     ObjectId, PortalClient,
 };
-use arcgis::example_tracker::ExampleTracker;
 use secrecy::ExposeSecret;
 use std::collections::HashMap;
 

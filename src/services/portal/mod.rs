@@ -56,8 +56,7 @@ pub use types::{
     DeleteServiceResult, GroupInfo, GroupMembership, GroupMembershipType, GroupResult,
     GroupSearchParameters, GroupSearchResult, ItemDataUpload, ItemInfo, OverwriteParameters,
     OverwriteResult, PublishParameters, PublishResult, PublishServiceInfo, PublishStatus,
-    SearchParameters,
-    SearchResult, ShareItemResult, SharingParameters, SortOrder, UnshareItemResult,
-    UpdateGroupParams, UpdateItemParams, UpdateItemResult, UpdateServiceDefinitionParams,
-    UpdateServiceDefinitionResult, UserInfo,
+    SearchParameters, SearchResult, ShareItemResult, SharingParameters, SortOrder,
+    UnshareItemResult, UpdateGroupParams, UpdateItemParams, UpdateItemResult,
+    UpdateServiceDefinitionParams, UpdateServiceDefinitionResult, UserInfo,
 };

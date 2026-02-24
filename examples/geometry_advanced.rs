@@ -26,12 +26,12 @@
 //! ```
 
 use anyhow::{Context, Result, ensure};
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ArcGISClient, ArcGISEnvelope, ArcGISGeometry, ArcGISPoint, ArcGISPolygon, AreaUnit,
     AreasAndLengthsParameters, CalculationType, GeometryServiceClient, LinearUnit, NoAuth,
     ProjectParameters, SimplifyParameters, SpatialReference, UnionParameters,
 };
-use arcgis::example_tracker::ExampleTracker;
 use tracing::{debug, info};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -56,8 +56,7 @@ async fn main() -> Result<()> {
 
     // Create geometry service client
     // Note: Using sampleserver6 instead of utility.arcgisonline.com for better reliability
-    let service_url =
-        "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer";
+    let service_url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer";
     let service = GeometryServiceClient::new(service_url, &client);
 
     info!("Connected to ArcGIS Geometry Service");

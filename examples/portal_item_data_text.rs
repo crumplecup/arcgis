@@ -58,8 +58,8 @@
 //! See the `portal_item_data_files` example for file-based uploads.
 
 use anyhow::Result;
-use arcgis::{AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, PortalClient};
 use arcgis::example_tracker::ExampleTracker;
+use arcgis::{AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, PortalClient};
 
 /// Portal base URL for ArcGIS Online
 const PORTAL_URL: &str = "https://www.arcgis.com/sharing/rest";
@@ -156,7 +156,9 @@ async fn test_webmap_text_upload(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("");
 
     let item_params = AddItemParams::new("Sample Web Map (Text Upload Demo)", "Web Map")
-        .with_description("Demonstrates text-based Web Map upload using add_item with text parameter")
+        .with_description(
+            "Demonstrates text-based Web Map upload using add_item with text parameter",
+        )
         .with_tags(vec![
             "demo".to_string(),
             "webmap".to_string(),
@@ -207,7 +209,10 @@ async fn test_webmap_text_upload(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("");
 
     tracing::info!("📊 Web Map Text Upload Summary:");
-    tracing::info!("   ✓ Created Web Map item with {} bytes of data", original_size);
+    tracing::info!(
+        "   ✓ Created Web Map item with {} bytes of data",
+        original_size
+    );
     tracing::info!("   ✓ Retrieved and verified map definition");
     tracing::info!("   ✓ Cleaned up resources");
 

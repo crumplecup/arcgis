@@ -49,8 +49,8 @@
 //! - Layer Definition: <https://developers.arcgis.com/rest/services-reference/enterprise/layer-feature-service/>
 
 use anyhow::Result;
-use arcgis::{ArcGISClient, FeatureServiceClient, LayerId, NoAuth};
 use arcgis::example_tracker::ExampleTracker;
+use arcgis::{ArcGISClient, FeatureServiceClient, LayerId, NoAuth};
 
 /// Public San Francisco 311 service (no authentication required)
 const SF311_SERVICE: &str =

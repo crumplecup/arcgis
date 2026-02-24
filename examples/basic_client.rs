@@ -24,8 +24,8 @@
 //! cargo run --example basic_client
 //! ```
 
-use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient};
 use arcgis::example_tracker::ExampleTracker;
+use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient};
 
 fn main() -> anyhow::Result<()> {
     // Initialize tracing subscriber for structured logging

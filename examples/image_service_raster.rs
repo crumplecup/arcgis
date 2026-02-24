@@ -48,12 +48,12 @@
 //! - Console output showing pixel values, histograms, and metadata
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ArcGISClient, ArcGISGeometry, ExportImageParametersBuilder, HistogramParametersBuilder,
     ImageServiceClient, NoAuth, SampleParametersBuilder,
     geo_types::{Geometry, LineString, Point},
 };
-use arcgis::example_tracker::ExampleTracker;
 
 /// Public NLCD Land Cover 2001 Image Service (no auth required).
 ///

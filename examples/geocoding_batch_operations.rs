@@ -46,11 +46,11 @@
 //! - **Logistics**: Convert delivery addresses to route waypoints
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ApiKeyAuth, ApiKeyTier, ArcGISClient, BatchGeocodeRecord, Category, GeocodeServiceClient,
     LocationType, WebMercatorPoint, Wgs84Point,
 };
-use arcgis::example_tracker::ExampleTracker;
 
 /// ArcGIS World Geocoding Service URL
 const WORLD_GEOCODE_SERVICE: &str =
@@ -333,7 +333,11 @@ async fn demonstrate_reverse_geocode_custom_sr(geocoder: &GeocodeServiceClient<'
     let wgs84 = Wgs84Point::new(-117.195, 34.056);
 
     tracing::info!("Reverse geocoding with WGS84 → Web Mercator conversion:");
-    tracing::info!("   Input: ({:.6}, {:.6}) [WGS84/EPSG:4326]", wgs84.lon(), wgs84.lat());
+    tracing::info!(
+        "   Input: ({:.6}, {:.6}) [WGS84/EPSG:4326]",
+        wgs84.lon(),
+        wgs84.lat()
+    );
     tracing::info!("   Output: Web Mercator (EPSG:3857)");
     tracing::info!("");
 

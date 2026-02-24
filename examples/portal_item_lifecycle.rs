@@ -12,11 +12,11 @@
 //! This example uses a "Web Mapping Application" item type which requires only
 //! metadata and a URL - no file uploads or complex data handling.
 
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, PortalClient, Result, SharingParameters,
     UpdateItemParams,
 };
-use arcgis::example_tracker::ExampleTracker;
 
 #[tokio::main]
 async fn main() -> Result<()> {

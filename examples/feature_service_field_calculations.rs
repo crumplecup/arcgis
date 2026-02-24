@@ -60,11 +60,11 @@
 //!   Update the field names in the example to match your layer's fields.
 
 use anyhow::{Context, Result};
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ApiKeyAuth, ArcGISClient, EditOptions, EnvConfig, Feature, FeatureQueryParams,
     FeatureServiceClient, FieldCalculation, LayerId, ObjectId,
 };
-use arcgis::example_tracker::ExampleTracker;
 use secrecy::ExposeSecret;
 use serde_json::json;
 use std::collections::HashMap;

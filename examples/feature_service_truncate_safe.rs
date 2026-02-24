@@ -74,12 +74,12 @@
 //! - With explicit approval for data deletion
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ApiKeyAuth, ApiKeyTier, ArcGISClient, CreateVersionParams, EditOptions, EnvConfig, Feature,
     FeatureServiceClient, LayerId, SessionId, VersionGuid, VersionManagementClient,
     VersionPermission,
 };
-use arcgis::example_tracker::ExampleTracker;
 use secrecy::ExposeSecret;
 use serde_json::json;
 use std::collections::HashMap;
@@ -98,9 +98,14 @@ async fn main() -> Result<()> {
     // Start accountability tracking
     let tracker = ExampleTracker::new("feature_service_truncate_safe")
         .methods(&[
-            "truncate", "add_features", "query_feature_count",
+            "truncate",
+            "add_features",
+            "query_feature_count",
             // Version management methods used for safety:
-            "create", "start_editing", "stop_editing", "delete"
+            "create",
+            "start_editing",
+            "stop_editing",
+            "delete",
         ])
         .service_type("FeatureServiceClient")
         .start();
@@ -194,9 +199,7 @@ async fn demonstrate_safe_truncate(
     tracing::info!("📋 STEP 2: Start edit session on version");
     let session_id = SessionId::new();
 
-    let start_response = vm_client
-        .start_editing(version_guid, session_id)
-        .await?;
+    let start_response = vm_client.start_editing(version_guid, session_id).await?;
 
     anyhow::ensure!(
         *start_response.success(),
@@ -235,10 +238,7 @@ async fn demonstrate_safe_truncate(
         )
         .await?;
 
-    anyhow::ensure!(
-        add_result.all_succeeded(),
-        "Failed to add test features"
-    );
+    anyhow::ensure!(add_result.all_succeeded(), "Failed to add test features");
 
     let added_count = add_result.success_count();
     tracing::info!("✅ Added {} test features to version", added_count);
@@ -249,9 +249,7 @@ async fn demonstrate_safe_truncate(
     // STEP 4: Verify features exist before truncate
     tracing::info!("📋 STEP 4: Verify features exist (pre-truncate)");
 
-    let pre_truncate_count = fs_client
-        .query_feature_count(layer_id, "1=1")
-        .await?;
+    let pre_truncate_count = fs_client.query_feature_count(layer_id, "1=1").await?;
 
     tracing::info!("✅ Pre-truncate count: {} features", pre_truncate_count);
     anyhow::ensure!(
@@ -262,16 +260,17 @@ async fn demonstrate_safe_truncate(
 
     // STEP 5: ⚠️ TRUNCATE - The destructive operation ⚠️
     tracing::info!("📋 STEP 5: ⚠️  TRUNCATE (Delete ALL features from layer) ⚠️");
-    tracing::warn!("   This will delete ALL features in layer {} of version {}", layer_id, version_name);
+    tracing::warn!(
+        "   This will delete ALL features in layer {} of version {}",
+        layer_id,
+        version_name
+    );
     tracing::warn!("   DEFAULT version remains UNAFFECTED");
     tracing::info!("");
 
     let truncate_result = fs_client.truncate(layer_id).await?;
 
-    anyhow::ensure!(
-        truncate_result.success(),
-        "Truncate operation failed"
-    );
+    anyhow::ensure!(truncate_result.success(), "Truncate operation failed");
 
     tracing::info!("✅ TRUNCATE completed successfully");
     tracing::info!("   All features deleted from version");
@@ -280,9 +279,7 @@ async fn demonstrate_safe_truncate(
     // STEP 6: Verify truncate worked
     tracing::info!("📋 STEP 6: Verify truncate worked (post-truncate)");
 
-    let post_truncate_count = fs_client
-        .query_feature_count(layer_id, "1=1")
-        .await?;
+    let post_truncate_count = fs_client.query_feature_count(layer_id, "1=1").await?;
 
     tracing::info!("✅ Post-truncate count: {} features", post_truncate_count);
 

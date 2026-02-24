@@ -86,13 +86,13 @@
 //! - Future: `shapefile-rs`, `geotiff` for other formats
 
 use anyhow::{Context, Result};
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     AddItemParams, AddToDefinitionParams, ApiKeyAuth, ApiKeyTier, ArcGISClient,
     CreateServiceParams, EditOptions, Feature, FeatureServiceClient, FieldDefinitionBuilder,
     FieldType, GeometryTypeDefinition, ItemDataUpload, LayerDefinitionBuilder, LayerId, NoAuth,
     PortalClient, SharingParameters,
 };
-use arcgis::example_tracker::ExampleTracker;
 use std::collections::HashMap;
 use std::time::Duration;
 

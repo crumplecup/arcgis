@@ -42,12 +42,12 @@
 //! Check your ArcGIS Online quota before running multiple times.
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISGeometry, ArcGISPoint, ClosestFacilityParameters,
     NALocation, ODCostMatrixParameters, RouteParameters, RoutingServiceClient,
     ServiceAreaParameters, TravelDirection,
 };
-use arcgis::example_tracker::ExampleTracker;
 
 /// World Routing Service endpoints
 const ROUTE_SERVICE: &str =

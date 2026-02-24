@@ -28,8 +28,8 @@
 //! cargo run --example query_features
 //! ```
 
-use arcgis::{ArcGISClient, FeatureServiceClient, LayerId, NoAuth, ObjectId};
 use arcgis::example_tracker::ExampleTracker;
+use arcgis::{ArcGISClient, FeatureServiceClient, LayerId, NoAuth, ObjectId};
 
 /// Public World Cities feature service (no auth required).
 const WORLD_CITIES_SERVICE: &str =

@@ -1367,38 +1367,32 @@ impl PublishResult {
     ///
     /// Checks top-level field first (.sd files), then services[0] (GeoJSON, etc.).
     pub fn service_item_id(&self) -> Option<&String> {
-        self.service_item_id
-            .as_ref()
-            .or_else(|| {
-                self.services
-                    .as_ref()
-                    .and_then(|s| s.first())
-                    .and_then(|info| info.service_item_id.as_ref())
-            })
+        self.service_item_id.as_ref().or_else(|| {
+            self.services
+                .as_ref()
+                .and_then(|s| s.first())
+                .and_then(|info| info.service_item_id.as_ref())
+        })
     }
 
     /// Gets service_url from either top-level field or services array.
     pub fn service_url(&self) -> Option<&String> {
-        self.service_url
-            .as_ref()
-            .or_else(|| {
-                self.services
-                    .as_ref()
-                    .and_then(|s| s.first())
-                    .and_then(|info| info.service_url.as_ref())
-            })
+        self.service_url.as_ref().or_else(|| {
+            self.services
+                .as_ref()
+                .and_then(|s| s.first())
+                .and_then(|info| info.service_url.as_ref())
+        })
     }
 
     /// Gets job_id from either top-level field or services array.
     pub fn job_id(&self) -> Option<&String> {
-        self.job_id
-            .as_ref()
-            .or_else(|| {
-                self.services
-                    .as_ref()
-                    .and_then(|s| s.first())
-                    .and_then(|info| info.job_id.as_ref())
-            })
+        self.job_id.as_ref().or_else(|| {
+            self.services
+                .as_ref()
+                .and_then(|s| s.first())
+                .and_then(|info| info.job_id.as_ref())
+        })
     }
 
     /// Returns success status.

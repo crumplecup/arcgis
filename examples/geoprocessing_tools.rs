@@ -58,8 +58,8 @@
 //! - Public safety planning
 
 use anyhow::Result;
-use arcgis::{ArcGISClient, GeoprocessingServiceClient, NoAuth};
 use arcgis::example_tracker::ExampleTracker;
+use arcgis::{ArcGISClient, GeoprocessingServiceClient, NoAuth};
 use std::collections::HashMap;
 use std::time::Duration;
 

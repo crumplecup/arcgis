@@ -53,11 +53,11 @@
 //! - **Cleanup**: Delete obsolete features efficiently
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ApiKeyAuth, ApiKeyTier, ArcGISClient, EditOptions, EnvConfig, Feature, FeatureServiceClient,
     LayerId, ObjectId,
 };
-use arcgis::example_tracker::ExampleTracker;
 use secrecy::ExposeSecret;
 use serde_json::json;
 use std::collections::HashMap;
@@ -75,8 +75,10 @@ async fn main() -> Result<()> {
     // Start accountability tracking
     let tracker = ExampleTracker::new("feature_service_batch_editing")
         .methods(&[
-            "get_table_definition", "apply_edits",
-            "update_features", "apply_edits_with_global_ids"
+            "get_table_definition",
+            "apply_edits",
+            "update_features",
+            "apply_edits_with_global_ids",
         ])
         .service_type("FeatureServiceClient")
         .start();
@@ -153,7 +155,8 @@ async fn demonstrate_get_table_definition(fs_client: &FeatureServiceClient<'_>) 
 
     // Show first few fields
     for (idx, field) in fields.iter().take(5).enumerate() {
-        let nullable_str = field.nullable()
+        let nullable_str = field
+            .nullable()
             .map(|n| if n { "nullable" } else { "not null" })
             .unwrap_or("unknown");
 
@@ -210,7 +213,10 @@ async fn demonstrate_apply_edits(fs_client: &FeatureServiceClient<'_>) -> Result
 
     let mut new_attrs2 = HashMap::new();
     new_attrs2.insert("name".to_string(), json!("Batch Test Feature 2"));
-    new_attrs2.insert("description".to_string(), json!("Also created by apply_edits"));
+    new_attrs2.insert(
+        "description".to_string(),
+        json!("Also created by apply_edits"),
+    );
     let feature_to_add2 = Feature::new(new_attrs2, None);
 
     tracing::info!("Preparing batch operation:");
@@ -228,8 +234,8 @@ async fn demonstrate_apply_edits(fs_client: &FeatureServiceClient<'_>) -> Result
         .apply_edits(
             layer_id,
             Some(vec![feature_to_add1, feature_to_add2]),
-            None,  // No updates
-            None,  // No deletes
+            None, // No updates
+            None, // No deletes
             options,
         )
         .await?;
@@ -241,10 +247,7 @@ async fn demonstrate_apply_edits(fs_client: &FeatureServiceClient<'_>) -> Result
     tracing::info!("   Add results: {}", result.add_results().len());
 
     // Assertions
-    anyhow::ensure!(
-        result.add_results().len() == 2,
-        "Should have 2 add results"
-    );
+    anyhow::ensure!(result.add_results().len() == 2, "Should have 2 add results");
 
     anyhow::ensure!(
         result.all_succeeded(),
@@ -263,10 +266,7 @@ async fn demonstrate_apply_edits(fs_client: &FeatureServiceClient<'_>) -> Result
         .filter_map(|r| *r.object_id())
         .collect();
 
-    anyhow::ensure!(
-        created_ids.len() == 2,
-        "Should have 2 created object IDs"
-    );
+    anyhow::ensure!(created_ids.len() == 2, "Should have 2 created object IDs");
 
     tracing::info!("   Created IDs: {:?}", created_ids);
 
@@ -277,17 +277,14 @@ async fn demonstrate_apply_edits(fs_client: &FeatureServiceClient<'_>) -> Result
     let cleanup_result = fs_client
         .apply_edits(
             layer_id,
-            None,               // No adds
-            None,               // No updates
-            Some(created_ids),  // Delete the ones we created
+            None,              // No adds
+            None,              // No updates
+            Some(created_ids), // Delete the ones we created
             EditOptions::default(),
         )
         .await?;
 
-    anyhow::ensure!(
-        cleanup_result.all_succeeded(),
-        "Cleanup should succeed"
-    );
+    anyhow::ensure!(cleanup_result.all_succeeded(), "Cleanup should succeed");
 
     tracing::info!("✅ Cleanup completed");
 
@@ -326,7 +323,10 @@ async fn demonstrate_update_features(fs_client: &FeatureServiceClient<'_>) -> Re
         .add_features(layer_id, vec![feature1, feature2], EditOptions::default())
         .await?;
 
-    anyhow::ensure!(add_result.all_succeeded(), "Feature creation should succeed");
+    anyhow::ensure!(
+        add_result.all_succeeded(),
+        "Feature creation should succeed"
+    );
 
     let created_ids: Vec<(i64, ObjectId)> = add_result
         .add_results()
@@ -375,10 +375,7 @@ async fn demonstrate_update_features(fs_client: &FeatureServiceClient<'_>) -> Re
         "Should have 2 update results"
     );
 
-    anyhow::ensure!(
-        update_result.all_succeeded(),
-        "All updates should succeed"
-    );
+    anyhow::ensure!(update_result.all_succeeded(), "All updates should succeed");
 
     // Cleanup
     tracing::info!("");
@@ -390,10 +387,7 @@ async fn demonstrate_update_features(fs_client: &FeatureServiceClient<'_>) -> Re
         .delete_features(layer_id, cleanup_ids, EditOptions::default())
         .await?;
 
-    anyhow::ensure!(
-        cleanup_result.all_succeeded(),
-        "Cleanup should succeed"
-    );
+    anyhow::ensure!(cleanup_result.all_succeeded(), "Cleanup should succeed");
 
     tracing::info!("✅ Cleanup completed");
 
@@ -424,14 +418,20 @@ async fn demonstrate_apply_edits_with_global_ids(
 
     let mut new_attrs = HashMap::new();
     new_attrs.insert("name".to_string(), json!("Global ID Test Feature"));
-    new_attrs.insert("description".to_string(), json!("Testing global ID operations"));
+    new_attrs.insert(
+        "description".to_string(),
+        json!("Testing global ID operations"),
+    );
     let feature = Feature::new(new_attrs, None);
 
     let add_result = fs_client
         .add_features(layer_id, vec![feature], EditOptions::default())
         .await?;
 
-    anyhow::ensure!(add_result.all_succeeded(), "Feature creation should succeed");
+    anyhow::ensure!(
+        add_result.all_succeeded(),
+        "Feature creation should succeed"
+    );
 
     let first_result = add_result
         .add_results()
@@ -442,10 +442,9 @@ async fn demonstrate_apply_edits_with_global_ids(
         .object_id()
         .ok_or_else(|| anyhow::anyhow!("No object ID returned"))?;
 
-    let global_id = first_result
-        .global_id()
-        .clone()
-        .ok_or_else(|| anyhow::anyhow!("No global ID returned (service may not support global IDs)"))?;
+    let global_id = first_result.global_id().clone().ok_or_else(|| {
+        anyhow::anyhow!("No global ID returned (service may not support global IDs)")
+    })?;
 
     tracing::info!("✅ Feature created");
     tracing::info!("   Object ID: {}", object_id);
@@ -463,9 +462,9 @@ async fn demonstrate_apply_edits_with_global_ids(
     let update_result = fs_client
         .apply_edits_with_global_ids(
             layer_id,
-            None,                         // No adds
-            Some(vec![update_feature]),  // Update by global ID
-            None,                         // No deletes
+            None,                       // No adds
+            Some(vec![update_feature]), // Update by global ID
+            None,                       // No deletes
             EditOptions::default(),
         )
         .await?;
@@ -485,9 +484,9 @@ async fn demonstrate_apply_edits_with_global_ids(
     let delete_result = fs_client
         .apply_edits_with_global_ids(
             layer_id,
-            None,                        // No adds
-            None,                        // No updates
-            Some(vec![global_id.to_string()]),  // Delete by global ID
+            None,                              // No adds
+            None,                              // No updates
+            Some(vec![global_id.to_string()]), // Delete by global ID
             EditOptions::default(),
         )
         .await?;

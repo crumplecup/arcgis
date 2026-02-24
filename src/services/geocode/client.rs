@@ -1,8 +1,7 @@
 //! Geocoding service client.
 
 use crate::{
-    ArcGISClient, GeocodeResponse, LocationType, Result, ReverseGeocodeResponse,
-    SuggestResponse,
+    ArcGISClient, GeocodeResponse, LocationType, Result, ReverseGeocodeResponse, SuggestResponse,
 };
 use tracing::instrument;
 
@@ -328,7 +327,6 @@ impl<'a> GeocodeServiceClient<'a> {
         Ok(geocode_response)
     }
 
-
     /// Reverse geocodes a point to an address, with output in the same spatial reference.
     ///
     /// # Type Safety
@@ -345,7 +343,7 @@ impl<'a> GeocodeServiceClient<'a> {
     /// # async fn example() -> arcgis::Result<()> {
     /// # let auth = ApiKeyAuth::new("YOUR_API_KEY");
     /// # let client = ArcGISClient::new(auth);
-    /// let geocoder = GeocodeServiceClient::world_geocoding_service(&client);
+    /// let geocoder = GeocodeServiceClient::new("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer", &client);
     ///
     /// // ✅ WGS84 input → WGS84 output
     /// let wgs84 = Wgs84Point::new(-117.195, 34.056);
@@ -391,7 +389,7 @@ impl<'a> GeocodeServiceClient<'a> {
     /// # async fn example() -> arcgis::Result<()> {
     /// # let auth = ApiKeyAuth::new("YOUR_API_KEY");
     /// # let client = ArcGISClient::new(auth);
-    /// let geocoder = GeocodeServiceClient::world_geocoding_service(&client);
+    /// let geocoder = GeocodeServiceClient::new("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer", &client);
     ///
     /// // ✅ WGS84 input → Web Mercator output
     /// let wgs84 = Wgs84Point::new(-117.195, 34.056);

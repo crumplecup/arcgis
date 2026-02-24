@@ -35,8 +35,8 @@
 //! - **Result processing**: Extract specific parameters for downstream workflows
 
 use anyhow::Result;
-use arcgis::{ArcGISClient, GPJobStatus, GeoprocessingServiceClient, NoAuth};
 use arcgis::example_tracker::ExampleTracker;
+use arcgis::{ArcGISClient, GPJobStatus, GeoprocessingServiceClient, NoAuth};
 use std::collections::HashMap;
 use std::time::Duration;
 

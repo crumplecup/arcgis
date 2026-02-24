@@ -43,11 +43,11 @@
 //! all authentication methods.
 
 use anyhow::{Context, Result};
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ArcGISClient, ClientCredentialsAuth, GroupSearchParameters, PortalClient, SearchParameters,
     SortOrder,
 };
-use arcgis::example_tracker::ExampleTracker;
 
 /// ArcGIS Online Portal URL (SaaS)
 const PORTAL_URL: &str = "https://www.arcgis.com/sharing/rest";

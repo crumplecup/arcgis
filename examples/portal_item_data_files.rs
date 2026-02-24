@@ -48,8 +48,8 @@
 //! - **PDF**: Portable document format files
 
 use anyhow::Result;
-use arcgis::{AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, ItemDataUpload, PortalClient};
 use arcgis::example_tracker::ExampleTracker;
+use arcgis::{AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, ItemDataUpload, PortalClient};
 
 /// Portal base URL for ArcGIS Online
 const PORTAL_URL: &str = "https://www.arcgis.com/sharing/rest";

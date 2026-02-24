@@ -33,8 +33,8 @@
 //! 2. Display the token information
 //! 3. Demonstrate automatic token caching
 
-use arcgis::{AuthProvider, ClientCredentialsAuth};
 use arcgis::example_tracker::ExampleTracker;
+use arcgis::{AuthProvider, ClientCredentialsAuth};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

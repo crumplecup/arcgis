@@ -80,12 +80,12 @@
 //! - **Conflict resolution**: Reconcile changes between competing versions
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     AlterVersionParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, ConflictDetection,
     CreateVersionParams, DifferenceResultType, EnvConfig, SessionId, VersionGuid,
     VersionManagementClient, VersionPermission,
 };
-use arcgis::example_tracker::ExampleTracker;
 use secrecy::ExposeSecret;
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
@@ -103,10 +103,22 @@ async fn main() -> Result<()> {
     // Start accountability tracking
     let tracker = ExampleTracker::new("version_management_basics")
         .methods(&[
-            "list_versions", "create", "get_info", "alter",
-            "start_editing", "stop_editing", "start_reading", "stop_reading",
-            "differences", "delete_forward_edits", "reconcile", "post",
-            "conflicts", "inspect_conflicts", "restore_rows", "delete"
+            "list_versions",
+            "create",
+            "get_info",
+            "alter",
+            "start_editing",
+            "stop_editing",
+            "start_reading",
+            "stop_reading",
+            "differences",
+            "delete_forward_edits",
+            "reconcile",
+            "post",
+            "conflicts",
+            "inspect_conflicts",
+            "restore_rows",
+            "delete",
         ])
         .service_type("VersionManagementClient")
         .start();
@@ -606,21 +618,9 @@ async fn demonstrate_differences(vm_client: &VersionManagementClient<'_>) -> Res
 
     if let Some(differences) = diffs_response.differences() {
         for layer_diff in differences {
-            let inserts_count = layer_diff
-                .inserts()
-                .as_ref()
-                .map(|i| i.len())
-                .unwrap_or(0);
-            let updates_count = layer_diff
-                .updates()
-                .as_ref()
-                .map(|u| u.len())
-                .unwrap_or(0);
-            let deletes_count = layer_diff
-                .deletes()
-                .as_ref()
-                .map(|d| d.len())
-                .unwrap_or(0);
+            let inserts_count = layer_diff.inserts().as_ref().map(|i| i.len()).unwrap_or(0);
+            let updates_count = layer_diff.updates().as_ref().map(|u| u.len()).unwrap_or(0);
+            let deletes_count = layer_diff.deletes().as_ref().map(|d| d.len()).unwrap_or(0);
 
             if inserts_count + updates_count + deletes_count > 0 {
                 tracing::info!(
@@ -853,9 +853,7 @@ async fn demonstrate_reconcile_and_post(vm_client: &VersionManagementClient<'_>)
 }
 
 /// Demonstrates conflict management operations.
-async fn demonstrate_conflict_management(
-    vm_client: &VersionManagementClient<'_>,
-) -> Result<()> {
+async fn demonstrate_conflict_management(vm_client: &VersionManagementClient<'_>) -> Result<()> {
     tracing::info!("\n=== Example 10: Conflict Management ===");
     tracing::info!("Query conflicts, inspect them, and resolve with restore_rows");
     tracing::info!("");
@@ -1041,7 +1039,10 @@ async fn demonstrate_delete_version(vm_client: &VersionManagementClient<'_>) -> 
         .iter()
         .any(|v| v.version_guid() == version_info.version_guid());
 
-    anyhow::ensure!(!still_exists, "Version should no longer exist after deletion");
+    anyhow::ensure!(
+        !still_exists,
+        "Version should no longer exist after deletion"
+    );
 
     tracing::info!("✅ Verified version no longer in version list");
 

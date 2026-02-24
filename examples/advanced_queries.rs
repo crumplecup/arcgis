@@ -41,11 +41,11 @@
 //! ```
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ArcGISClient, FeatureQueryParams, FeatureServiceClient, LayerId, NoAuth, ObjectId,
     RelatedRecordsParams, StatisticDefinition, StatisticType, TopFeaturesParams, TopFilter,
 };
-use arcgis::example_tracker::ExampleTracker;
 use tracing::instrument;
 
 /// ESRI's sample SF311 incidents service (for demonstration).

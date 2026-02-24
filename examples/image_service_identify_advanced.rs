@@ -40,11 +40,11 @@
 //! - **Rendering rules**: Apply on-the-fly analysis (NDVI, slope) before identify
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ArcGISClient, ArcGISGeometry, IdentifyParametersBuilder, ImageServiceClient, NoAuth,
     geo_types::{Geometry, Point},
 };
-use arcgis::example_tracker::ExampleTracker;
 
 /// Public NLCD Land Cover 2001 Image Service (no auth required).
 ///

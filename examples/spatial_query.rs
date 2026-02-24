@@ -16,11 +16,11 @@
 //! cargo run --example spatial_query
 //! ```
 
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ArcGISClient, ArcGISEnvelope, ArcGISGeometry, ArcGISPolygon, FeatureServiceClient,
     GeometryType, LayerId, NoAuth, SpatialReference, SpatialRel,
 };
-use arcgis::example_tracker::ExampleTracker;
 
 /// Public World Cities feature service (no auth required).
 const WORLD_CITIES_SERVICE: &str =

@@ -61,10 +61,10 @@
 //! To decode MVT tiles in Rust, use the `mapbox-vector-tile` crate.
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ArcGISClient, FontStack, GlyphRange, NoAuth, TileCoordinate, VectorTileServiceClient,
 };
-use arcgis::example_tracker::ExampleTracker;
 use std::collections::HashMap;
 
 /// Public vector basemap service (no authentication required)

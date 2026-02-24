@@ -69,8 +69,8 @@
 //! with `premium:user:elevation` privileges and are not included in this example.
 
 use anyhow::Result;
-use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ElevationClient, ProfileParametersBuilder};
 use arcgis::example_tracker::ExampleTracker;
+use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ElevationClient, ProfileParametersBuilder};
 
 #[tokio::main]
 async fn main() -> Result<()> {

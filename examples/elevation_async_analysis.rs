@@ -76,11 +76,11 @@
 //! - **Viewshed** (async): Visibility analysis, job-based
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ApiKeyAuth, ApiKeyTier, ArcGISClient, ElevationClient, SummarizeElevationParametersBuilder,
     ViewshedParametersBuilder,
 };
-use arcgis::example_tracker::ExampleTracker;
 
 #[tokio::main]
 async fn main() -> Result<()> {

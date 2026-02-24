@@ -34,11 +34,11 @@
 //! - **Content discovery**: Make items discoverable through group membership
 //! - **Permissions**: Use groups for fine-grained access control
 
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, CreateGroupParams, DeleteItemResult,
     PortalClient, Result, ShareItemResult, UnshareItemResult, UpdateGroupParams,
 };
-use arcgis::example_tracker::ExampleTracker;
 
 #[tokio::main]
 async fn main() -> Result<()> {

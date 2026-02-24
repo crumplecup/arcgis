@@ -49,10 +49,10 @@
 //! - **Private (Invitation)**: Requires invitation from owner/admin
 
 use anyhow::Result;
+use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
     ArcGISClient, ClientCredentialsAuth, CreateGroupParams, GroupMembershipType, PortalClient,
 };
-use arcgis::example_tracker::ExampleTracker;
 
 /// Portal base URL for ArcGIS Online
 const PORTAL_URL: &str = "https://www.arcgis.com/sharing/rest";

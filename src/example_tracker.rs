@@ -214,17 +214,20 @@ impl ExampleTracker {
 
         let csv_line = format!(
             "{},{},{},{},{},{},\"{}\",{}\n",
-            self.example_name, timestamp, status_str, duration_ms, methods, service_type, error_escaped, git_commit
+            self.example_name,
+            timestamp,
+            status_str,
+            duration_ms,
+            methods,
+            service_type,
+            error_escaped,
+            git_commit
         );
 
         // Append to CSV file
         let csv_path = Self::csv_path();
 
-        match OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&csv_path)
-        {
+        match OpenOptions::new().create(true).append(true).open(&csv_path) {
             Ok(mut file) => {
                 if let Err(e) = file.write_all(csv_line.as_bytes()) {
                     eprintln!("Failed to write to tracking CSV: {}", e);
