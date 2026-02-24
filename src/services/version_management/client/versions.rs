@@ -487,7 +487,28 @@ impl<'a> VersionManagementClient<'a> {
             }));
         }
 
-        let versions_response: VersionInfosResponse = response.json().await?;
+        // Get raw response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "Raw list versions response");
+
+        // Check for API error response
+        if let Ok(error_response) = serde_json::from_str::<serde_json::Value>(&response_text) {
+            if let Some(error_obj) = error_response.get("error") {
+                let code = error_obj.get("code").and_then(|c| c.as_i64()).unwrap_or(0);
+                let message = error_obj
+                    .get("message")
+                    .and_then(|m| m.as_str())
+                    .unwrap_or("Unknown error");
+                tracing::error!(code = code, message = message, "API returned error");
+                return Err(crate::Error::from(crate::ErrorKind::Api {
+                    code: code as i32,
+                    message: message.to_string(),
+                }));
+            }
+        }
+
+        // Try to deserialize
+        let versions_response: VersionInfosResponse = serde_json::from_str(&response_text)?;
 
         tracing::info!(
             version_count = versions_response.versions().len(),
