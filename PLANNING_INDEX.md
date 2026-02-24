@@ -7,14 +7,8 @@ along with their last associated commit.
 
 | Document | Purpose | Last Commit | Date |
 |----------|---------|-------------|------|
-| [ARCGIS_REST_API_RESEARCH.md](ARCGIS_REST_API_RESEARCH.md) | ArcGIS REST API research and analysis | `f616763` - feat: initial SDK foundation with type-safe architecture | 2 days ago |
-| [FULL_COVERAGE_PLAN.md](FULL_COVERAGE_PLAN.md) | Full coverage implementation plan (70-75% API surface) | `121f0f5` - docs: update FULL_COVERAGE_PLAN.md for Elevation Service completion | Today |
-| [AUTHENTICATION_STRATEGY.md](AUTHENTICATION_STRATEGY.md) | Automated authentication strategy (API Key + Client Credentials) | New document | Today |
 | [docs/gap_analysis_2026-02-08.md](docs/gap_analysis_2026-02-08.md) | **Gap Analysis: Implemented vs. Demonstrated Features** (35% coverage, 4 example recommendations) | New document | 2026-02-08 |
 | [docs/examples_expansion_plan.md](docs/examples_expansion_plan.md) | Examples expansion plan (25% → 80% coverage) | New document | Today |
-| [ESRI_GEOMETRY_INTEGRATION_PLAN.md](ESRI_GEOMETRY_INTEGRATION_PLAN.md) | ✅ Geometry consolidation refactor (COMPLETE) | Latest on branch `refactor/consolidate-geometry` | Today |
-| [SERVICE_DEFINITION_TYPING_PLAN.md](SERVICE_DEFINITION_TYPING_PLAN.md) | 🟡 Strong typing for service definitions (replace serde_json::Value) | New document | Today |
-| [PLANNING_ITEM_DATA_API.md](PLANNING_ITEM_DATA_API.md) | 🔧 Item data API enhancement (fix get_item_data/update_item_data, support diverse formats) | New document | 2026-02-21 |
 
 ## Project Standards
 
@@ -41,6 +35,15 @@ but accessible via git history):
 - CLAUDE_MD_COMPLIANCE.md - CLAUDE.md compliance checklist
 - CLAUDE_COMPLIANCE_REVIEW.md - Compliance review findings
 - PKCE_AUTHENTICATION_STRATEGY.md - OAuth PKCE strategy (wrong approach - requires browser)
+- API_KEY_TESTING_STRATEGY.md - API key testing strategy (`e4925a2`)
+- ARCGIS_REST_API_RESEARCH.md - ArcGIS REST API research and analysis (`f616763`)
+- ASYNC_ELEVATION_PLAN.md - Async elevation service implementation plan (`0286067`)
+- CHANGELOG-0.1.2.md - Version 0.1.2 changelog (`8007aaa`)
+- COVERAGE_ROADMAP.md - Coverage roadmap (`9c249ea`)
+- ESRI_GEOMETRY_INTEGRATION_PLAN.md - Geometry consolidation refactor (COMPLETE) (`a59665d`)
+- PLANNING_ITEM_DATA_API.md - Item data API enhancement plan (`d657edf`)
+- SERVICE_DEFINITION_TYPING_PLAN.md - Strong typing for service definitions (`0b8a051`)
+- AUTHENTICATION_STRATEGY.md - Automated authentication strategy (`dd2c33d`)
 
 To view archived documents:
 
