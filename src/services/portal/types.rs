@@ -1305,28 +1305,111 @@ impl PublishParameters {
 }
 
 /// Result from publishing a service.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PublishResult {
     /// Whether the operation succeeded (defaults to true if not present).
     #[serde(default = "default_true")]
     success: bool,
 
-    /// Service item ID.
+    /// Service item ID (top-level field for .sd files).
     #[serde(default)]
     service_item_id: Option<String>,
 
-    /// Service URL.
+    /// Service URL (top-level field for .sd files).
     #[serde(default)]
     service_url: Option<String>,
 
-    /// Job ID for tracking publish status.
+    /// Job ID for tracking publish status (top-level field for .sd files).
     #[serde(default)]
     job_id: Option<String>,
+
+    /// Services array (used for GeoJSON, shapefile, csv publishes).
+    #[serde(default)]
+    services: Option<Vec<PublishServiceInfo>>,
 
     /// Error messages if any.
     #[serde(default)]
     error: Option<serde_json::Value>,
+}
+
+/// Service information from publish result.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, derive_getters::Getters)]
+#[serde(rename_all = "camelCase")]
+pub struct PublishServiceInfo {
+    /// Service type (e.g., "Feature Service").
+    #[serde(default)]
+    service_type: Option<String>,
+
+    /// Service URL.
+    #[serde(rename = "serviceurl", default)]
+    service_url: Option<String>,
+
+    /// Service item ID.
+    #[serde(default)]
+    service_item_id: Option<String>,
+
+    /// Job ID.
+    #[serde(default)]
+    job_id: Option<String>,
+
+    /// Service size.
+    #[serde(default)]
+    size: Option<i64>,
+
+    /// Encoded service URL.
+    #[serde(default)]
+    encoded_service_url: Option<String>,
+}
+
+impl PublishResult {
+    /// Gets service_item_id from either top-level field or services array.
+    ///
+    /// Checks top-level field first (.sd files), then services[0] (GeoJSON, etc.).
+    pub fn service_item_id(&self) -> Option<&String> {
+        self.service_item_id
+            .as_ref()
+            .or_else(|| {
+                self.services
+                    .as_ref()
+                    .and_then(|s| s.first())
+                    .and_then(|info| info.service_item_id.as_ref())
+            })
+    }
+
+    /// Gets service_url from either top-level field or services array.
+    pub fn service_url(&self) -> Option<&String> {
+        self.service_url
+            .as_ref()
+            .or_else(|| {
+                self.services
+                    .as_ref()
+                    .and_then(|s| s.first())
+                    .and_then(|info| info.service_url.as_ref())
+            })
+    }
+
+    /// Gets job_id from either top-level field or services array.
+    pub fn job_id(&self) -> Option<&String> {
+        self.job_id
+            .as_ref()
+            .or_else(|| {
+                self.services
+                    .as_ref()
+                    .and_then(|s| s.first())
+                    .and_then(|info| info.job_id.as_ref())
+            })
+    }
+
+    /// Returns success status.
+    pub fn success(&self) -> &bool {
+        &self.success
+    }
+
+    /// Returns error if any.
+    pub fn error(&self) -> Option<&serde_json::Value> {
+        self.error.as_ref()
+    }
 }
 
 /// Status of a publishing job.

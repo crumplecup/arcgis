@@ -125,7 +125,7 @@ pub use services::{
     PlaceInfo, PlaceRating, PlaceSearchParameters, PlaceSearchParametersBuilder, PlaceSearchResult,
     PlacesClient, PortalClient, PostResponse, ProfileParameters, ProfileParametersBuilder,
     ProfileResult, ProjectParameters, ProjectParametersBuilder, ProjectResult, PublishParameters,
-    PublishResult, PublishStatus, QueryBuilder, QueryDomainsResponse, RangeDomain,
+    PublishResult, PublishServiceInfo, PublishStatus, QueryBuilder, QueryDomainsResponse, RangeDomain,
     RangeDomainBuilder, RasterInfo, ReconcileResponse, RelatedRecordGroup, RelatedRecordsParams,
     RelatedRecordsParamsBuilder, RelatedRecordsResponse, RelationshipCardinality,
     RelationshipClass, RelationshipRole, RelationshipRule, RelationshipsResponse, RendererResponse,
