@@ -7,8 +7,7 @@ along with their last associated commit.
 
 | Document | Purpose | Last Commit | Date |
 |----------|---------|-------------|------|
-| [docs/gap_analysis_2026-02-08.md](docs/gap_analysis_2026-02-08.md) | **Gap Analysis: Implemented vs. Demonstrated Features** (35% coverage, 4 example recommendations) | New document | 2026-02-08 |
-| [docs/examples_expansion_plan.md](docs/examples_expansion_plan.md) | Examples expansion plan (25% → 80% coverage) | New document | Today |
+| [docs/gap_analysis_testing_2026-02-14.md](docs/gap_analysis_testing_2026-02-14.md) | Gap analysis with testing results and method coverage tracking | Active | 2026-02-14 |
 
 ## Project Standards
 
@@ -44,6 +43,11 @@ but accessible via git history):
 - PLANNING_ITEM_DATA_API.md - Item data API enhancement plan (`d657edf`)
 - SERVICE_DEFINITION_TYPING_PLAN.md - Strong typing for service definitions (`0b8a051`)
 - AUTHENTICATION_STRATEGY.md - Automated authentication strategy (`dd2c33d`)
+- docs/assertion_audit_2026-02-22.md - Assertion audit (100% coverage achieved) (`ed6cbff`)
+- docs/example_coverage_assessment.md - Comprehensive example coverage assessment (`2e0f782`)
+- docs/examples_expansion_plan.md - Examples expansion plan (25% → 80% coverage) (`3039441`)
+- docs/gap_analysis_2026-02-08.md - Gap analysis (35% coverage, 4 example recommendations) (`cb4337e`)
+- docs/multi-tier-testing.md - Multi-tier testing strategy (`e4925a2`)
 
 To view archived documents:
 
