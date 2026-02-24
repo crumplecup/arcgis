@@ -59,6 +59,7 @@
 
 use anyhow::Result;
 use arcgis::{ArcGISClient, GeoprocessingServiceClient, NoAuth};
+use arcgis::example_tracker::ExampleTracker;
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -81,6 +82,11 @@ async fn main() -> Result<()> {
         )
         .init();
 
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("geoprocessing_tools")
+        .service_type("ExampleClient")
+        .start();
+
     tracing::info!("🔧 Geoprocessing Service Examples");
     tracing::info!("Analyzing 911 call patterns using kernel density hotspot analysis");
     tracing::info!("Dataset: San Diego County 911 calls (Jan-May 1998)");
@@ -98,6 +104,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All geoprocessing examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

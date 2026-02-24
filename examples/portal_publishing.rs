@@ -92,6 +92,7 @@ use arcgis::{
     FieldType, GeometryTypeDefinition, ItemDataUpload, LayerDefinitionBuilder, LayerId, NoAuth,
     PortalClient, SharingParameters,
 };
+use arcgis::example_tracker::ExampleTracker;
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -104,6 +105,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("portal_publishing")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🚀 Portal Publishing Examples");
     tracing::info!("Demonstrating hosted feature service creation and management");
@@ -133,6 +139,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ Portal publishing examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

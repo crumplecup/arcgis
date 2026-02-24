@@ -50,6 +50,7 @@ use arcgis::{
     AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, OverwriteParameters, PortalClient,
     PublishParameters, UpdateServiceDefinitionParams,
 };
+use arcgis::example_tracker::ExampleTracker;
 use std::time::Duration;
 
 /// Portal base URL for ArcGIS Online
@@ -64,6 +65,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("portal_service_management")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🔧 Portal Service Management Example");
     tracing::info!("");
@@ -84,6 +90,8 @@ async fn main() -> Result<()> {
     tracing::info!("✅ All service management operations completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

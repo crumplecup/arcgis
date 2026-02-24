@@ -52,6 +52,7 @@ use anyhow::Result;
 use arcgis::{
     ArcGISClient, ClientCredentialsAuth, CreateGroupParams, GroupMembershipType, PortalClient,
 };
+use arcgis::example_tracker::ExampleTracker;
 
 /// Portal base URL for ArcGIS Online
 const PORTAL_URL: &str = "https://www.arcgis.com/sharing/rest";
@@ -65,6 +66,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("portal_group_membership")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("👥 Portal Group Membership Example");
     tracing::info!("");
@@ -86,6 +92,8 @@ async fn main() -> Result<()> {
     tracing::info!("✅ All group membership operations completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 
@@ -281,7 +289,6 @@ async fn run_membership_workflow(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("   ✓ User left group via leave_group()");
     tracing::info!("   ✓ Verified user no longer a member");
     tracing::info!("   ✓ Cleaned up test group");
-
     Ok(())
 }
 

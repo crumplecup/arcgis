@@ -47,6 +47,7 @@ use arcgis::{
     ArcGISClient, ClientCredentialsAuth, GroupSearchParameters, PortalClient, SearchParameters,
     SortOrder,
 };
+use arcgis::example_tracker::ExampleTracker;
 
 /// ArcGIS Online Portal URL (SaaS)
 const PORTAL_URL: &str = "https://www.arcgis.com/sharing/rest";
@@ -60,6 +61,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("portal_content_management")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("📦 ArcGIS Portal Content Discovery Examples");
     tracing::info!("Demonstrating search and exploration workflows");
@@ -81,6 +87,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ Portal content discovery examples completed!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 
@@ -312,7 +320,6 @@ async fn demonstrate_pagination(portal: &PortalClient<'_>) -> Result<()> {
             break;
         }
     }
-
     Ok(())
 }
 

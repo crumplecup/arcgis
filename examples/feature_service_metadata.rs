@@ -50,6 +50,7 @@
 
 use anyhow::Result;
 use arcgis::{ArcGISClient, FeatureServiceClient, LayerId, NoAuth};
+use arcgis::example_tracker::ExampleTracker;
 
 /// Public San Francisco 311 service (no authentication required)
 const SF311_SERVICE: &str =
@@ -64,6 +65,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("feature_service_metadata")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🔍 Feature Service Metadata Examples");
     tracing::info!("Using San Francisco 311 Service Requests (public, no auth required)");
@@ -80,6 +86,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All metadata examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

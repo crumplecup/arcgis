@@ -49,6 +49,7 @@
 
 use anyhow::Result;
 use arcgis::{AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, ItemDataUpload, PortalClient};
+use arcgis::example_tracker::ExampleTracker;
 
 /// Portal base URL for ArcGIS Online
 const PORTAL_URL: &str = "https://www.arcgis.com/sharing/rest";
@@ -62,6 +63,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("portal_item_data_files")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("📁 Portal Item Data - File Uploads Example");
     tracing::info!("");
@@ -81,6 +87,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All file upload examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

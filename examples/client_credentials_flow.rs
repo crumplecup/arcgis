@@ -34,6 +34,7 @@
 //! 3. Demonstrate automatic token caching
 
 use arcgis::{AuthProvider, ClientCredentialsAuth};
+use arcgis::example_tracker::ExampleTracker;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -44,6 +45,12 @@ async fn main() -> anyhow::Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("client_credentials_flow")
+        .methods(&["get_token"])
+        .service_type("ClientCredentialsAuth")
+        .start();
 
     tracing::info!("🔐 ArcGIS OAuth 2.0 Client Credentials Flow Example");
     tracing::info!("✨ Fully automated - no browser interaction required!");
@@ -105,5 +112,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("   let client = ArcGISClient::new(auth);");
     tracing::info!("   // All API calls automatically use refreshed tokens");
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }

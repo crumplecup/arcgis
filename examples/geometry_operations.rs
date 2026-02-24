@@ -40,6 +40,7 @@ use arcgis::{
     ArcGISClient, ArcGISGeometry, ArcGISPoint, ArcGISPolyline, GeometryServiceClient, LinearUnit,
     NoAuth,
 };
+use arcgis::example_tracker::ExampleTracker;
 
 /// ArcGIS Online Geometry Service URL (free public utility)
 const GEOMETRY_SERVICE: &str =
@@ -54,6 +55,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("geometry_operations")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("📐 ArcGIS Geometry Service Examples");
     tracing::info!("Demonstrating spatial analysis and transformations");
@@ -73,6 +79,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All geometry operations completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 
@@ -314,7 +322,6 @@ async fn demonstrate_line_length(geom_service: &GeometryServiceClient<'_>) -> Re
             "✅ Route line created and projected"
         );
     }
-
     Ok(())
 }
 

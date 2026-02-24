@@ -45,6 +45,7 @@ use arcgis::{
     ArcGISClient, FeatureQueryParams, FeatureServiceClient, LayerId, NoAuth, ObjectId,
     RelatedRecordsParams, StatisticDefinition, StatisticType, TopFeaturesParams, TopFilter,
 };
+use arcgis::example_tracker::ExampleTracker;
 use tracing::instrument;
 
 /// ESRI's sample SF311 incidents service (for demonstration).
@@ -65,6 +66,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("advanced_queries")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🔍 Advanced Feature Service Query Examples");
     tracing::info!("Use Case: SF311 Service Request Analysis");
@@ -118,6 +124,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All advanced query examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

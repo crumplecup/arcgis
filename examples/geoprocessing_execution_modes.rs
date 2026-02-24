@@ -39,6 +39,7 @@
 
 use anyhow::Result;
 use arcgis::{ArcGISClient, GeoprocessingServiceClient, NoAuth};
+use arcgis::example_tracker::ExampleTracker;
 use serde_json::json;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -59,6 +60,11 @@ async fn main() -> Result<()> {
         )
         .init();
 
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("geoprocessing_execution_modes")
+        .service_type("ExampleClient")
+        .start();
+
     tracing::info!("🎯 Geoprocessing Job Cancellation Example");
     tracing::info!("");
 
@@ -71,6 +77,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ Geoprocessing job cancellation example completed!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

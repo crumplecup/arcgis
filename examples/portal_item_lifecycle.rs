@@ -16,10 +16,16 @@ use arcgis::{
     AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, PortalClient, Result, SharingParameters,
     UpdateItemParams,
 };
+use arcgis::example_tracker::ExampleTracker;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("portal_item_lifecycle")
+        .service_type("PortalClient")
+        .start();
 
     tracing::info!("🔄 Portal Item Lifecycle Example");
     tracing::info!("Demonstrating complete metadata-based item management");
@@ -167,5 +173,7 @@ async fn main() -> Result<()> {
     tracing::info!("");
     tracing::info!("💡 All metadata lifecycle operations demonstrated successfully!");
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }

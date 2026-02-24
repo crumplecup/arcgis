@@ -64,6 +64,7 @@ use anyhow::Result;
 use arcgis::{
     ArcGISClient, FontStack, GlyphRange, NoAuth, TileCoordinate, VectorTileServiceClient,
 };
+use arcgis::example_tracker::ExampleTracker;
 use std::collections::HashMap;
 
 /// Public vector basemap service (no authentication required)
@@ -79,6 +80,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("vector_tiles")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🗺️  Vector Tile Service Examples");
     tracing::info!("Using ArcGIS World Basemap (public, no auth required)");
@@ -98,6 +104,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All vector tile examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

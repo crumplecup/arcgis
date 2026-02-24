@@ -36,6 +36,7 @@
 
 use anyhow::Result;
 use arcgis::{ArcGISClient, GPJobStatus, GeoprocessingServiceClient, NoAuth};
+use arcgis::example_tracker::ExampleTracker;
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -55,6 +56,11 @@ async fn main() -> Result<()> {
         )
         .init();
 
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("geoprocessing_job_monitoring")
+        .service_type("ExampleClient")
+        .start();
+
     tracing::info!("🔍 Geoprocessing Job Monitoring Examples");
     tracing::info!("Testing individual GP monitoring methods with comprehensive assertions");
     tracing::info!("");
@@ -73,6 +79,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All job monitoring examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

@@ -20,6 +20,7 @@ use arcgis::{
     ArcGISClient, ArcGISEnvelope, ArcGISGeometry, ArcGISPolygon, FeatureServiceClient,
     GeometryType, LayerId, NoAuth, SpatialReference, SpatialRel,
 };
+use arcgis::example_tracker::ExampleTracker;
 
 /// Public World Cities feature service (no auth required).
 const WORLD_CITIES_SERVICE: &str =
@@ -34,6 +35,11 @@ async fn main() -> anyhow::Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("spatial_query")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🗺️  Spatial Query Examples");
     tracing::info!("Using ESRI's public World Cities service");
@@ -53,6 +59,8 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("\n✅ All spatial query examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 
@@ -324,7 +332,6 @@ async fn demonstrate_large_area_pagination(
         exceeded_limit = us_result.exceeded_transfer_limit(),
         "US cities with population > 100,000"
     );
-
     Ok(())
 }
 

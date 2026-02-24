@@ -25,6 +25,7 @@
 //! ```
 
 use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient};
+use arcgis::example_tracker::ExampleTracker;
 
 fn main() -> anyhow::Result<()> {
     // Initialize tracing subscriber for structured logging
@@ -34,6 +35,11 @@ fn main() -> anyhow::Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("basic_client")
+        .service_type("ArcGISClient")
+        .start();
 
     tracing::info!("Starting basic_client example");
 
@@ -52,5 +58,7 @@ fn main() -> anyhow::Result<()> {
     tracing::info!("  - Check out examples/client_credentials_flow.rs for OAuth");
     tracing::info!("  - See examples/edit_session.rs for feature editing");
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }

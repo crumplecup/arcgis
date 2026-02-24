@@ -44,6 +44,7 @@ use arcgis::{
     ArcGISClient, ArcGISGeometry, IdentifyParametersBuilder, ImageServiceClient, NoAuth,
     geo_types::{Geometry, Point},
 };
+use arcgis::example_tracker::ExampleTracker;
 
 /// Public NLCD Land Cover 2001 Image Service (no auth required).
 ///
@@ -62,6 +63,11 @@ async fn main() -> Result<()> {
         )
         .init();
 
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("image_service_identify_advanced")
+        .service_type("ExampleClient")
+        .start();
+
     tracing::info!("🔍 Advanced Image Service Identification Examples");
     tracing::info!("Using NLCD Land Cover 2001 public service");
     tracing::info!("");
@@ -78,6 +84,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All advanced identify examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

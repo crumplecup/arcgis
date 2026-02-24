@@ -47,6 +47,7 @@ use arcgis::{
     NALocation, ODCostMatrixParameters, RouteParameters, RoutingServiceClient,
     ServiceAreaParameters, TravelDirection,
 };
+use arcgis::example_tracker::ExampleTracker;
 
 /// World Routing Service endpoints
 const ROUTE_SERVICE: &str =
@@ -65,6 +66,11 @@ async fn main() -> Result<()> {
         )
         .init();
 
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("routing_navigation")
+        .service_type("ExampleClient")
+        .start();
+
     tracing::info!("🗺️ ArcGIS Routing & Navigation Examples");
     tracing::info!("Pacific Coast Road Trip: San Francisco → Seattle");
 
@@ -82,6 +88,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All routing examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

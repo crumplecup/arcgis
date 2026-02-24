@@ -61,6 +61,7 @@ use arcgis::{
     CreateServiceParams, DownloadTarget, EditOptions, EnvConfig, Feature, FeatureServiceClient,
     ObjectId, PortalClient,
 };
+use arcgis::example_tracker::ExampleTracker;
 use secrecy::ExposeSecret;
 use std::collections::HashMap;
 
@@ -79,6 +80,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("feature_attachments")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("📎 ArcGIS Feature Attachments Examples");
     tracing::info!("Demonstrating file attachment management workflows");
@@ -133,6 +139,8 @@ async fn main() -> Result<()> {
 
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 
@@ -621,7 +629,6 @@ async fn cleanup(
 
     portal.delete_service(service_item_id).await?;
     tracing::info!(service_item_id = %service_item_id, "✅ Feature service deleted");
-
     Ok(())
 }
 

@@ -38,6 +38,7 @@ use arcgis::{
     AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, CreateGroupParams, DeleteItemResult,
     PortalClient, Result, ShareItemResult, UnshareItemResult, UpdateGroupParams,
 };
+use arcgis::example_tracker::ExampleTracker;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -48,6 +49,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("portal_group_workflow")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("👥 Portal Group Management Workflow");
     tracing::info!("");
@@ -67,6 +73,8 @@ async fn main() -> Result<()> {
             tracing::info!("");
             tracing::info!("✅ All group workflow operations completed successfully!");
             print_best_practices();
+            // Mark tracking as successful
+            tracker.success();
             Ok(())
         }
         Err(e) => {

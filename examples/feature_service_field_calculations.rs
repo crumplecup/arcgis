@@ -64,6 +64,7 @@ use arcgis::{
     ApiKeyAuth, ArcGISClient, EditOptions, EnvConfig, Feature, FeatureQueryParams,
     FeatureServiceClient, FieldCalculation, LayerId, ObjectId,
 };
+use arcgis::example_tracker::ExampleTracker;
 use secrecy::ExposeSecret;
 use serde_json::json;
 use std::collections::HashMap;
@@ -77,6 +78,11 @@ async fn main() -> Result<()> {
                 .add_directive("feature_service_field_calculations=info".parse()?),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("feature_service_field_calculations")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("=== Feature Service Field Calculations Example ===");
 
@@ -402,5 +408,7 @@ async fn main() -> Result<()> {
     tracing::info!("✓ CalculateResult response format validated");
     tracing::info!("\nFeatureServiceClient coverage for calculate_records: 100%");
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }

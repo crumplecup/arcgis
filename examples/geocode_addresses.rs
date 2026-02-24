@@ -47,6 +47,7 @@
 
 use anyhow::Result;
 use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ArcGISPoint, GeocodeServiceClient};
+use arcgis::example_tracker::ExampleTracker;
 
 /// ArcGIS World Geocoding Service URL
 const WORLD_GEOCODE_SERVICE: &str =
@@ -61,6 +62,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("geocode_addresses")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🗺️  ArcGIS Geocoding Service Examples");
     tracing::info!("Demonstrating address and coordinate conversion");
@@ -81,6 +87,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All geocoding examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

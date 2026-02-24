@@ -29,6 +29,7 @@
 //! ```
 
 use arcgis::{ArcGISClient, FeatureServiceClient, LayerId, NoAuth, ObjectId};
+use arcgis::example_tracker::ExampleTracker;
 
 /// Public World Cities feature service (no auth required).
 const WORLD_CITIES_SERVICE: &str =
@@ -43,6 +44,11 @@ async fn main() -> anyhow::Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("query_features")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🌍 Feature Service Query Examples");
     tracing::info!("Using ESRI's public World Cities service");
@@ -64,6 +70,8 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("\n✅ All query examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

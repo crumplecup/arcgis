@@ -80,6 +80,7 @@ use arcgis::{
     ApiKeyAuth, ApiKeyTier, ArcGISClient, ElevationClient, SummarizeElevationParametersBuilder,
     ViewshedParametersBuilder,
 };
+use arcgis::example_tracker::ExampleTracker;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -90,6 +91,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("elevation_async_analysis")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🏔️  Async Elevation Analysis Examples");
     tracing::info!("Advanced terrain analysis with ArcGIS Elevation Geoprocessing Services");
@@ -111,6 +117,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ Async elevation examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 

@@ -70,6 +70,7 @@
 
 use anyhow::Result;
 use arcgis::{ApiKeyAuth, ApiKeyTier, ArcGISClient, ElevationClient, ProfileParametersBuilder};
+use arcgis::example_tracker::ExampleTracker;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -80,6 +81,11 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("elevation_analysis")
+        .service_type("ExampleClient")
+        .start();
 
     tracing::info!("🏔️  Elevation Analysis Examples");
     tracing::info!("Terrain analysis with ArcGIS Elevation Services");
@@ -100,6 +106,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ Elevation Profile example completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 
@@ -269,7 +277,6 @@ async fn demonstrate_elevation_profile(elevation: &ElevationClient<'_>) -> Resul
     tracing::info!("   • Distance and elevation for each sample point");
     tracing::info!("   • Ready for charts, analysis, or further processing");
     tracing::info!("   • Use elevation_points() helper to extract typed data");
-
     Ok(())
 }
 

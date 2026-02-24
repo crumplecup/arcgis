@@ -53,6 +53,7 @@ use arcgis::{
     ImageServiceClient, NoAuth, SampleParametersBuilder,
     geo_types::{Geometry, LineString, Point},
 };
+use arcgis::example_tracker::ExampleTracker;
 
 /// Public NLCD Land Cover 2001 Image Service (no auth required).
 ///
@@ -71,6 +72,11 @@ async fn main() -> Result<()> {
         )
         .init();
 
+    // Start accountability tracking
+    let tracker = ExampleTracker::new("image_service_raster")
+        .service_type("ExampleClient")
+        .start();
+
     tracing::info!("🌍 Image Service Examples");
     tracing::info!("Using NLCD Land Cover 2001 public service");
 
@@ -88,6 +94,8 @@ async fn main() -> Result<()> {
     tracing::info!("\n✅ All image service examples completed successfully!");
     print_best_practices();
 
+    // Mark tracking as successful
+    tracker.success();
     Ok(())
 }
 
