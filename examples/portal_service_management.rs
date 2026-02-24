@@ -1,15 +1,16 @@
 //! 🔧 Portal Service Management Example
 //!
+//! **FIXED** - Bug was hardcoded filetype="serviceDefinition" instead of "geojson".
+//!
 //! Demonstrates advanced service management operations for hosted feature services.
 //! This example shows how to publish, monitor, update, and overwrite services.
 //!
 //! # What You'll Learn
 //!
+//! - **Publish from GeoJSON**: File-based publish workflow with proper filetype
 //! - **Publish status monitoring**: Track asynchronous publish jobs
 //! - **Service definition updates**: Modify service capabilities and settings
 //! - **Service overwrite**: Replace service data while preserving URL/ID
-//! - **Job polling**: Monitor long-running operations
-//! - **Service lifecycle**: Complete publish → update → overwrite workflow
 //!
 //! # Prerequisites
 //!
@@ -47,8 +48,8 @@
 
 use anyhow::Result;
 use arcgis::{
-    AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, OverwriteParameters, PortalClient,
-    PublishParameters, UpdateServiceDefinitionParams,
+    AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, ItemDataUpload, OverwriteParameters,
+    PortalClient, PublishParameters, UpdateServiceDefinitionParams,
 };
 use arcgis::example_tracker::ExampleTracker;
 use std::time::Duration;
@@ -137,13 +138,21 @@ async fn run_service_management_workflow(portal: &PortalClient<'_>) -> Result<()
     let timestamp = chrono::Utc::now().timestamp();
     let service_name = format!("ServiceMgmt_{}", timestamp);
 
-    let item_params = AddItemParams::new(format!("{} Source", service_name), "GeoJSON")
+    let item_params = AddItemParams::new(format!("{} Source", service_name), "GeoJson")
         .with_description("Source data for service management demo")
-        .with_tags(vec!["demo".to_string(), "service-mgmt".to_string()])
-        .with_text(initial_geojson);
+        .with_tags(vec!["demo".to_string(), "service-mgmt".to_string()]);
 
     let add_result = portal.add_item(item_params).await?;
     let source_item_id = add_result.id().to_string();
+
+    // Upload the GeoJSON data as a file
+    let geojson_bytes = initial_geojson.as_bytes().to_vec();
+    let upload = arcgis::ItemDataUpload::File {
+        data: geojson_bytes,
+        filename: "data.geojson".to_string(),
+        mime_type: "application/json".to_string(),
+    };
+    portal.update_item_data_v2(&source_item_id, upload).await?;
 
     tracing::info!("✅ Uploaded source data");
     tracing::info!("   Item ID: {}", source_item_id);
@@ -161,6 +170,7 @@ async fn run_service_management_workflow(portal: &PortalClient<'_>) -> Result<()
     tracing::info!("");
 
     let publish_params = PublishParameters::new(&service_name)
+        .with_file_type("geojson")
         .with_description("Demo service for testing management operations")
         .with_capabilities("Query,Create,Update,Delete")
         .with_max_record_count(1000);
@@ -329,13 +339,21 @@ async fn run_service_management_workflow(portal: &PortalClient<'_>) -> Result<()
   ]
 }"#;
 
-    let update_item_params = AddItemParams::new(format!("{} Updated", service_name), "GeoJSON")
+    let update_item_params = AddItemParams::new(format!("{} Updated", service_name), "GeoJson")
         .with_description("Updated data for overwrite operation")
-        .with_tags(vec!["demo".to_string(), "service-mgmt".to_string()])
-        .with_text(updated_geojson);
+        .with_tags(vec!["demo".to_string(), "service-mgmt".to_string()]);
 
     let update_add_result = portal.add_item(update_item_params).await?;
     let update_source_id = update_add_result.id().to_string();
+
+    // Upload the updated GeoJSON data as a file
+    let updated_geojson_bytes = updated_geojson.as_bytes().to_vec();
+    let updated_upload = ItemDataUpload::File {
+        data: updated_geojson_bytes,
+        filename: "data.geojson".to_string(),
+        mime_type: "application/json".to_string(),
+    };
+    portal.update_item_data_v2(&update_source_id, updated_upload).await?;
 
     tracing::info!("✅ Uploaded updated data");
     tracing::info!("   Item ID: {}", update_source_id);
