@@ -490,8 +490,11 @@ impl<'a> PortalClient<'a> {
             }));
         }
 
-        // Parse response
-        let result: UpdateServiceDefinitionResult = response.json().await?;
+        // Parse response - check for ESRI API error first
+        let response_text = response.text().await?;
+        crate::check_esri_error(&response_text, "updateDefinition")?;
+
+        let result: UpdateServiceDefinitionResult = serde_json::from_str(&response_text)?;
 
         tracing::debug!(success = result.success(), "Service definition updated");
 
@@ -762,8 +765,11 @@ impl<'a> PortalClient<'a> {
             }));
         }
 
-        // Parse response
-        let result: OverwriteResult = response.json().await?;
+        // Parse response - check for ESRI API error first
+        let response_text = response.text().await?;
+        crate::check_esri_error(&response_text, "overwriteService")?;
+
+        let result: OverwriteResult = serde_json::from_str(&response_text)?;
 
         tracing::debug!(success = result.success(), "Service overwritten");
 
