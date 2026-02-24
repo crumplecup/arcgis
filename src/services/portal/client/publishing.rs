@@ -216,9 +216,14 @@ impl<'a> PortalClient<'a> {
         tracing::debug!(url = %url, "Sending publish request");
 
         // Build publish parameters as JSON
+        let file_type = params
+            .file_type()
+            .as_deref()
+            .unwrap_or("serviceDefinition")
+            .to_string();
         let mut publish_params = serde_json::json!({
             "itemId": item_id,
-            "filetype": "serviceDefinition",
+            "filetype": file_type,
             "publishParameters": {
                 "name": params.name(),
             }
@@ -277,7 +282,7 @@ impl<'a> PortalClient<'a> {
         let mut form = reqwest::multipart::Form::new()
             .text("f", "json")
             .text("itemId", item_id.to_string())
-            .text("filetype", "serviceDefinition")
+            .text("filetype", file_type)
             .text(
                 "publishParameters",
                 publish_params["publishParameters"].to_string(),
@@ -309,6 +314,9 @@ impl<'a> PortalClient<'a> {
         // Get response text for debugging
         let response_text = response.text().await?;
         tracing::debug!(response = %response_text, "publish raw response");
+
+        // Check for ESRI error in response body
+        crate::check_esri_error(&response_text, "publish")?;
 
         // Parse response
         let result: PublishResult = serde_json::from_str(&response_text)?;

@@ -60,6 +60,10 @@ impl<'a> PortalClient<'a> {
         // Parse response
         let response_text = response.text().await?;
         tracing::debug!("Raw getSelf response: {}", response_text);
+
+        // Check for ESRI error in response body
+        crate::check_esri_error(&response_text, "getSelf")?;
+
         let user: UserInfo = serde_json::from_str(&response_text)?;
 
         if let Some(username) = user.effective_username() {

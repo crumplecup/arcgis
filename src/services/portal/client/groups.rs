@@ -151,6 +151,9 @@ impl<'a> PortalClient<'a> {
         let response_text = response.text().await?;
         tracing::debug!(response_body = %response_text, "Raw getGroup response");
 
+        // Check for ESRI error in response body
+        crate::check_esri_error(&response_text, "getGroup")?;
+
         let group: GroupInfo = serde_json::from_str(&response_text)?;
 
         tracing::debug!(title = %group.title(), owner = %group.owner(), "Got group");
@@ -250,6 +253,9 @@ impl<'a> PortalClient<'a> {
         // Parse response
         let response_text = response.text().await?;
         tracing::debug!(response_body = %response_text, "Raw createGroup response");
+
+        // Check for ESRI error in response body
+        crate::check_esri_error(&response_text, "createGroup")?;
 
         let result: GroupResult = serde_json::from_str(&response_text)?;
 
@@ -627,6 +633,10 @@ impl<'a> PortalClient<'a> {
         // Parse response
         let response_text = response.text().await?;
         tracing::debug!(response_body = %response_text, "Raw addToGroup response");
+
+        // Check for ESRI error in response body
+        crate::check_esri_error(&response_text, "addToGroup")?;
+
         let result: crate::ShareItemResult = serde_json::from_str(&response_text)?;
 
         tracing::debug!(success = result.success(), "Added item to group");
