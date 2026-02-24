@@ -53,5 +53,9 @@ Desktop.ini
 *.log.*
 logs/
 
-# Example output files
+# Example output files and tracking data
+*.csv
+*.png
+*.jpg
+*.jpeg
 map_*.png
