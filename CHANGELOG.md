@@ -1,4 +1,3 @@
- WARN  git_cliff > "cliff.toml" is not found, using the default configuration
 ## [0.1.1] - 2026-02-09
 
 ### 🚀 Features
