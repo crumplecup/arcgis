@@ -297,21 +297,37 @@ impl<'a> VersionManagementClient<'a> {
     pub async fn delete(&self, version_guid: VersionGuid) -> Result<DeleteResponse> {
         tracing::debug!(version_guid = %version_guid, "Deleting version");
 
-        let url = format!("{}/versions/{}/delete", self.base_url, version_guid);
+        // First, get the version name (required by delete API)
+        let version_info = self.get_info(version_guid).await?;
+        let version_name = version_info.version_name().to_string();
 
-        tracing::debug!(url = %url, "Sending delete request");
+        let url = format!("{}/delete", self.base_url);
 
-        let mut form = vec![];
+        tracing::debug!(
+            url = %url,
+            version_name = %version_name,
+            "Sending delete request"
+        );
+
+        let mut form = vec![("versionName", version_name), ("f", "json".to_string())];
 
         // Add token if required by auth provider
         let token_opt = self.client.get_token_if_required().await?;
         let token_str;
         if let Some(token) = token_opt {
             token_str = token;
-            form.push(("token", token_str.as_str()));
+            form.push(("token", token_str));
         }
 
-        let response = self.client.http().post(&url).form(&form).send().await?;
+        let form_refs: Vec<(&str, &str)> = form.iter().map(|(k, v)| (*k, v.as_str())).collect();
+
+        let response = self
+            .client
+            .http()
+            .post(&url)
+            .form(&form_refs)
+            .send()
+            .await?;
 
         let status = response.status();
         if !status.is_success() {
