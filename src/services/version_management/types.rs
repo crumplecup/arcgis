@@ -103,7 +103,7 @@ pub struct StartEditingResponse {
 
     /// Moment (timestamp) when the edit session started
     #[serde(skip_serializing_if = "Option::is_none")]
-    moment: Option<String>,
+    moment: Option<i64>,
 
     /// Error information if the operation failed
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -118,7 +118,7 @@ pub struct StopEditingResponse {
 
     /// Moment (timestamp) when the edit session stopped
     #[serde(skip_serializing_if = "Option::is_none")]
-    moment: Option<String>,
+    moment: Option<i64>,
 
     /// Error information if the operation failed
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -133,7 +133,7 @@ pub struct StartReadingResponse {
 
     /// Moment (timestamp) when the read session started
     #[serde(skip_serializing_if = "Option::is_none")]
-    moment: Option<String>,
+    moment: Option<i64>,
 
     /// Error information if the operation failed
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -148,7 +148,7 @@ pub struct StopReadingResponse {
 
     /// Moment (timestamp) when the read session stopped
     #[serde(skip_serializing_if = "Option::is_none")]
-    moment: Option<String>,
+    moment: Option<i64>,
 
     /// Error information if the operation failed
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -398,7 +398,7 @@ pub struct AlterResponse {
 
     /// Moment (timestamp) when the alteration occurred
     #[serde(skip_serializing_if = "Option::is_none")]
-    moment: Option<String>,
+    moment: Option<i64>,
 
     /// Error information if the operation failed
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -413,7 +413,7 @@ pub struct DeleteResponse {
 
     /// Moment (timestamp) when the deletion occurred
     #[serde(skip_serializing_if = "Option::is_none")]
-    moment: Option<String>,
+    moment: Option<i64>,
 
     /// Error information if the operation failed
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -459,9 +459,9 @@ pub struct ReconcileResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     has_conflicts: Option<bool>,
 
-    /// Moment (timestamp) when the reconcile occurred
+    /// Moment (timestamp) when the reconcile occurred (Unix timestamp in milliseconds)
     #[serde(skip_serializing_if = "Option::is_none")]
-    moment: Option<String>,
+    moment: Option<i64>,
 
     /// Whether the post operation was performed (if withPost=true)
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -480,7 +480,7 @@ pub struct PostResponse {
 
     /// Moment (timestamp) when the post occurred
     #[serde(skip_serializing_if = "Option::is_none")]
-    moment: Option<String>,
+    moment: Option<i64>,
 
     /// Error information if the operation failed
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -857,7 +857,7 @@ pub struct RestoreRowsResponse {
 
     /// Moment (timestamp) when the restore occurred
     #[serde(skip_serializing_if = "Option::is_none")]
-    moment: Option<String>,
+    moment: Option<i64>,
 
     /// Error information if the operation failed
     #[serde(skip_serializing_if = "Option::is_none")]

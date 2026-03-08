@@ -114,7 +114,12 @@ impl<'a> VersionManagementClient<'a> {
             }));
         }
 
-        let conflicts_response: ConflictsResponse = response.json().await?;
+        // Get raw response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "Raw conflicts response");
+
+        // Try to deserialize
+        let conflicts_response: ConflictsResponse = serde_json::from_str(&response_text)?;
 
         if *conflicts_response.success() {
             let conflict_count = conflicts_response
@@ -257,6 +262,14 @@ impl<'a> VersionManagementClient<'a> {
             }
         }
 
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str));
+        }
+
         tracing::debug!(url = %url, "Sending inspect conflicts request");
 
         let form_refs: Vec<(&str, &str)> = form.iter().map(|(k, v)| (*k, v.as_str())).collect();
@@ -282,7 +295,12 @@ impl<'a> VersionManagementClient<'a> {
             }));
         }
 
-        let inspect_response: InspectConflictsResponse = response.json().await?;
+        // Get raw response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "Raw inspect conflicts response");
+
+        // Try to deserialize
+        let inspect_response: InspectConflictsResponse = serde_json::from_str(&response_text)?;
 
         if *inspect_response.success() {
             tracing::info!(

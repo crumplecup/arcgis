@@ -722,7 +722,16 @@ async fn demonstrate_delete_forward_edits(vm_client: &VersionManagementClient<'_
 
     tracing::info!("Created version: {}", version_info.version_name());
 
-    // Start edit session
+    // Start reading session (shared lock)
+    tracing::info!("Starting reading session...");
+    let read_response = vm_client.start_reading(version_guid, session_id).await?;
+    anyhow::ensure!(
+        *read_response.success(),
+        "Start reading should succeed. Error: {:?}",
+        read_response.error()
+    );
+
+    // Start edit session (exclusive lock)
     tracing::info!("Starting edit session...");
     let start_response = vm_client.start_editing(version_guid, session_id).await?;
     anyhow::ensure!(*start_response.success(), "Edit session should start");
@@ -766,6 +775,14 @@ async fn demonstrate_delete_forward_edits(vm_client: &VersionManagementClient<'_
         .await?;
     anyhow::ensure!(*stop_response.success(), "Stop editing should succeed");
 
+    // Stop reading session (release all locks)
+    let stop_read_response = vm_client.stop_reading(version_guid, session_id).await?;
+    anyhow::ensure!(
+        *stop_read_response.success(),
+        "Stop reading should succeed. Error: {:?}",
+        stop_read_response.error()
+    );
+
     tracing::info!("");
     tracing::info!("💡 Delete forward edits:");
     tracing::info!("   • Implements undo functionality");
@@ -804,7 +821,16 @@ async fn demonstrate_reconcile_and_post(vm_client: &VersionManagementClient<'_>)
 
     tracing::info!("Created version: {}", version_info.version_name());
 
-    // Start edit session
+    // Start reading session (shared lock)
+    tracing::info!("Starting reading session...");
+    let read_response = vm_client.start_reading(version_guid, session_id).await?;
+    anyhow::ensure!(
+        *read_response.success(),
+        "Start reading should succeed. Error: {:?}",
+        read_response.error()
+    );
+
+    // Start edit session (exclusive lock)
     tracing::info!("Starting edit session...");
     let start_response = vm_client.start_editing(version_guid, session_id).await?;
     anyhow::ensure!(*start_response.success(), "Edit session should start");
@@ -878,6 +904,14 @@ async fn demonstrate_reconcile_and_post(vm_client: &VersionManagementClient<'_>)
         .await?;
     anyhow::ensure!(*stop_response.success(), "Stop editing should succeed");
 
+    // Stop reading session (release all locks)
+    let stop_read_response = vm_client.stop_reading(version_guid, session_id).await?;
+    anyhow::ensure!(
+        *stop_read_response.success(),
+        "Stop reading should succeed. Error: {:?}",
+        stop_read_response.error()
+    );
+
     tracing::info!("");
     tracing::info!("💡 Reconcile and post:");
     tracing::info!("   • Reconcile compares version with DEFAULT");
@@ -916,7 +950,16 @@ async fn demonstrate_conflict_management(vm_client: &VersionManagementClient<'_>
 
     tracing::info!("Created version: {}", version_info.version_name());
 
-    // Start edit session
+    // Start reading session (shared lock)
+    tracing::info!("Starting reading session...");
+    let read_response = vm_client.start_reading(version_guid, session_id).await?;
+    anyhow::ensure!(
+        *read_response.success(),
+        "Start reading should succeed. Error: {:?}",
+        read_response.error()
+    );
+
+    // Start edit session (exclusive lock)
     let start_response = vm_client.start_editing(version_guid, session_id).await?;
     anyhow::ensure!(*start_response.success(), "Edit session should start");
 
@@ -1011,6 +1054,14 @@ async fn demonstrate_conflict_management(vm_client: &VersionManagementClient<'_>
         .stop_editing(version_guid, session_id, false)
         .await?;
     anyhow::ensure!(*stop_response.success(), "Stop editing should succeed");
+
+    // Stop reading session (release all locks)
+    let stop_read_response = vm_client.stop_reading(version_guid, session_id).await?;
+    anyhow::ensure!(
+        *stop_read_response.success(),
+        "Stop reading should succeed. Error: {:?}",
+        stop_read_response.error()
+    );
 
     tracing::info!("");
     tracing::info!("💡 Conflict management:");

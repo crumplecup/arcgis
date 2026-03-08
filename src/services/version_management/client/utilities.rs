@@ -253,6 +253,14 @@ impl<'a> VersionManagementClient<'a> {
             form.push(("layers", layers_json));
         }
 
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str));
+        }
+
         tracing::debug!(url = %url, "Sending differences request");
 
         let form_refs: Vec<(&str, &str)> = form.iter().map(|(k, v)| (*k, v.as_str())).collect();
@@ -278,7 +286,12 @@ impl<'a> VersionManagementClient<'a> {
             }));
         }
 
-        let diffs_response: DifferencesResponse = response.json().await?;
+        // Get raw response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "Raw differences response");
+
+        // Try to deserialize
+        let diffs_response: DifferencesResponse = serde_json::from_str(&response_text)?;
 
         if *diffs_response.success() {
             tracing::info!(

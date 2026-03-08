@@ -146,7 +146,12 @@ impl<'a> VersionManagementClient<'a> {
             }));
         }
 
-        let reconcile_response: ReconcileResponse = response.json().await?;
+        // Get raw response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "Raw reconcile response");
+
+        // Try to deserialize
+        let reconcile_response: ReconcileResponse = serde_json::from_str(&response_text)?;
 
         if *reconcile_response.success() {
             tracing::info!(
@@ -309,6 +314,14 @@ impl<'a> VersionManagementClient<'a> {
             form.push(("rows", rows_json));
         }
 
+        // Add token if required by auth provider
+        let token_opt = self.client.get_token_if_required().await?;
+        let token_str;
+        if let Some(token) = token_opt {
+            token_str = token;
+            form.push(("token", token_str));
+        }
+
         tracing::debug!(url = %url, "Sending post request");
 
         let form_refs: Vec<(&str, &str)> = form.iter().map(|(k, v)| (*k, v.as_str())).collect();
@@ -334,7 +347,12 @@ impl<'a> VersionManagementClient<'a> {
             }));
         }
 
-        let post_response: PostResponse = response.json().await?;
+        // Get raw response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "Raw post response");
+
+        // Try to deserialize
+        let post_response: PostResponse = serde_json::from_str(&response_text)?;
 
         if *post_response.success() {
             tracing::info!(
