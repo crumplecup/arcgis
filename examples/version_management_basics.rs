@@ -344,7 +344,7 @@ async fn demonstrate_version_metadata(vm_client: &VersionManagementClient<'_>) -
         tracing::info!("   Access: {}", access);
     }
 
-    if let Some(created) = version_info.created_date() {
+    if let Some(created) = version_info.creation_date() {
         tracing::info!("   Created: {}", created);
     }
 
@@ -367,23 +367,31 @@ async fn demonstrate_edit_session(vm_client: &VersionManagementClient<'_>) -> Re
     tracing::info!("Start and stop editing session on a version");
     tracing::info!("");
 
-    // Get DEFAULT version GUID
-    let versions_response = vm_client.list_versions().await?;
+    // Create a new version for editing (DEFAULT version doesn't support editing)
+    let version_name = format!("edit_test_{}", chrono::Utc::now().timestamp());
+    let params = CreateVersionParams::new(&version_name, VersionPermission::Private)
+        .with_description("Temporary version for edit session demo");
 
+    tracing::info!("Creating version for editing...");
+    let create_response = vm_client.create(params).await?;
     anyhow::ensure!(
-        !versions_response.versions().is_empty(),
-        "Need at least one version for edit session"
+        create_response.success().unwrap_or(false),
+        "Version creation should succeed"
     );
 
-    let default_version = &versions_response.versions()[0];
-    let uuid = Uuid::parse_str(default_version.version_guid())?;
+    let version_info = create_response
+        .version_info()
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("No version info in response"))?;
+    let uuid = Uuid::parse_str(version_info.version_guid())?;
     let version_guid = VersionGuid::from_uuid(uuid);
 
     tracing::info!(
-        "Using version: {} ({})",
-        default_version.version_name(),
+        "Created version: {} ({})",
+        version_info.version_name(),
         version_guid
     );
+    tracing::info!("");
 
     // Generate unique session ID
     let session_id = SessionId::new();
@@ -391,8 +399,20 @@ async fn demonstrate_edit_session(vm_client: &VersionManagementClient<'_>) -> Re
     tracing::info!("Session ID: {}", session_id);
     tracing::info!("");
 
-    // Start editing session
-    tracing::info!("Starting edit session...");
+    // Step 1: Start reading session (acquires shared lock)
+    tracing::info!("Starting reading session (shared lock)...");
+    let read_response = vm_client.start_reading(version_guid, session_id).await?;
+
+    anyhow::ensure!(
+        *read_response.success(),
+        "Start reading should succeed. Error: {:?}",
+        read_response.error()
+    );
+
+    tracing::info!("✅ Reading session started (shared lock acquired)");
+
+    // Step 2: Start editing session (upgrades to exclusive lock)
+    tracing::info!("Starting edit session (exclusive lock)...");
     let start_response = vm_client.start_editing(version_guid, session_id).await?;
 
     anyhow::ensure!(
@@ -401,7 +421,7 @@ async fn demonstrate_edit_session(vm_client: &VersionManagementClient<'_>) -> Re
         start_response.error()
     );
 
-    tracing::info!("✅ Edit session started");
+    tracing::info!("✅ Edit session started (exclusive lock acquired)");
 
     if let Some(moment) = start_response.moment() {
         tracing::info!("   Moment: {}", moment);
@@ -413,30 +433,47 @@ async fn demonstrate_edit_session(vm_client: &VersionManagementClient<'_>) -> Re
     tracing::info!("(In real workflow: make edits to features here)");
     tracing::info!("");
 
-    // Stop editing session (save changes)
+    // Step 3: Stop editing session (releases exclusive lock, keeps shared)
     tracing::info!("Stopping edit session (saving changes)...");
-    let stop_response = vm_client
+    let stop_edit_response = vm_client
         .stop_editing(version_guid, session_id, true)
         .await?;
 
     anyhow::ensure!(
-        *stop_response.success(),
+        *stop_edit_response.success(),
         "Stop editing should succeed. Error: {:?}",
-        stop_response.error()
+        stop_edit_response.error()
     );
 
-    tracing::info!("✅ Edit session stopped (changes saved)");
+    tracing::info!("✅ Edit session stopped (exclusive lock released, changes saved)");
 
-    if let Some(moment) = stop_response.moment() {
+    if let Some(moment) = stop_edit_response.moment() {
         tracing::info!("   Moment: {}", moment);
     }
 
+    // Step 4: Stop reading session (releases shared lock)
+    tracing::info!("Stopping reading session (releasing shared lock)...");
+    let stop_read_response = vm_client.stop_reading(version_guid, session_id).await?;
+
+    anyhow::ensure!(
+        *stop_read_response.success(),
+        "Stop reading should succeed. Error: {:?}",
+        stop_read_response.error()
+    );
+
+    tracing::info!("✅ Reading session stopped (all locks released)");
+
     tracing::info!("");
     tracing::info!("💡 Edit sessions:");
-    tracing::info!("   • Required for branch versioning edits");
-    tracing::info!("   • Provide write locks and transactions");
-    tracing::info!("   • Save with stop_editing(version, session, true)");
-    tracing::info!("   • Discard with stop_editing(version, session, false)");
+    tracing::info!(
+        "   • Required workflow: startReading → startEditing → stopEditing → stopReading"
+    );
+    tracing::info!("   • startReading acquires shared lock");
+    tracing::info!("   • startEditing upgrades to exclusive lock");
+    tracing::info!("   • stopEditing(save=true) commits changes, stopEditing(save=false) discards");
+    tracing::info!("   • stopReading releases all locks");
+
+    // Note: Test version left in place for manual cleanup if needed
 
     Ok(())
 }

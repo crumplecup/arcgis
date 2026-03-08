@@ -37,7 +37,12 @@ impl Default for SessionId {
 
 impl fmt::Display for SessionId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        // ArcGIS API expects GUIDs with curly braces: {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
+        write!(
+            f,
+            "{{{}}}",
+            self.0.as_hyphenated().to_string().to_uppercase()
+        )
     }
 }
 
@@ -73,6 +78,7 @@ impl VersionGuid {
 
 impl fmt::Display for VersionGuid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Format as lowercase UUID for URL paths (no braces)
         write!(f, "{}", self.0)
     }
 }
@@ -153,10 +159,12 @@ pub struct StopReadingResponse {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Getters)]
 pub struct EditSessionError {
     /// Error code
-    code: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    code: Option<i32>,
 
     /// Error message
-    message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    message: Option<String>,
 
     /// Additional error details
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -192,6 +200,10 @@ pub struct VersionInfo {
     /// Version name
     version_name: String,
 
+    /// Version ID (integer identifier)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    version_id: Option<i64>,
+
     /// Version description
     #[serde(skip_serializing_if = "Option::is_none")]
     description: Option<String>,
@@ -200,13 +212,29 @@ pub struct VersionInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     access: Option<String>,
 
-    /// Created date
+    /// Creation date (Unix timestamp in milliseconds)
     #[serde(skip_serializing_if = "Option::is_none")]
-    created_date: Option<String>,
+    creation_date: Option<i64>,
 
-    /// Modified date
+    /// Modified date (Unix timestamp in milliseconds)
     #[serde(skip_serializing_if = "Option::is_none")]
-    modified_date: Option<String>,
+    modified_date: Option<i64>,
+
+    /// Reconcile date (Unix timestamp in milliseconds)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reconcile_date: Option<i64>,
+
+    /// Evaluation date (Unix timestamp in milliseconds)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    evaluation_date: Option<i64>,
+
+    /// Previous ancestor date (Unix timestamp in milliseconds)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    previous_ancestor_date: Option<i64>,
+
+    /// Common ancestor date (Unix timestamp in milliseconds)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    common_ancestor_date: Option<i64>,
 }
 
 /// Access permission level for a version.
@@ -345,6 +373,7 @@ impl Default for AlterVersionParams {
 
 /// Response from create operation.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateVersionResponse {
     /// Whether the operation succeeded
     ///
