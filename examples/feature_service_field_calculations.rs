@@ -38,7 +38,7 @@
 //!
 //! ```env
 //! ARCGIS_FEATURES_KEY=your_api_key_with_edit_privileges
-//! FEATURE_SERVICE_URL=https://services.arcgis.com/YOUR_ORG/arcgis/rest/services/YOUR_SERVICE/FeatureServer
+//! ARCGIS_FEATURE_URL=https://services.arcgis.com/YOUR_ORG/arcgis/rest/services/YOUR_SERVICE/FeatureServer
 //! LAYER_ID=0
 //! ```
 //!
@@ -98,17 +98,17 @@ async fn main() -> Result<()> {
     )?;
 
     // Get service URL - REQUIRED for this example
-    let service_url = std::env::var("FEATURE_SERVICE_URL").context(
-        "FEATURE_SERVICE_URL not set. This example requires a feature service you own.\n\
+    let service_url = config.arcgis_feature_url.as_ref().context(
+        "ARCGIS_FEATURE_URL not set. This example requires a feature service you own.\n\
          \n\
          Public sample servers reject API key editing operations.\n\
          \n\
          To run this example:\n\
          1. Create a hosted feature service in ArcGIS Online (https://www.arcgis.com)\n\
          2. Enable editing and add some text fields (eventtype, description)\n\
-         3. Set FEATURE_SERVICE_URL in .env:\n\
+         3. Set ARCGIS_FEATURE_URL in .env:\n\
          \n\
-         FEATURE_SERVICE_URL=https://services.arcgis.com/YOUR_ORG/arcgis/rest/services/YOUR_SERVICE/FeatureServer\n\
+         ARCGIS_FEATURE_URL=https://services.arcgis.com/YOUR_ORG/arcgis/rest/services/YOUR_SERVICE/FeatureServer\n\
          \n\
          See example documentation for detailed setup instructions.",
     )?;
@@ -119,7 +119,7 @@ async fn main() -> Result<()> {
     // Create client with features key
     let auth = ApiKeyAuth::new(features_key.expose_secret());
     let client = ArcGISClient::new(auth);
-    let service = FeatureServiceClient::new(&service_url, &client);
+    let service = FeatureServiceClient::new(service_url.as_str(), &client);
 
     tracing::info!("Connected to feature service: {}", service_url);
     tracing::info!("Using layer ID: {}", layer_id);
