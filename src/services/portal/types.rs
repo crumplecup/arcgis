@@ -1166,12 +1166,35 @@ impl UpdateGroupParams {
     }
 }
 
+/// Error information from portal operations.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
+pub struct PortalError {
+    /// Error code
+    #[serde(skip_serializing_if = "Option::is_none")]
+    code: Option<i32>,
+
+    /// Error message code
+    #[serde(rename = "messageCode", skip_serializing_if = "Option::is_none")]
+    message_code: Option<String>,
+
+    /// Error message
+    #[serde(skip_serializing_if = "Option::is_none")]
+    message: Option<String>,
+
+    /// Additional error details
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    details: Vec<String>,
+}
+
 /// Generic result for group operations.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, derive_getters::Getters)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupResult {
     /// Whether the operation succeeded.
-    success: bool,
+    ///
+    /// When an error occurs, this field may be absent and only `error` is present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    success: Option<bool>,
 
     /// Group details (for create operations).
     #[serde(default)]
@@ -1180,6 +1203,10 @@ pub struct GroupResult {
     /// Group ID (for update/delete operations that return just success and groupId).
     #[serde(default)]
     group_id: Option<String>,
+
+    /// Error information if the operation failed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<PortalError>,
 }
 
 impl GroupResult {
@@ -1218,11 +1245,14 @@ impl<'de> Deserialize<'de> for GroupResult {
         #[derive(Deserialize)]
         #[serde(rename_all = "camelCase")]
         struct Helper {
-            success: bool,
+            #[serde(default)]
+            success: Option<bool>,
             #[serde(default)]
             group: Option<GroupSummary>,
             #[serde(default)]
             group_id: Option<String>,
+            #[serde(default)]
+            error: Option<PortalError>,
         }
 
         let helper = Helper::deserialize(deserializer)?;
@@ -1230,6 +1260,7 @@ impl<'de> Deserialize<'de> for GroupResult {
             success: helper.success,
             group: helper.group,
             group_id: helper.group_id,
+            error: helper.error,
         })
     }
 }

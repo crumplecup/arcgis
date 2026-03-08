@@ -259,7 +259,7 @@ impl<'a> PortalClient<'a> {
 
         let result: GroupResult = serde_json::from_str(&response_text)?;
 
-        tracing::debug!(success = result.success(), group_id = ?result.group_id(), "Group created");
+        tracing::debug!(success = ?result.success(), group_id = ?result.group_id(), "Group created");
 
         Ok(result)
     }
@@ -358,7 +358,7 @@ impl<'a> PortalClient<'a> {
         // Parse response
         let result: GroupResult = response.json().await?;
 
-        tracing::debug!(success = result.success(), "Group updated");
+        tracing::debug!(success = ?result.success(), "Group updated");
 
         Ok(result)
     }
@@ -427,7 +427,7 @@ impl<'a> PortalClient<'a> {
         // Parse response
         let result: GroupResult = response.json().await?;
 
-        tracing::debug!(success = result.success(), "Group deleted");
+        tracing::debug!(success = ?result.success(), "Group deleted");
 
         Ok(result)
     }
@@ -491,10 +491,18 @@ impl<'a> PortalClient<'a> {
             }));
         }
 
-        // Parse response
-        let result: GroupResult = response.json().await?;
+        // Get raw response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "Raw joinGroup response");
 
-        tracing::debug!(success = result.success(), "Joined group");
+        // Parse response
+        let result: GroupResult = serde_json::from_str(&response_text)?;
+
+        if result.success().map_or(false, |b| b) {
+            tracing::debug!("Joined group successfully");
+        } else {
+            tracing::warn!(error = ?result.error(), "Join group failed or user already member");
+        }
 
         Ok(result)
     }
@@ -558,10 +566,18 @@ impl<'a> PortalClient<'a> {
             }));
         }
 
-        // Parse response
-        let result: GroupResult = response.json().await?;
+        // Get raw response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "Raw leaveGroup response");
 
-        tracing::debug!(success = result.success(), "Left group");
+        // Parse response
+        let result: GroupResult = serde_json::from_str(&response_text)?;
+
+        if result.success().map_or(false, |b| b) {
+            tracing::debug!("Left group successfully");
+        } else {
+            tracing::warn!(error = ?result.error(), "Leave group failed (may be owner)");
+        }
 
         Ok(result)
     }
@@ -639,7 +655,7 @@ impl<'a> PortalClient<'a> {
 
         let result: crate::ShareItemResult = serde_json::from_str(&response_text)?;
 
-        tracing::debug!(success = result.success(), "Added item to group");
+        tracing::debug!(success = ?result.success(), "Added item to group");
 
         Ok(result)
     }
@@ -711,7 +727,7 @@ impl<'a> PortalClient<'a> {
         // Parse response
         let result: crate::UnshareItemResult = response.json().await?;
 
-        tracing::debug!(success = result.success(), "Removed item from group");
+        tracing::debug!(success = ?result.success(), "Removed item from group");
 
         Ok(result)
     }
