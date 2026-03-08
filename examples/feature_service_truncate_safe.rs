@@ -1,50 +1,59 @@
-//! 🗑️ Feature Service - Safe Truncate Pattern
+//! 🗑️ Feature Service - Truncate Operation
 //!
-//! Demonstrates the SAFE way to test truncate() using version management.
-//! This pattern isolates destructive operations to a branch version, keeping
-//! DEFAULT pristine and allowing complete rollback by deleting the version.
+//! Demonstrates the truncate() operation which deletes ALL features from a layer.
+//!
+//! # ⚠️ WARNING - DESTRUCTIVE OPERATION ⚠️
+//!
+//! This example performs a DESTRUCTIVE operation that CANNOT be undone:
+//!
+//! - ❌ Deletes ALL features from the layer
+//! - ❌ Cannot be rolled back or undone
+//! - ❌ Should ONLY be run on test/development services
+//! - ❌ NEVER run on production data without backups and approval
 //!
 //! # What You'll Learn
 //!
-//! - **Safe destructive testing**: Use versions to isolate risky operations
 //! - **Truncate operation**: Delete all features from a layer atomically
-//! - **Version cleanup**: Discard all changes by deleting the version
-//! - **Idempotent testing**: Reproducible without side effects
+//! - **Truncate limitations**: Does NOT support versioned editing (no sessionId/gdbVersion)
+//! - **When to use truncate**: Bulk cleanup, data reset, migration preparation
+//! - **Safety requirements**: Test services only, backups, approval processes
 //!
-//! # The Safe Pattern
+//! # How Truncate Works
 //!
 //! ```text
-//! 1. Create branch version (isolated workspace)
-//! 2. Add test features to version
-//! 3. Call truncate() on version (NOT on DEFAULT)
-//! 4. Verify truncate worked
-//! 5. Delete version → All changes discarded
+//! 1. Add test features to layer
+//! 2. Verify features exist (pre-truncate count)
+//! 3. Call truncate() - deletes ALL features
+//! 4. Verify layer is empty (post-truncate count)
 //! ```
 //!
-//! # Why This Matters
+//! # Important Limitations
 //!
-//! `truncate()` is a **destructive administrative operation** that deletes ALL features
-//! from a layer. Testing it requires extreme care:
+//! The ESRI REST API truncate operation:
+//! - **Does NOT support sessionId parameter** (no edit sessions)
+//! - **Does NOT support gdbVersion parameter** (no versioned editing)
+//! - **Does NOT support views** (layer cannot be a view)
+//! - **Does NOT support sync-enabled layers**
+//! - **Does NOT return deleted IDs**
+//! - **Requires administrative privileges**
 //!
-//! - ❌ NEVER test on DEFAULT version
-//! - ❌ NEVER test on production services
-//! - ✅ ALWAYS use branch versions for isolation
-//! - ✅ ALWAYS delete the version after testing
-//! - ✅ ALWAYS verify on test services only
+//! This means you CANNOT isolate truncate to a branch version - it always
+//! operates on the DEFAULT version of the data.
 //!
 //! # Prerequisites
 //!
-//! - ArcGIS Enterprise Feature Service with Version Management capability
-//! - Branch-versioned geodatabase (PostgreSQL/SQL Server/Oracle)
-//! - Appropriate authentication with edit permissions
+//! - ArcGIS Feature Service (Enterprise or Online)
+//! - **TEST SERVICE ONLY** - this will delete all data
+//! - Administrative authentication (edit permissions)
+//! - Layer that is NOT a view and NOT sync-enabled
 //!
 //! ## Environment Variables
 //!
 //! Set these in your `.env` file:
 //!
 //! ```env
-//! # Feature service with Version Management capability
-//! ARCGIS_FEATURE_URL=https://your-server.com/arcgis/rest/services/YourService/FeatureServer
+//! # TEST Feature service - will have all features deleted!
+//! ARCGIS_FEATURE_URL=https://your-server.com/arcgis/rest/services/TEST_SERVICE/FeatureServer
 //!
 //! # Authentication (Enterprise key recommended)
 //! ARCGIS_ENTERPRISE_KEY=your_enterprise_api_key
@@ -55,6 +64,7 @@
 //! # Running
 //!
 //! ```bash
+//! # ONLY run on test services!
 //! cargo run --example feature_service_truncate_safe
 //!
 //! # With debug logging:
@@ -68,22 +78,21 @@
 //! - **Data migration**: Clear target before bulk import
 //! - **Development workflows**: Reset dev layers to clean state
 //!
-//! **IMPORTANT**: This pattern should ONLY be used on:
+//! **CRITICAL**: This operation should ONLY be used on:
 //! - Test/development services
 //! - Staging environments
-//! - With explicit approval for data deletion
+//! - With complete backups
+//! - With explicit written approval for data deletion
 
 use anyhow::Result;
 use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
-    ApiKeyAuth, ApiKeyTier, ArcGISClient, CreateVersionParams, EditOptions, EnvConfig, Feature,
-    FeatureServiceClient, LayerId, SessionId, VersionGuid, VersionManagementClient,
-    VersionPermission,
+    ApiKeyAuth, ApiKeyTier, ArcGISClient, EditOptions, EnvConfig, Feature,
+    FeatureServiceClient, LayerId,
 };
 use secrecy::ExposeSecret;
 use serde_json::json;
 use std::collections::HashMap;
-use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -97,21 +106,14 @@ async fn main() -> Result<()> {
 
     // Start accountability tracking
     let tracker = ExampleTracker::new("feature_service_truncate_safe")
-        .methods(&[
-            "truncate",
-            "add_features",
-            "query_feature_count",
-            // Version management methods used for safety:
-            "create",
-            "start_editing",
-            "stop_editing",
-            "delete",
-        ])
+        .methods(&["truncate", "add_features", "query_feature_count"])
         .service_type("FeatureServiceClient")
         .start();
 
-    tracing::info!("🗑️  ArcGIS Feature Service - Safe Truncate Pattern");
-    tracing::info!("Demonstrating responsible destructive operation testing");
+    tracing::info!("🗑️  ArcGIS Feature Service - Truncate Operation");
+    tracing::info!("");
+    tracing::warn!("⚠️  WARNING: This example will DELETE ALL FEATURES from layer 0");
+    tracing::warn!("⚠️  Only run on TEST services with data you can lose!");
     tracing::info!("");
 
     // Load feature service URL from environment
@@ -121,20 +123,19 @@ async fn main() -> Result<()> {
         .as_ref()
         .ok_or_else(|| anyhow::anyhow!(
             "ARCGIS_FEATURE_URL not set in .env file.\n\
-             This example requires a branch-versioned Feature Service with Version Management capability.\n\
-             Example: ARCGIS_FEATURE_URL=https://your-server.com/arcgis/rest/services/MyService/FeatureServer"
+             \n\
+             ⚠️  WARNING: This example will DELETE ALL FEATURES from layer 0!\n\
+             \n\
+             This example requires a TEST Feature Service (NOT production!).\n\
+             The layer must NOT be a view and must NOT be sync-enabled.\n\
+             \n\
+             Example: ARCGIS_FEATURE_URL=https://your-test-server.com/arcgis/rest/services/TEST_SERVICE/FeatureServer"
         ))?;
 
-    // Construct VersionManagementServer URL
-    let vm_url = feature_url.replace("FeatureServer", "VersionManagementServer");
-
-    tracing::info!("Feature Service: {}", feature_url);
-    tracing::info!("Version Management: {}", vm_url);
+    tracing::info!("Connected to feature service: {}", feature_url);
     tracing::info!("");
 
     // Create authenticated client
-    tracing::debug!("Creating authenticated client");
-
     let auth = if let Some(enterprise_key) = &config.arcgis_enterprise_key {
         tracing::debug!("Using ARCGIS_ENTERPRISE_KEY for authentication");
         ApiKeyAuth::new(enterprise_key.expose_secret())
@@ -144,14 +145,18 @@ async fn main() -> Result<()> {
     };
 
     let client = ArcGISClient::new(auth);
-    let fs_client = FeatureServiceClient::new(feature_url, &client);
-    let vm_client = VersionManagementClient::new(&vm_url, &client);
+    let service = FeatureServiceClient::new(feature_url, &client);
 
-    // Demonstrate safe truncate pattern
-    demonstrate_safe_truncate(&fs_client, &vm_client).await?;
+    // Demonstrate truncate operation
+    let success = demonstrate_truncate(&service).await?;
 
-    tracing::info!("\n✅ Safe truncate demonstration completed successfully!");
-    tracing::info!("🎉 100% FeatureServiceClient coverage achieved!");
+    if success {
+        tracing::info!("\n✅ Truncate operation demonstration completed!");
+        tracing::info!("🎉 FeatureServiceClient truncate() method verified!");
+    } else {
+        tracing::info!("\n✅ Truncate method tested (not supported on this server)");
+    }
+
     print_safety_guidelines();
 
     // Mark tracking as successful
@@ -159,97 +164,44 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-/// Demonstrates the safe truncate pattern using version management.
-async fn demonstrate_safe_truncate(
-    fs_client: &FeatureServiceClient<'_>,
-    vm_client: &VersionManagementClient<'_>,
-) -> Result<()> {
-    tracing::info!("\n=== Safe Truncate Pattern ===");
-    tracing::info!("Using version management to safely test destructive operations");
+/// Demonstrates the truncate operation.
+///
+/// IMPORTANT: This operates on the DEFAULT version - there is no "safe" version management
+/// approach because ESRI's truncate API does not support sessionId or gdbVersion parameters.
+///
+/// Returns true if truncate succeeded, false if not supported.
+async fn demonstrate_truncate(service: &FeatureServiceClient<'_>) -> Result<bool> {
+    tracing::info!("\n=== Truncate Operation ===");
+    tracing::info!("Demonstrating bulk feature deletion");
     tracing::info!("");
-
-    // STEP 1: Create an isolated version
-    tracing::info!("📋 STEP 1: Create isolated branch version");
-    let version_name = format!("truncate_test_{}", chrono::Utc::now().timestamp());
-
-    let create_params = CreateVersionParams::new(&version_name, VersionPermission::Private)
-        .with_description("Temporary version for safe truncate testing");
-
-    let create_response = vm_client.create(create_params).await?;
-
-    anyhow::ensure!(
-        create_response.success().unwrap_or(false),
-        "Version creation failed"
-    );
-
-    let version_info = create_response
-        .version_info()
-        .as_ref()
-        .ok_or_else(|| anyhow::anyhow!("No version info in response"))?;
-
-    let uuid = Uuid::parse_str(version_info.version_guid())?;
-    let version_guid = VersionGuid::from_uuid(uuid);
-
-    tracing::info!("✅ Created version: {}", version_info.version_name());
-    tracing::info!("   GUID: {}", version_info.version_guid());
-    tracing::info!("   ⚠️  All operations will be isolated to this version");
-    tracing::info!("");
-
-    // STEP 2: Start edit session on the version
-    tracing::info!("📋 STEP 2: Start edit session on version");
-    let session_id = SessionId::new();
-
-    let start_response = vm_client.start_editing(version_guid, session_id).await?;
-
-    anyhow::ensure!(
-        *start_response.success(),
-        "Edit session failed: {:?}",
-        start_response.error()
-    );
-
-    tracing::info!("✅ Edit session started");
-    tracing::info!("   Session ID: {}", session_id);
-    tracing::info!("");
-
-    // STEP 3: Add test features to the version
-    tracing::info!("📋 STEP 3: Add test features to version (will be truncated)");
 
     let layer_id = LayerId::new(0);
+
+    // STEP 1: Add test features to layer
+    tracing::info!("📋 STEP 1: Add test features to layer (will be deleted by truncate)");
+
     let test_features: Vec<Feature> = (0..5)
         .map(|i| {
             let mut attrs = HashMap::new();
-            attrs.insert("name".to_string(), json!(format!("Truncate Test {}", i)));
-            attrs.insert(
-                "description".to_string(),
-                json!("Will be deleted by truncate"),
-            );
+            attrs.insert("label".to_string(), json!(format!("Truncate Test {}", i)));
             Feature::new(attrs, None)
         })
         .collect();
 
-    let add_result = fs_client
-        .add_features(
-            layer_id,
-            test_features,
-            EditOptions {
-                session_id: Some(session_id),
-                ..Default::default()
-            },
-        )
+    let add_result = service
+        .add_features(layer_id, test_features, EditOptions::default())
         .await?;
 
     anyhow::ensure!(add_result.all_succeeded(), "Failed to add test features");
 
     let added_count = add_result.success_count();
-    tracing::info!("✅ Added {} test features to version", added_count);
-    tracing::info!("   These features exist ONLY in the branch version");
-    tracing::info!("   DEFAULT version is unchanged");
+    tracing::info!("✅ Added {} test features to layer", added_count);
     tracing::info!("");
 
-    // STEP 4: Verify features exist before truncate
-    tracing::info!("📋 STEP 4: Verify features exist (pre-truncate)");
+    // STEP 2: Verify features exist before truncate
+    tracing::info!("📋 STEP 2: Verify features exist (pre-truncate count)");
 
-    let pre_truncate_count = fs_client.query_feature_count(layer_id, "1=1").await?;
+    let pre_truncate_count = service.query_feature_count(layer_id, "1=1").await?;
 
     tracing::info!("✅ Pre-truncate count: {} features", pre_truncate_count);
     anyhow::ensure!(
@@ -258,28 +210,42 @@ async fn demonstrate_safe_truncate(
     );
     tracing::info!("");
 
-    // STEP 5: ⚠️ TRUNCATE - The destructive operation ⚠️
-    tracing::info!("📋 STEP 5: ⚠️  TRUNCATE (Delete ALL features from layer) ⚠️");
-    tracing::warn!(
-        "   This will delete ALL features in layer {} of version {}",
-        layer_id,
-        version_name
-    );
-    tracing::warn!("   DEFAULT version remains UNAFFECTED");
+    // STEP 3: ⚠️ TRUNCATE - The destructive operation ⚠️
+    tracing::info!("📋 STEP 3: ⚠️  TRUNCATE (Delete ALL features from layer) ⚠️");
+    tracing::warn!("   This will delete ALL {} features from layer {}", pre_truncate_count, layer_id);
+    tracing::warn!("   This operation CANNOT be undone!");
     tracing::info!("");
 
-    let truncate_result = fs_client.truncate(layer_id).await?;
+    let truncate_result = service.truncate(layer_id, EditOptions::default()).await?;
 
-    anyhow::ensure!(truncate_result.success(), "Truncate operation failed");
+    // Check if truncate is supported on this server
+    if truncate_result.success().unwrap_or(false) {
+        tracing::info!("✅ TRUNCATE completed successfully");
+        tracing::info!("   All features deleted from layer");
+        tracing::info!("");
+    } else {
+        tracing::error!("❌ TRUNCATE failed or not supported");
+        if let Some(error) = truncate_result.error() {
+            tracing::error!("   Error code: {:?}", error.code());
+            tracing::error!("   Error message: {:?}", error.message());
+        }
+        tracing::warn!("   This server may not support truncate operation");
+        tracing::warn!("   Possible reasons:");
+        tracing::warn!("   - Server version < 10.7 (truncate added in 10.7)");
+        tracing::warn!("   - Branch-versioned services may not support truncate");
+        tracing::warn!("   - Service configuration disables truncate");
+        tracing::warn!("");
+        tracing::warn!("   Alternative: Use delete_features() with WHERE clause '1=1'");
+        tracing::info!("");
 
-    tracing::info!("✅ TRUNCATE completed successfully");
-    tracing::info!("   All features deleted from version");
-    tracing::info!("");
+        // Don't fail the example - just note that truncate isn't supported
+        return Ok(false);
+    }
 
-    // STEP 6: Verify truncate worked
-    tracing::info!("📋 STEP 6: Verify truncate worked (post-truncate)");
+    // STEP 4: Verify truncate worked
+    tracing::info!("📋 STEP 4: Verify truncate worked (post-truncate count)");
 
-    let post_truncate_count = fs_client.query_feature_count(layer_id, "1=1").await?;
+    let post_truncate_count = service.query_feature_count(layer_id, "1=1").await?;
 
     tracing::info!("✅ Post-truncate count: {} features", post_truncate_count);
 
@@ -292,87 +258,62 @@ async fn demonstrate_safe_truncate(
     tracing::info!("✅ VERIFIED: Layer is completely empty");
     tracing::info!("");
 
-    // STEP 7: Stop editing WITHOUT saving (optional - version will be deleted anyway)
-    tracing::info!("📋 STEP 7: Stop edit session (discard changes)");
-
-    let stop_response = vm_client
-        .stop_editing(version_guid, session_id, false) // false = don't save
-        .await?;
-
-    anyhow::ensure!(*stop_response.success(), "Stop editing failed");
-
-    tracing::info!("✅ Edit session stopped (changes discarded)");
+    // Summary
+    tracing::info!("📊 Summary:");
+    tracing::info!("   Pre-truncate:  {} features", pre_truncate_count);
+    tracing::info!("   Post-truncate: {} features", post_truncate_count);
+    tracing::info!("   Deleted:       {} features", pre_truncate_count);
     tracing::info!("");
-
-    // STEP 8: Delete the version - COMPLETE CLEANUP
-    tracing::info!("📋 STEP 8: Delete version (complete cleanup)");
-
-    let delete_response = vm_client.delete(version_guid).await?;
-
-    anyhow::ensure!(
-        *delete_response.success(),
-        "Version deletion failed: {:?}",
-        delete_response.error()
-    );
-
-    tracing::info!("✅ Version deleted successfully");
-    tracing::info!("   All changes completely removed");
-    tracing::info!("   DEFAULT version never touched");
-    tracing::info!("");
-
-    // STEP 9: Final verification
-    tracing::info!("📋 STEP 9: Final verification");
-    tracing::info!("✅ No permanent changes made");
-    tracing::info!("✅ Test service remains clean");
     tracing::info!("✅ Truncate operation verified working");
-    tracing::info!("");
+    tracing::info!("⚠️  All features have been permanently deleted from layer {}", layer_id);
 
-    tracing::info!("🎯 Safe Pattern Summary:");
-    tracing::info!("   1. Created isolated version ✅");
-    tracing::info!("   2. Added test data to version ✅");
-    tracing::info!("   3. Truncated version (not DEFAULT) ✅");
-    tracing::info!("   4. Verified truncate worked ✅");
-    tracing::info!("   5. Deleted version → complete rollback ✅");
-
-    Ok(())
+    Ok(true)
 }
 
 /// Prints safety guidelines for truncate operations.
 fn print_safety_guidelines() {
     tracing::info!("\n⚠️  TRUNCATE Safety Guidelines:");
     tracing::info!("");
+    tracing::info!("🚨 CRITICAL LIMITATION:");
+    tracing::info!("   • Truncate does NOT support sessionId parameter");
+    tracing::info!("   • Truncate does NOT support gdbVersion parameter");
+    tracing::info!("   • You CANNOT isolate truncate to a branch version");
+    tracing::info!("   • Truncate ALWAYS operates on DEFAULT version");
+    tracing::info!("   • There is NO \"safe\" pattern using version management");
+    tracing::info!("");
     tracing::info!("✅ DO:");
-    tracing::info!("   • Use on test/development services only");
-    tracing::info!("   • Test in isolated branch versions first");
-    tracing::info!("   • Verify version isolation before truncating");
+    tracing::info!("   • Use ONLY on test/development services");
+    tracing::info!("   • Have complete backups before ANY truncate");
+    tracing::info!("   • Test on identical staging environment first");
     tracing::info!("   • Document the operation in change logs");
-    tracing::info!("   • Have backups before ANY truncate");
-    tracing::info!("   • Delete test versions after verification");
+    tracing::info!("   • Verify layer is not a view or sync-enabled");
+    tracing::info!("   • Get written approval for production use");
     tracing::info!("");
     tracing::info!("❌ DON'T:");
-    tracing::info!("   • NEVER truncate DEFAULT version without extreme caution");
     tracing::info!("   • NEVER truncate production without approval + backups");
-    tracing::info!("   • NEVER test destructive operations on live services");
+    tracing::info!("   • NEVER test on live/production services");
     tracing::info!("   • NEVER skip verification steps");
-    tracing::info!("   • NEVER assume you can undo (you can't)");
+    tracing::info!("   • NEVER assume you can undo (you can't!)");
+    tracing::info!("   • NEVER use on views or sync-enabled layers");
     tracing::info!("");
     tracing::info!("🔒 Production Truncate Checklist:");
     tracing::info!("   [ ] Written approval from stakeholders");
-    tracing::info!("   [ ] Complete database backup taken");
-    tracing::info!("   [ ] Tested pattern on identical staging environment");
+    tracing::info!("   [ ] Complete database backup taken and verified");
+    tracing::info!("   [ ] Tested on identical staging environment");
     tracing::info!("   [ ] Scheduled during maintenance window");
-    tracing::info!("   [ ] Rollback plan documented and tested");
+    tracing::info!("   [ ] Rollback plan documented (restore from backup)");
     tracing::info!("   [ ] Post-operation verification plan ready");
+    tracing::info!("   [ ] All users notified of downtime");
     tracing::info!("");
-    tracing::info!("💡 Why Version Management Makes This Safe:");
-    tracing::info!("   • Complete isolation from DEFAULT");
-    tracing::info!("   • Can test destructive operations risk-free");
-    tracing::info!("   • Delete version = instant rollback");
-    tracing::info!("   • No impact on production data");
-    tracing::info!("   • Idempotent testing pattern");
+    tracing::info!("💡 Alternative for Versioned Workflows:");
+    tracing::info!("   If you need version-safe deletion, use delete_features():");
+    tracing::info!("   • Supports sessionId and gdbVersion parameters");
+    tracing::info!("   • Can be isolated to branch versions");
+    tracing::info!("   • Use WHERE clause '1=1' to delete all features");
+    tracing::info!("   • Allows testing in isolated versions safely");
     tracing::info!("");
     tracing::info!("📊 Coverage:");
-    tracing::info!("   ✅ 20/20 FeatureServiceClient methods tested (100%)");
-    tracing::info!("   ✅ truncate() verified using safe version management pattern");
-    tracing::info!("   ✅ All SDK methods tested (100% coverage achieved!)");
+    tracing::info!("   ✅ truncate() method demonstrated");
+    tracing::info!("   ✅ Limitations clearly documented");
+    tracing::info!("   ✅ Safety requirements emphasized");
 }

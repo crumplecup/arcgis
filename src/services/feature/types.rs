@@ -779,13 +779,36 @@ impl TopFeaturesParams {
     }
 }
 
+/// Error information from API operations.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
+pub struct OperationError {
+    /// Error code
+    #[serde(skip_serializing_if = "Option::is_none")]
+    code: Option<i32>,
+
+    /// Error message
+    #[serde(skip_serializing_if = "Option::is_none")]
+    message: Option<String>,
+
+    /// Additional error details
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    details: Vec<String>,
+}
+
 /// Response from truncate operation.
 ///
 /// Indicates whether the truncate operation completed successfully.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, derive_getters::Getters)]
 pub struct TruncateResult {
     /// Whether the operation succeeded.
-    success: bool,
+    ///
+    /// When an error occurs, this field may be absent and only `error` is present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    success: Option<bool>,
+
+    /// Error information if the operation failed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<OperationError>,
 }
 
 /// Response from queryDomains operation.

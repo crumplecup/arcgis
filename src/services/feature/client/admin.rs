@@ -13,11 +13,12 @@ impl<'a> FeatureServiceClient<'a> {
     /// # Arguments
     ///
     /// * `layer_id` - The layer to truncate
+    /// * `options` - Edit options (session ID for versioned editing)
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId};
+    /// use arcgis::{ArcGISClient, ApiKeyAuth, FeatureServiceClient, LayerId, EditOptions};
     ///
     /// # async fn example() -> arcgis::Result<()> {
     /// let auth = ApiKeyAuth::new("YOUR_API_KEY");
@@ -25,19 +26,37 @@ impl<'a> FeatureServiceClient<'a> {
     /// let service = FeatureServiceClient::new("https://example.com/FeatureServer", &client);
     ///
     /// // Delete all features from layer 0
-    /// let result = service.truncate(LayerId::new(0)).await?;
-    /// println!("Truncate successful: {}", result.success());
+    /// let result = service.truncate(LayerId::new(0), EditOptions::default()).await?;
+    /// if result.success().unwrap_or(false) {
+    ///     println!("Truncate successful");
+    /// } else {
+    ///     println!("Truncate failed: {:?}", result.error());
+    /// }
     /// # Ok(())
     /// # }
     /// ```
-    #[instrument(skip(self), fields(layer_id = %layer_id))]
-    pub async fn truncate(&self, layer_id: LayerId) -> Result<crate::TruncateResult> {
+    #[instrument(skip(self, options), fields(layer_id = %layer_id))]
+    pub async fn truncate(&self, layer_id: LayerId, options: crate::EditOptions) -> Result<crate::TruncateResult> {
         tracing::debug!("Truncating layer");
 
         let url = format!("{}/{}/truncate", self.base_url, layer_id);
+
+        tracing::debug!(url = %url, "Sending truncate request");
+
         // Build form data
 
         let mut form = vec![("f", "json")];
+
+        // Add optional parameters (similar to add_features pattern)
+        let session_id_str = options.session_id.as_ref().map(|s| s.to_string());
+        if let Some(ref session_id) = session_id_str {
+            tracing::debug!(session_id = %session_id, "Adding sessionId parameter");
+            form.push(("sessionId", session_id.as_str()));
+        }
+        if let Some(ref gdb_version) = options.gdb_version {
+            tracing::debug!(gdb_version = %gdb_version, "Adding gdbVersion parameter");
+            form.push(("gdbVersion", gdb_version.as_str()));
+        }
 
         // Add token if required by auth provider
 
@@ -64,9 +83,18 @@ impl<'a> FeatureServiceClient<'a> {
             }));
         }
 
-        let result: crate::TruncateResult = response.json().await?;
+        // Get raw response text for debugging
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "Raw truncate response");
 
-        tracing::info!(success = result.success(), "Truncate completed");
+        // Try to deserialize
+        let result: crate::TruncateResult = serde_json::from_str(&response_text)?;
+
+        if result.success().unwrap_or(false) {
+            tracing::info!("Truncate completed successfully");
+        } else {
+            tracing::warn!(error = ?result.error(), "Truncate operation failed or not supported");
+        }
 
         Ok(result)
     }
