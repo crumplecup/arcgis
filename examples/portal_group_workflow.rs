@@ -1,6 +1,6 @@
 //! 👥 Portal Group Management - Complete Workflow
 //!
-//! Demonstrates the complete lifecycle of group management in ArcGIS Online/Enterprise,
+//! Demonstrates the complete lifecycle of group management in ArcGIS Enterprise,
 //! including creation, item management, updates, and deletion.
 //!
 //! # What You'll Learn
@@ -14,8 +14,15 @@
 //!
 //! # Prerequisites
 //!
-//! - ArcGIS API Key with content management privileges
-//! - Set ARCGIS_CONTENT_KEY in `.env` file
+//! - Enterprise API key with group management and content creation privileges
+//! - Enterprise Portal deployment
+//!
+//! ## Environment Variables
+//!
+//! ```env
+//! ARCGIS_ENTERPRISE_KEY=your_enterprise_api_key
+//! ARCGIS_ENTERPRISE_PORTAL=https://your-server/arcgis/sharing/rest
+//! ```
 //!
 //! # Running
 //!
@@ -34,11 +41,13 @@
 //! - **Content discovery**: Make items discoverable through group membership
 //! - **Permissions**: Use groups for fine-grained access control
 
+use anyhow::{Context, Result};
 use arcgis::example_tracker::ExampleTracker;
 use arcgis::{
-    AddItemParams, ApiKeyAuth, ApiKeyTier, ArcGISClient, CreateGroupParams, DeleteItemResult,
-    PortalClient, Result, ShareItemResult, UnshareItemResult, UpdateGroupParams,
+    AddItemParams, ApiKeyAuth, ArcGISClient, CreateGroupParams, DeleteItemResult, EnvConfig,
+    PortalClient, ShareItemResult, UnshareItemResult, UpdateGroupParams,
 };
+use secrecy::ExposeSecret;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -58,12 +67,34 @@ async fn main() -> Result<()> {
     tracing::info!("👥 Portal Group Management Workflow");
     tracing::info!("");
 
-    // Authenticate
-    let auth = ApiKeyAuth::from_env(ApiKeyTier::Content)?;
-    let client = ArcGISClient::new(auth);
-    let portal = PortalClient::new("https://www.arcgis.com/sharing/rest", &client);
+    // Load configuration from environment
+    let config = EnvConfig::global();
 
-    tracing::info!("✅ Authenticated with API key (ARCGIS_CONTENT_KEY)");
+    // Get Enterprise API key
+    tracing::info!("🔐 Authenticating with Enterprise API Key");
+    let auth = ApiKeyAuth::new(
+        config
+            .arcgis_enterprise_key
+            .as_ref()
+            .context("ARCGIS_ENTERPRISE_KEY not set in .env")?
+            .expose_secret(),
+    );
+
+    // Get Enterprise portal URL
+    let portal_url = config
+        .arcgis_enterprise_portal
+        .as_ref()
+        .context(
+            "ARCGIS_ENTERPRISE_PORTAL not set in .env\n\
+             Example: ARCGIS_ENTERPRISE_PORTAL=https://your-server/arcgis/sharing/rest",
+        )?;
+
+    let client = ArcGISClient::new(auth);
+    let portal = PortalClient::new(portal_url, &client);
+
+    tracing::info!("✅ Authenticated with Enterprise");
+    tracing::info!("   Portal: {}", portal_url);
+    tracing::info!("");
 
     // Execute the complete workflow
     let result = run_group_workflow(&portal).await;
@@ -116,10 +147,13 @@ async fn run_group_workflow(portal: &PortalClient<'_>) -> Result<()> {
         .with_access("private"); // Private group
 
     let create_result = portal.create_group(create_params).await?;
-    assert!(*create_result.success(), "Group creation must succeed");
+    assert!(
+        create_result.success().map_or(false, |b| b),
+        "Group creation must succeed"
+    );
 
     tracing::debug!(
-        "Create result: success={}, id={:?}",
+        "Create result: success={:?}, id={:?}",
         create_result.success(),
         create_result.id()
     );
@@ -190,7 +224,10 @@ async fn run_group_workflow(portal: &PortalClient<'_>) -> Result<()> {
         .with_snippet("Updated snippet for test group");
 
     let update_result = portal.update_group(&group_id, update_params).await?;
-    assert!(update_result.success(), "Group update must succeed");
+    assert!(
+        update_result.success().map_or(false, |b| b),
+        "Group update must succeed"
+    );
 
     tracing::info!("✓ Updated group metadata");
 
@@ -253,7 +290,10 @@ async fn run_group_workflow(portal: &PortalClient<'_>) -> Result<()> {
     tracing::info!("=== Step 11: Cleaning Up - Deleting Group ===");
 
     let delete_group_result = portal.delete_group(&group_id).await?;
-    assert!(delete_group_result.success(), "Group deletion must succeed");
+    assert!(
+        delete_group_result.success().map_or(false, |b| b),
+        "Group deletion must succeed"
+    );
 
     tracing::info!("✓ Deleted test group: {}", group_id);
 
