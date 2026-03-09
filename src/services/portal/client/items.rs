@@ -59,7 +59,24 @@ impl<'a> PortalClient<'a> {
         }
 
         // Parse response
-        let item: ItemInfo = response.json().await?;
+        let response_text = response.text().await?;
+        tracing::debug!(response_body = %response_text, "getItem response body");
+
+        // Check if response contains an error (ESRI sometimes returns 200 with error in body)
+        if let Ok(error_response) = serde_json::from_str::<serde_json::Value>(&response_text) {
+            if let Some(error) = error_response.get("error") {
+                if let Some(message) = error.get("message").and_then(|m| m.as_str()) {
+                    let code = error
+                        .get("code")
+                        .and_then(|c| c.as_i64())
+                        .unwrap_or(400) as i32;
+                    tracing::error!(code = code, message = %message, "getItem returned error in response body");
+                    return Err(crate::Error::from(crate::ErrorKind::Api { code, message: message.to_string() }));
+                }
+            }
+        }
+
+        let item: ItemInfo = serde_json::from_str(&response_text)?;
 
         tracing::debug!(title = %item.title(), item_type = %item.item_type(), "Got item");
 

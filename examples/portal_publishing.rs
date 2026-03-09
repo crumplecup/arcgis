@@ -352,8 +352,9 @@ async fn demonstrate_workflow_a_direct_service(
     tracing::info!("");
 
     let add_def_params = AddToDefinitionParams::new().with_layers(vec![layer]);
+    // Use add_to_definition_with_url to avoid get_item call (service item may not be accessible yet)
     let add_def_result = portal
-        .add_to_definition(&service_item_id, add_def_params)
+        .add_to_definition_with_url(&service_url, add_def_params)
         .await?;
 
     // Assertion: Operation must succeed

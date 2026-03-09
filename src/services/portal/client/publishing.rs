@@ -654,6 +654,123 @@ impl<'a> PortalClient<'a> {
         Ok(result)
     }
 
+    /// Adds layers or tables to a service definition using a provided service URL.
+    ///
+    /// This is an alternative to `add_to_definition` that accepts the service URL directly,
+    /// avoiding the need to call `get_item` on the service item. Use this when you already
+    /// have the service URL (e.g., from `create_service` result) and want to avoid the
+    /// item lookup.
+    ///
+    /// # Arguments
+    ///
+    /// * `service_url` - The URL of the feature service (not admin URL)
+    /// * `params` - Layer/table definitions to add
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use arcgis::{ArcGISClient, ApiKeyAuth, PortalClient, CreateServiceParams, AddToDefinitionParams};
+    /// # async fn example(portal: &PortalClient<'_>) -> arcgis::Result<()> {
+    /// // Create service and get URL
+    /// let create_result = portal.create_service(
+    ///     CreateServiceParams::new("MyService")
+    /// ).await?;
+    ///
+    /// let service_url = create_result.service_url()
+    ///     .as_ref()
+    ///     .expect("Service URL");
+    ///
+    /// // Add definition without item lookup
+    /// let add_result = portal
+    ///     .add_to_definition_with_url(service_url, AddToDefinitionParams::new()
+    ///         .with_layers(vec![/* layer */]))
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self, service_url, params))]
+    pub async fn add_to_definition_with_url(
+        &self,
+        service_url: impl AsRef<str>,
+        params: crate::AddToDefinitionParams,
+    ) -> Result<crate::AddToDefinitionResult> {
+        let service_url = service_url.as_ref();
+
+        let layer_count = params.layers().as_ref().map_or(0, |v| v.len());
+        let table_count = params.tables().as_ref().map_or(0, |v| v.len());
+
+        tracing::debug!(
+            service_url = %service_url,
+            layer_count,
+            table_count,
+            "Adding to service definition (with URL)"
+        );
+
+        // addToDefinition is an admin operation - convert service URL to admin URL
+        // Regular: https://services.arcgis.com/.../rest/services/ServiceName/FeatureServer
+        // Admin:   https://services.arcgis.com/.../rest/admin/services/ServiceName/FeatureServer/addToDefinition
+        let admin_url = service_url.replace("/rest/services/", "/rest/admin/services/");
+        let url = format!("{}/addToDefinition", admin_url);
+
+        tracing::debug!(url = %url, "Sending addToDefinition request");
+
+        // Build the addToDefinition JSON payload
+        let mut add_definition = serde_json::Map::new();
+
+        if let Some(layers) = params.layers() {
+            let layers_json = serde_json::to_value(layers)?;
+            add_definition.insert("layers".to_string(), layers_json);
+        }
+
+        if let Some(tables) = params.tables() {
+            let tables_json = serde_json::to_value(tables)?;
+            add_definition.insert("tables".to_string(), tables_json);
+        }
+
+        let add_definition_str = serde_json::to_string(&add_definition)?;
+
+        // Build multipart form
+        let mut form = reqwest::multipart::Form::new()
+            .text("f", "json")
+            .text("addToDefinition", add_definition_str);
+
+        // Add token if required
+        if let Some(token) = self.client.get_token_if_required().await? {
+            form = form.text("token", token);
+        }
+
+        let response = self.client.http().post(&url).multipart(form).send().await?;
+
+        // Check for HTTP errors
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|e| format!("Failed to read error response: {}", e));
+            tracing::error!(status = %status, error = %error_text, "addToDefinition request failed");
+            return Err(crate::Error::from(crate::ErrorKind::Api {
+                code: status.as_u16() as i32,
+                message: format!("HTTP {}: {}", status, error_text),
+            }));
+        }
+
+        // Parse response
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "addToDefinition response");
+        crate::check_esri_error(&response_text, "addToDefinition")?;
+        let result: crate::AddToDefinitionResult = serde_json::from_str(&response_text)?;
+
+        tracing::info!(
+            success = result.success(),
+            layers_added = result.layers().len(),
+            tables_added = result.tables().len(),
+            "addToDefinition completed"
+        );
+
+        Ok(result)
+    }
+
     /// Deletes a hosted service.
     ///
     /// Permanently removes a hosted service and its associated item.
