@@ -1,0 +1,266 @@
+🔍 ArcGIS API Key Permission Discovery
+
+Querying /community/self for each configured key...
+
+================================================================================
+
+🔑 ARCGIS_PUBLIC_KEY
+   Calling /portals/self...
+   ✅ Success
+   Type: API Key
+   App: rust_sdk_public
+   Owner: erose_GrantsPassOregon
+   Privileges (1)
+      - premium:user:basemaps
+
+🔑 ARCGIS_LOCATION_KEY
+   Calling /portals/self...
+   ✅ Success
+   Type: API Key
+   App: arcgis_location
+   Owner: erose_GrantsPassOregon
+   Privileges (15)
+      - premium:user:basemaps
+      - premium:user:geocode
+      - premium:user:geocode:stored
+      - premium:user:geocode:temporary
+      - premium:user:geoenrichment
+      - premium:user:networkanalysis
+      - premium:user:networkanalysis:closestfacility
+      - premium:user:networkanalysis:lastmiledelivery
+      - premium:user:networkanalysis:locationallocation
+      - premium:user:networkanalysis:optimizedrouting
+      - premium:user:networkanalysis:origindestinationcostmatrix
+      - premium:user:networkanalysis:routing
+      - premium:user:networkanalysis:servicearea
+      - premium:user:networkanalysis:snaptoroads
+      - premium:user:networkanalysis:vehiclerouting
+
+🔑 ARCGIS_SPATIAL_KEY
+   Calling /portals/self...
+   ✅ Success
+   Type: API Key
+   App: arcgis_spatial
+   Owner: erose_GrantsPassOregon
+   Privileges (3)
+      - premium:publisher:rasteranalysis
+      - premium:user:basemaps
+      - premium:user:spatialanalysis
+
+🔑 ARCGIS_GENERAL_KEY
+   Calling /portals/self...
+   ✅ Success
+   Type: API Key
+   App: arcgis_general
+   Owner: erose_GrantsPassOregon
+   Privileges (32)
+      - features:user:edit
+      - features:user:fullEdit
+      - opendata:user:designateGroup
+      - portal:publisher:createDataPipelines
+      - portal:publisher:publishDynamicImagery
+      - portal:publisher:publishFeatures
+      - portal:publisher:publishScenes
+      - portal:publisher:publishTiledImagery
+      - portal:publisher:publishTiles
+      - portal:user:addExternalMembersToGroup
+      - portal:user:createGroup
+      - portal:user:createItem
+      - portal:user:createWorkflow
+      - portal:user:invitePartneredCollaborationMembers
+      - portal:user:joinGroup
+      - portal:user:joinNonOrgGroup
+      - portal:user:reassignItems
+      - portal:user:shareGroupToOrg
+      - portal:user:shareGroupToPublic
+      - portal:user:shareToGroup
+      - portal:user:shareToOrg
+      - portal:user:shareToPublic
+      - portal:user:viewOrgGroups
+      - portal:user:viewOrgItems
+      - portal:user:viewOrgUsers
+      - portal:user:viewTracks
+      - premium:publisher:createAdvancedNotebooks
+      - premium:publisher:createNotebooks
+      - premium:publisher:scheduleNotebooks
+      - premium:user:basemaps
+      - premium:user:demographics
+      - premium:user:featurereport
+
+🔑 ARCGIS_ADMIN_KEY
+   Calling /portals/self...
+   ✅ Success
+   Type: API Key
+   App: arcgis_admin
+   Owner: erose_GrantsPassOregon
+   Privileges (63)
+      - features:user:edit
+      - features:user:fullEdit
+      - opendata:user:designateGroup
+      - portal:admin:assignToGroups
+      - portal:admin:changeUserRoles
+      - portal:admin:createLeavingDisallowedGroup
+      - portal:admin:createReports
+      - portal:admin:createUpdateCapableGroup
+      - portal:admin:deleteGroups
+      - portal:admin:deleteItems
+      - portal:admin:deleteUsers
+      - portal:admin:disableUsers
+      - portal:admin:inviteUsers
+      - portal:admin:manageCollaborations
+      - portal:admin:manageCredits
+      - portal:admin:manageEnterpriseGroups
+      - portal:admin:manageLicenses
+      - portal:admin:manageRoles
+      - portal:admin:manageSecurity
+      - portal:admin:manageUtilityServices
+      - portal:admin:manageWebsite
+      - portal:admin:reassignGroups
+      - portal:admin:reassignItems
+      - portal:admin:shareToOrg
+      - portal:admin:shareToPublic
+      - portal:admin:updateGroups
+      - portal:admin:updateItemCategorySchema
+      - portal:admin:updateItems
+      - portal:admin:updateMemberCategorySchema
+      - portal:admin:updateUsers
+      - portal:admin:viewGroups
+      - portal:admin:viewItems
+      - portal:admin:viewUsers
+      - portal:publisher:createDataPipelines
+      - portal:publisher:publishDynamicImagery
+      - portal:publisher:publishFeatures
+      - portal:publisher:publishScenes
+      - portal:publisher:publishServerGPServices
+      - portal:publisher:publishTiledImagery
+      - portal:publisher:publishTiles
+      - portal:user:addExternalMembersToGroup
+      - portal:user:createGroup
+      - portal:user:createItem
+      - portal:user:createWorkflow
+      - portal:user:invitePartneredCollaborationMembers
+      - portal:user:joinGroup
+      - portal:user:joinNonOrgGroup
+      - portal:user:reassignItems
+      - portal:user:shareGroupToOrg
+      - portal:user:shareGroupToPublic
+      - portal:user:shareToGroup
+      - portal:user:shareToOrg
+      - portal:user:shareToPublic
+      - portal:user:viewOrgGroups
+      - portal:user:viewOrgItems
+      - portal:user:viewOrgUsers
+      - portal:user:viewTracks
+      - premium:publisher:createAdvancedNotebooks
+      - premium:publisher:createNotebooks
+      - premium:publisher:scheduleNotebooks
+      - premium:user:basemaps
+      - premium:user:demographics
+      - premium:user:featurereport
+
+⚠️  ARCGIS_API_KEY not configured (skipped)
+
+🔑 ARCGIS_ENTERPRISE_KEY
+   Calling /portals/self...
+   ❌ Error: Failed to decode response: data did not match any variant of untagged enum SelfResponse
+
+================================================================================
+
+📊 Summary:
+   Keys queried: 5
+   Unique privileges discovered: 79
+
+📋 All Unique Privileges:
+
+  portal:
+    - portal:admin:assignToGroups
+    - portal:admin:changeUserRoles
+    - portal:admin:createLeavingDisallowedGroup
+    - portal:admin:createReports
+    - portal:admin:createUpdateCapableGroup
+    - portal:admin:deleteGroups
+    - portal:admin:deleteItems
+    - portal:admin:deleteUsers
+    - portal:admin:disableUsers
+    - portal:admin:inviteUsers
+    - portal:admin:manageCollaborations
+    - portal:admin:manageCredits
+    - portal:admin:manageEnterpriseGroups
+    - portal:admin:manageLicenses
+    - portal:admin:manageRoles
+    - portal:admin:manageSecurity
+    - portal:admin:manageUtilityServices
+    - portal:admin:manageWebsite
+    - portal:admin:reassignGroups
+    - portal:admin:reassignItems
+    - portal:admin:shareToOrg
+    - portal:admin:shareToPublic
+    - portal:admin:updateGroups
+    - portal:admin:updateItemCategorySchema
+    - portal:admin:updateItems
+    - portal:admin:updateMemberCategorySchema
+    - portal:admin:updateUsers
+    - portal:admin:viewGroups
+    - portal:admin:viewItems
+    - portal:admin:viewUsers
+    - portal:publisher:createDataPipelines
+    - portal:publisher:publishDynamicImagery
+    - portal:publisher:publishFeatures
+    - portal:publisher:publishScenes
+    - portal:publisher:publishServerGPServices
+    - portal:publisher:publishTiledImagery
+    - portal:publisher:publishTiles
+    - portal:user:addExternalMembersToGroup
+    - portal:user:createGroup
+    - portal:user:createItem
+    - portal:user:createWorkflow
+    - portal:user:invitePartneredCollaborationMembers
+    - portal:user:joinGroup
+    - portal:user:joinNonOrgGroup
+    - portal:user:reassignItems
+    - portal:user:shareGroupToOrg
+    - portal:user:shareGroupToPublic
+    - portal:user:shareToGroup
+    - portal:user:shareToOrg
+    - portal:user:shareToPublic
+    - portal:user:viewOrgGroups
+    - portal:user:viewOrgItems
+    - portal:user:viewOrgUsers
+    - portal:user:viewTracks
+
+  features:
+    - features:user:edit
+    - features:user:fullEdit
+
+  opendata:
+    - opendata:user:designateGroup
+
+  premium:
+    - premium:publisher:createAdvancedNotebooks
+    - premium:publisher:createNotebooks
+    - premium:publisher:rasteranalysis
+    - premium:publisher:scheduleNotebooks
+    - premium:user:basemaps
+    - premium:user:demographics
+    - premium:user:featurereport
+    - premium:user:geocode
+    - premium:user:geocode:stored
+    - premium:user:geocode:temporary
+    - premium:user:geoenrichment
+    - premium:user:networkanalysis
+    - premium:user:networkanalysis:closestfacility
+    - premium:user:networkanalysis:lastmiledelivery
+    - premium:user:networkanalysis:locationallocation
+    - premium:user:networkanalysis:optimizedrouting
+    - premium:user:networkanalysis:origindestinationcostmatrix
+    - premium:user:networkanalysis:routing
+    - premium:user:networkanalysis:servicearea
+    - premium:user:networkanalysis:snaptoroads
+    - premium:user:networkanalysis:vehiclerouting
+    - premium:user:spatialanalysis
+
+
+💡 Next Steps:
+   1. Use this list to build the Permission enum in src/auth/permissions.rs
+   2. Map each privilege string to an enum variant
+   3. Implement from_esri_string() and to_esri_string() conversions

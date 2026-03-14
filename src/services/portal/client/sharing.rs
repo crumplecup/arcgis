@@ -79,11 +79,15 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::share_item"));
         }
 
         // Parse response
-        let result: ShareItemResult = response.json().await?;
+        let response_text = response.text().await?;
+        tracing::debug!(response = %response_text, "shareItem raw response");
+
+        let result: ShareItemResult = serde_json::from_str(&response_text)?;
 
         tracing::debug!(success = result.success(), "Item shared");
 
@@ -155,7 +159,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::unshare_item"));
         }
 
         // Parse response

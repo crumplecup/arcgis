@@ -103,6 +103,86 @@ impl ArcGISClient {
             Ok(None)
         }
     }
+
+    /// Gets API key token for a specific permission (automatic key routing).
+    ///
+    /// This method implements permission-based API key routing, allowing you to
+    /// configure different API keys for different operations in your `.env` file.
+    /// The SDK automatically selects the correct key based on the required permission.
+    ///
+    /// # Fallback Hierarchy
+    ///
+    /// 1. **Specific permission key**: `ARCGIS_PERMISSION_portal:user:deleteItem=key`
+    /// 2. **Tier/group key**: `ARCGIS_GENERAL_KEY=key` (based on permission's default tier)
+    /// 3. **AGOL skeleton key**: `ARCGIS_API_KEY=key` (single key for all permissions)
+    /// 4. **Enterprise skeleton key**: `ARCGIS_ENTERPRISE_KEY=key`
+    ///
+    /// # Arguments
+    /// * `perm` - The permission required for the operation
+    ///
+    /// # Returns
+    /// The API key token for the given permission.
+    ///
+    /// # Errors
+    /// Returns an error if no API key is configured for the required permission.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use arcgis::{ArcGISClient, NoAuth, Permission};
+    ///
+    /// # async fn example() -> arcgis::Result<()> {
+    /// let client = ArcGISClient::new(NoAuth);
+    ///
+    /// // Automatically selects the correct key for this permission
+    /// let token = client.get_token_for_permission(Permission::PortalUserDeleteItem).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[instrument(skip(self))]
+    pub async fn get_token_for_permission(
+        &self,
+        perm: crate::Permission,
+    ) -> crate::Result<String> {
+        use crate::EnvConfig;
+        use secrecy::ExposeSecret;
+
+        let config = EnvConfig::global();
+
+        match config.get_key_for_permission(perm) {
+            Some(key) => {
+                tracing::debug!(
+                    permission = %perm.to_esri_string(),
+                    "Found API key for permission"
+                );
+                Ok(key.expose_secret().to_string())
+            }
+            None => {
+                let tier = perm.default_tier();
+                let tier_name = format!("{:?}", tier).to_uppercase();
+
+                tracing::error!(
+                    permission = %perm.to_esri_string(),
+                    tier = ?tier,
+                    "No API key configured for permission"
+                );
+
+                Err(crate::ErrorKind::Auth(format!(
+                    "No API key configured for permission: {} ({})\n\
+                    \n\
+                    Configure one of the following in your .env file:\n\
+                    1. Specific: ARCGIS_PERMISSION_{}=your_api_key\n\
+                    2. Group:    ARCGIS_{}_KEY=your_api_key\n\
+                    3. Skeleton: ARCGIS_API_KEY=your_api_key",
+                    perm.to_esri_string(),
+                    perm.description(),
+                    perm.to_esri_string(),
+                    tier_name
+                ))
+                .into())
+            }
+        }
+    }
 }
 
 // TODO: Add request/response helpers

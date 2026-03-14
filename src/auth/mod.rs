@@ -3,9 +3,11 @@
 mod api_key;
 mod client_credentials;
 mod no_auth;
+mod permissions;
 mod provider;
 
 pub use api_key::{ApiKeyAuth, ApiKeyTier};
 pub use client_credentials::ClientCredentialsAuth;
 pub use no_auth::NoAuth;
+pub use permissions::Permission;
 pub use provider::AuthProvider;

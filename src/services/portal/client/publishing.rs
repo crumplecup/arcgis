@@ -147,7 +147,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::create_service"));
         }
 
         // Get response text for debugging
@@ -308,7 +309,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::publish"));
         }
 
         // Get response text for debugging
@@ -487,7 +489,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::update_service_definition"));
         }
 
         // Parse response - check for ESRI API error first
@@ -635,7 +638,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::add_to_definition"));
         }
 
         // Parse response
@@ -752,7 +756,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::add_to_definition"));
         }
 
         // Parse response
@@ -879,7 +884,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::overwrite_service"));
         }
 
         // Parse response - check for ESRI API error first

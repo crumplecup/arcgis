@@ -247,7 +247,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::create_group"));
         }
 
         // Parse response
@@ -352,7 +353,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::update_group"));
         }
 
         // Parse response
@@ -421,7 +423,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::delete_group"));
         }
 
         // Parse response
@@ -488,7 +491,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::join_group"));
         }
 
         // Get raw response text for debugging
@@ -563,7 +567,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::leave_group"));
         }
 
         // Get raw response text for debugging
@@ -643,7 +648,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::add_to_group"));
         }
 
         // Parse response
@@ -721,7 +727,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::remove_from_group"));
         }
 
         // Parse response

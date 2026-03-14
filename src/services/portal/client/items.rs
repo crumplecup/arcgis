@@ -197,7 +197,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::add_item"));
         }
 
         // Get response text for debugging
@@ -319,7 +320,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::update_item"));
         }
 
         // Parse response
@@ -366,7 +368,6 @@ impl<'a> PortalClient<'a> {
         let mut form_data = vec![("f", "json")];
 
         // Add token if required by auth provider
-
         let token_opt = self.client.get_token_if_required().await?;
 
         let token_str;
@@ -396,7 +397,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::delete_item"));
         }
 
         // Parse response
@@ -625,7 +627,8 @@ impl<'a> PortalClient<'a> {
             return Err(crate::Error::from(crate::ErrorKind::Api {
                 code: status.as_u16() as i32,
                 message: format!("HTTP {}: {}", status, error_text),
-            }));
+            })
+            .with_permission_suggestion("PortalClient::update_item_data_v2"));
         }
 
         let result: UpdateItemResult = response.json().await?;

@@ -353,6 +353,68 @@ impl Error {
     pub fn kind(&self) -> &ErrorKind {
         &self.0
     }
+
+    /// Enhance permission-denied errors with helpful configuration suggestions.
+    ///
+    /// If this error is a 403 (Forbidden) or 498 (Invalid Token) API error,
+    /// attempts to find the required permission for the given method and
+    /// enhances the error message with configuration guidance.
+    ///
+    /// For other error types, returns the error unchanged.
+    ///
+    /// This method provides zero overhead in the happy path - permission
+    /// lookup only occurs when operations fail with permission errors.
+    ///
+    /// # Arguments
+    /// * `method_name` - Fully qualified method name (e.g., "PortalClient::delete_item")
+    ///
+    /// # Example
+    /// ```ignore
+    /// use arcgis::{Error, PortalClient};
+    ///
+    /// let result = portal.delete_item("abc123")
+    ///     .await
+    ///     .map_err(|e| e.with_permission_suggestion("PortalClient::delete_item"))?;
+    /// ```
+    #[track_caller]
+    pub fn with_permission_suggestion(self, method_name: &str) -> Self {
+        use crate::Permission;
+
+        match self.kind() {
+            ErrorKind::Api { code, message } if *code == 403 || *code == 498 => {
+                // Try to find the required permission for this method
+                if let Some(perm) = Permission::find_for_method(method_name) {
+                    let tier_name = format!("{:?}", perm.default_tier()).to_uppercase();
+
+                    let enhanced_message = format!(
+                        "{}\n\n\
+                        This operation requires permission: {} ({})\n\
+                        \n\
+                        To fix this, configure an API key with this permission in your .env file:\n\
+                        \n\
+                        Option 1 (Specific): ARCGIS_PERMISSION_{}=your_api_key\n\
+                        Option 2 (Group):    ARCGIS_{}_KEY=your_api_key\n\
+                        Option 3 (Skeleton): ARCGIS_API_KEY=your_api_key",
+                        message,
+                        perm.to_esri_string(),
+                        perm.description(),
+                        perm.to_esri_string(),
+                        tier_name
+                    );
+
+                    ErrorKind::Api {
+                        code: *code,
+                        message: enhanced_message,
+                    }
+                    .into()
+                } else {
+                    // No permission mapping found for this method
+                    self
+                }
+            }
+            _ => self,
+        }
+    }
 }
 
 /// Macro to implement From<SourceError> for Error.

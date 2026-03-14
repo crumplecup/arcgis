@@ -66,7 +66,7 @@ mod util;
 pub mod example_tracker;
 
 // Re-exports
-pub use auth::{ApiKeyAuth, ApiKeyTier, AuthProvider, ClientCredentialsAuth, NoAuth};
+pub use auth::{ApiKeyAuth, ApiKeyTier, AuthProvider, ClientCredentialsAuth, NoAuth, Permission};
 pub use client::ArcGISClient;
 pub use config::EnvConfig;
 pub use error::{
